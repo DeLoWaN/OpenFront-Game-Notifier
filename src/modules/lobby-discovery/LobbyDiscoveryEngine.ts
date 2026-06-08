@@ -50,6 +50,17 @@ export class LobbyDiscoveryEngine {
         ? getPlayersPerTeam(lobbyTeamConfig, lobbyCapacity)
         : null;
 
+    // Resolve the lobby's effective number of teams. OpenFront encodes a team
+    // game's playerTeams either as a number (the team count) or as a named
+    // players-per-team format ('Duos'/'Trios'/'Quads'), whose team count is
+    // derived from capacity. 'Humans Vs Nations' has no numeric team count and
+    // is matched by format identity instead, so it stays null here.
+    const lobbyNumTeams = this.resolveLobbyTeamCount(
+      lobbyTeamConfig,
+      teamComparisonCapacity,
+      lobbyCapacity
+    );
+
     for (const criteria of criteriaList) {
       if (criteria.gameMode !== gameMode) {
         continue;
@@ -58,23 +69,28 @@ export class LobbyDiscoveryEngine {
       if (gameMode === 'Team') {
         if (criteria.teamCount !== null && criteria.teamCount !== undefined) {
           if (criteria.teamCount === '8+') {
-            let numTeams: number | null = null;
-            if (typeof lobbyTeamConfig === 'number') {
-              numTeams = lobbyTeamConfig;
-            } else if (
-              lobbyTeamConfig === 'Duos' ||
-              lobbyTeamConfig === 'Trios' ||
-              lobbyTeamConfig === 'Quads'
-            ) {
-              const ppt = getPlayersPerTeam(lobbyTeamConfig, lobbyCapacity);
-              if (ppt !== null && lobbyCapacity !== null) {
-                numTeams = Math.floor(lobbyCapacity / ppt);
-              }
-            }
-            if (numTeams === null || numTeams < 8) {
+            if (lobbyNumTeams === null || lobbyNumTeams < 8) {
               continue;
             }
-          } else if (criteria.teamCount !== lobbyTeamConfig) {
+          } else if (
+            criteria.teamCount === 'Humans Vs Nations' ||
+            criteria.teamCount === 'Duos' ||
+            criteria.teamCount === 'Trios' ||
+            criteria.teamCount === 'Quads'
+          ) {
+            // Named-format criteria match by format identity. The UI only emits
+            // 'Humans Vs Nations' (Duos/Trios/Quads are stripped by criteria
+            // sanitization); the others are handled defensively for parity.
+            if (criteria.teamCount !== lobbyTeamConfig) {
+              continue;
+            }
+          } else if (
+            lobbyNumTeams === null ||
+            criteria.teamCount !== lobbyNumTeams
+          ) {
+            // Numeric NUMBER OF TEAMS criterion: compare against the derived
+            // team count so named-format lobbies ('Quads' + cap 24 => 6 teams)
+            // match the user's numeric selection.
             continue;
           }
         }
@@ -109,6 +125,30 @@ export class LobbyDiscoveryEngine {
     }
 
     return false;
+  }
+
+  /**
+   * Resolve a lobby's effective number of teams from its team config.
+   * - numeric config: the team count itself
+   * - named players-per-team format ('Duos'/'Trios'/'Quads'): derived as
+   *   floor(capacity / playersPerTeam)
+   * - 'Humans Vs Nations' or missing/zero capacity: null (no numeric team count)
+   */
+  private resolveLobbyTeamCount(
+    lobbyTeamConfig: ReturnType<typeof getLobbyTeamConfig>,
+    playersPerTeam: number | null,
+    lobbyCapacity: number | null
+  ): number | null {
+    if (typeof lobbyTeamConfig === 'number') {
+      return lobbyTeamConfig;
+    }
+    if (lobbyTeamConfig === 'Humans Vs Nations') {
+      return null;
+    }
+    if (playersPerTeam !== null && playersPerTeam > 0 && lobbyCapacity !== null) {
+      return Math.floor(lobbyCapacity / playersPerTeam);
+    }
+    return null;
   }
 
   private matchesModifiers(

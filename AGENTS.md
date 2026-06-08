@@ -180,6 +180,8 @@ const data = await new Promise((resolve) => {
 
 `data.games` is keyed by `"ffa"`, `"team"`, `"special"`. Each value is an array of `Lobby` objects — the game UI always shows index `[0]` of each source; the notifier only evaluates `[0]` as the "featured" lobby for that slot.
 
+> **`gameConfig.playerTeams` is polymorphic.** OpenFront encodes a team game's structure two ways: as a **number** (the team count, e.g. `6` → "6 teams") or as a **named format string** — `"Duos"`/`"Trios"`/`"Quads"` (a fixed players-per-team of 2/3/4, with the team count *derived* as `floor(capacity / playersPerTeam)`), or `"Humans Vs Nations"` (a distinct format with no per-team structure). Both forms appear in the live feed simultaneously. Because "Quads" + capacity 24 and numeric `6` + capacity 24 both render as "6 teams of 4", code that compares against the *team count* MUST resolve named formats to their derived count first — never compare a number against the raw `playerTeams` (`6 !== "Quads"`). The matcher in `LobbyDiscoveryEngine` does this via `resolveLobbyTeamCount`.
+
 ### How to run the matcher against live data
 
 Inline the logic from `LobbyDiscoveryHelpers.ts` + `LobbyDiscoveryEngine.ts` directly in `page.evaluate()` (pure functions, no imports needed). Then iterate over the lobbies, annotate each with `{ source, featured, matched, wouldPulse, failReason }`, and return the array. This gives a full picture of what the notifier would do without running the full bundle.
@@ -210,6 +212,7 @@ page.evaluate(() => {
 |---|---|
 | `matched: true, wouldPulse: false` | Matching lobby is at `[1]` or later — blocked by a non-matching featured lobby at `[0]` |
 | `matched: false` for HvN lobby | `getPlayersPerTeam('Humans Vs Nations', cap)` returns `cap`; players/team filter compares against full capacity |
+| `matched: false` for a Duos/Trios/Quads lobby | A numeric NUMBER OF TEAMS criterion is being compared against the raw named `playerTeams` instead of the derived team count — resolve `"Quads"`+cap to `floor(cap/4)` first (see `resolveLobbyTeamCount`) |
 | No lobbies at all | Navigated to `/play` instead of `/`; the data feed doesn't start there |
 
 # Version Management
