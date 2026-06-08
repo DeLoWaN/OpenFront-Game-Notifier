@@ -505,6 +505,51 @@ describe('LobbyDiscoveryEngine', () => {
     });
   });
 
+  describe('numeric team-count criterion vs named-format lobbies', () => {
+    // OpenFront sends playerTeams either as a number (team count) or as a named
+    // format ('Duos'/'Trios'/'Quads') meaning fixed players-per-team, with the
+    // team count derived from capacity. A numeric NUMBER OF TEAMS criterion must
+    // match the lobby's *derived* team count, not the raw named string.
+
+    const makeNamed = (playerTeams: string, maxPlayers: number) => ({
+      gameID: `named-${playerTeams}-${maxPlayers}`,
+      publicGameType: 'special',
+      numClients: 0,
+      gameConfig: {
+        gameMode: 'Team',
+        playerTeams,
+        maxPlayers,
+      },
+    } as any);
+
+    it('matches a "Quads" + 24 lobby ("6 teams of 4") against teamCount 6', () => {
+      // 24 / 4 = 6 teams; players-per-team 4 within [3, 11].
+      const criteria = [{ gameMode: 'Team', teamCount: 6, minPlayers: 3, maxPlayers: 11 }] as any;
+      expect(engine.matchesCriteria(makeNamed('Quads', 24), criteria)).toBe(true);
+    });
+
+    it('matches a "Trios" + 9 lobby ("3 teams of 3") against teamCount 3', () => {
+      const criteria = [{ gameMode: 'Team', teamCount: 3, minPlayers: 2, maxPlayers: 5 }] as any;
+      expect(engine.matchesCriteria(makeNamed('Trios', 9), criteria)).toBe(true);
+    });
+
+    it('does not match a "Quads" + 24 lobby (6 teams) against teamCount 5', () => {
+      const criteria = [{ gameMode: 'Team', teamCount: 5, minPlayers: 3, maxPlayers: 11 }] as any;
+      expect(engine.matchesCriteria(makeNamed('Quads', 24), criteria)).toBe(false);
+    });
+
+    it('still matches a numeric-encoded lobby (playerTeams: 6) against teamCount 6', () => {
+      const lobby = {
+        gameID: 'numeric-6',
+        publicGameType: 'special',
+        numClients: 0,
+        gameConfig: { gameMode: 'Team', playerTeams: 6, maxPlayers: 24 },
+      } as any;
+      const criteria = [{ gameMode: 'Team', teamCount: 6, minPlayers: 3, maxPlayers: 11 }] as any;
+      expect(engine.matchesCriteria(lobby, criteria)).toBe(true);
+    });
+  });
+
   describe('8+ team count matching', () => {
     const make8PlusCriteria = (minPPT: number, maxPPT: number) => [
       { gameMode: 'Team', teamCount: '8+', minPlayers: minPPT, maxPlayers: maxPPT },
