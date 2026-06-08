@@ -4,8 +4,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 
 ## For Players
 
-<img src="docs/images/notifier-panel.png" alt="OpenFront Game Notifier panel with mode, format, capacity, and modifier filters" width="380" />
-
+<img width="404" height="1174" alt="image" src="https://github.com/user-attachments/assets/db113419-2624-461a-b8b0-a69d956992d7" />
 
 ### Features
 
@@ -23,7 +22,8 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Slots with no upcoming game show an explicit fallback rather than a stale card
 - Clicking an upcoming card navigates to OpenFront's own join modal — manual quick-join only, you still confirm entry there
 
-<img src="docs/images/up-next.png" alt="Up Next area showing upcoming games per slot, with a no-upcoming-game fallback" width="724" />
+<img width="946" height="352" alt="image" src="https://github.com/user-attachments/assets/e9d14503-90de-4a8a-93ae-ce460f82e4d0" />
+
 
 **Alerts**
 - Pulse highlight on the matching homepage queue card the moment a lobby matches
