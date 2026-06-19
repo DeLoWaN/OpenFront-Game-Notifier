@@ -522,6 +522,21 @@ describe('LobbyDiscoveryHelpers', () => {
         getLobbyMapThumbnailUrl({ gameID: 'g', gameConfig: { gameMode: 'Free For All' } } as any)
       ).toBeNull();
     });
+
+    it('strips parentheses when normalizing the map name (OpenFront V32 parity)', () => {
+      // OpenFront normalizes with /[\s.()]+/g; a parenthesized name must resolve
+      // to the parens-stripped manifest key, not leave the "(...)" in the lookup.
+      const lobby = {
+        gameID: 'g',
+        gameConfig: { gameMode: 'Free For All', gameMap: 'Faroe Islands (Test)' },
+      } as any;
+      const manifest = {
+        'maps/faroeislandstest/thumbnail.webp': '/_assets/maps/faroeislandstest/thumbnail.abc.webp',
+      };
+      expect(getLobbyMapThumbnailUrl(lobby, manifest, 'https://cdn.ofedge.io')).toBe(
+        'https://cdn.ofedge.io/_assets/maps/faroeislandstest/thumbnail.abc.webp'
+      );
+    });
   });
 
   describe('buildUpcomingCardModel', () => {

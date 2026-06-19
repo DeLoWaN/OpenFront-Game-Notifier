@@ -489,7 +489,10 @@ export function getLobbyMapThumbnailUrl(
   const mapName = lobby.gameConfig?.gameMap?.trim();
   if (!mapName) return null;
 
-  const normalizedMap = mapName.toLowerCase().replace(/[\s.]+/g, '');
+  // Mirror OpenFront's normalization (src/core/AssetUrls.ts + GamePreviewBuilder):
+  // strip whitespace, dots, AND parentheses so parenthesized map names resolve to
+  // the same manifest key OpenFront uses.
+  const normalizedMap = mapName.toLowerCase().replace(/[\s.()]+/g, '');
   if (!normalizedMap) return null;
 
   const path = `maps/${encodeURIComponent(normalizedMap)}/thumbnail.webp`;
