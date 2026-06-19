@@ -213,6 +213,7 @@ page.evaluate(() => {
 | `matched: true, wouldPulse: false` | Matching lobby is at `[1]` or later — blocked by a non-matching featured lobby at `[0]` |
 | `matched: false` for HvN lobby | `getPlayersPerTeam('Humans Vs Nations', cap)` returns `cap`; players/team filter compares against full capacity |
 | `matched: false` for a Duos/Trios/Quads lobby | A numeric NUMBER OF TEAMS criterion is being compared against the raw named `playerTeams` instead of the derived team count — resolve `"Quads"`+cap to `floor(cap/4)` first (see `resolveLobbyTeamCount`) |
+| Up Next cards show black/empty map art | The asset globals weren't found, so `getLobbyMapThumbnailUrl` fell back to a non-existent relative path. OpenFront moved them: read `window.BOOTSTRAP_CONFIG.assetManifest` / `.cdnBase` (fallbacks `globalThis.__ASSET_MANIFEST__` / `__CDN_BASE__`) — mirror OpenFront's `getAssetManifest`/`getCdnBase` in `src/core/AssetUrls.ts`. The legacy `ASSET_MANIFEST`/`CDN_BASE` globals were removed in v0.32 |
 | No lobbies at all | Navigated to `/play` instead of `/`; the data feed doesn't start there |
 
 # Version Management
