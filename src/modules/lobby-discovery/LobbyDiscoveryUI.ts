@@ -468,7 +468,11 @@ export class LobbyDiscoveryUI {
    * (e.g. unsafeWindow not granted, or in tests).
    */
   private getAssetContext(): { manifest: Record<string, string> | null; cdnBase: string | null } {
-    type AssetGlobals = { ASSET_MANIFEST?: Record<string, string>; CDN_BASE?: string };
+    type AssetGlobals = {
+      BOOTSTRAP_CONFIG?: { assetManifest?: Record<string, string>; cdnBase?: string };
+      __ASSET_MANIFEST__?: Record<string, string>;
+      __CDN_BASE__?: string;
+    };
     let win: AssetGlobals | undefined;
     try {
       if (typeof unsafeWindow !== 'undefined') {
@@ -480,9 +484,15 @@ export class LobbyDiscoveryUI {
     if (!win && typeof window !== 'undefined') {
       win = window as unknown as AssetGlobals;
     }
+    // OpenFront v0.32 reads assets from window.BOOTSTRAP_CONFIG, with the
+    // globalThis.__ASSET_MANIFEST__/__CDN_BASE__ pair as its own fallback. Mirror
+    // that precedence so upcoming cards reuse the exact fingerprinted CDN
+    // thumbnails; see OpenFront src/core/AssetUrls.ts (getAssetManifest/getCdnBase).
+    // The earlier ASSET_MANIFEST/CDN_BASE globals were removed in v0.32, so reading
+    // them yielded null and every card fell back to a non-existent relative path.
     return {
-      manifest: win?.ASSET_MANIFEST ?? null,
-      cdnBase: win?.CDN_BASE ?? null,
+      manifest: win?.BOOTSTRAP_CONFIG?.assetManifest ?? win?.__ASSET_MANIFEST__ ?? null,
+      cdnBase: win?.BOOTSTRAP_CONFIG?.cdnBase ?? win?.__CDN_BASE__ ?? null,
     };
   }
 

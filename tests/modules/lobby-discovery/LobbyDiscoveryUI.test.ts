@@ -114,6 +114,9 @@ describe('LobbyDiscoveryUI', () => {
     vi.clearAllTimers();
     vi.useRealTimers();
     document.body.innerHTML = '';
+    delete (window as any).BOOTSTRAP_CONFIG;
+    delete (globalThis as any).__ASSET_MANIFEST__;
+    delete (globalThis as any).__CDN_BASE__;
   });
 
   it('keeps matching cards in one animated active state and deduplicates sound across repeated updates', () => {
@@ -1190,6 +1193,70 @@ describe('LobbyDiscoveryUI', () => {
       vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(true);
       ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
       expect(strip.style.display).not.toBe('none');
+    });
+  });
+
+  describe('upcoming card map thumbnail asset resolution', () => {
+    beforeEach(() => {
+      store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
+        criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null }],
+        discoveryEnabled: true,
+        soundEnabled: false,
+        desktopNotificationsEnabled: false,
+        isTeamTwoTimesMinEnabled: false,
+        notifyUpcomingEnabled: true,
+      });
+    });
+
+    function ffaUpcoming(): any[] {
+      return [
+        {
+          gameID: 'ffa-live',
+          publicGameType: 'ffa',
+          gameConfig: { gameMode: 'Free For All', gameMap: 'Bering Sea', maxPlayers: 25 },
+        },
+        {
+          gameID: 'ffa-next',
+          publicGameType: 'ffa',
+          gameConfig: { gameMode: 'Free For All', gameMap: 'Europe', maxPlayers: 40 },
+        },
+      ];
+    }
+
+    function renderedUpcomingImgSrc(): string | null {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaUpcoming());
+      const img = document.querySelector(
+        '.of-upcoming-slot[data-source="ffa"] .of-upcoming-art img'
+      ) as HTMLImageElement | null;
+      // getAttribute, not .src — jsdom resolves the property to an absolute URL.
+      return img?.getAttribute('src') ?? null;
+    }
+
+    it('resolves the thumbnail from window.BOOTSTRAP_CONFIG (OpenFront V32)', () => {
+      (window as any).BOOTSTRAP_CONFIG = {
+        assetManifest: {
+          'maps/europe/thumbnail.webp': '/_assets/maps/europe/thumbnail.5ffe4eb83aa5.webp',
+        },
+        cdnBase: 'https://cdn.ofedge.io/game_assets',
+      };
+      expect(renderedUpcomingImgSrc()).toBe(
+        'https://cdn.ofedge.io/game_assets/_assets/maps/europe/thumbnail.5ffe4eb83aa5.webp'
+      );
+    });
+
+    it('falls back to __ASSET_MANIFEST__/__CDN_BASE__ when BOOTSTRAP_CONFIG is absent', () => {
+      (globalThis as any).__ASSET_MANIFEST__ = {
+        'maps/europe/thumbnail.webp': '/_assets/maps/europe/thumbnail.5ffe4eb83aa5.webp',
+      };
+      (globalThis as any).__CDN_BASE__ = 'https://cdn.ofedge.io/game_assets';
+      expect(renderedUpcomingImgSrc()).toBe(
+        'https://cdn.ofedge.io/game_assets/_assets/maps/europe/thumbnail.5ffe4eb83aa5.webp'
+      );
+    });
+
+    it('degrades to a relative path when no asset globals are present', () => {
+      expect(renderedUpcomingImgSrc()).toBe('/maps/europe/thumbnail.webp');
     });
   });
 });

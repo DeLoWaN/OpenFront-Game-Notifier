@@ -1,6 +1,6 @@
 {
   "name": "openfront-bundle-userscript",
-  "version": "2.11.1",
+  "version": "2.11.2",
   "description": "OpenFront Game Notifier",
   "type": "module",
   "scripts": {
