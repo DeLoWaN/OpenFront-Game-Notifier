@@ -128,7 +128,7 @@ npm run type-check  # tsc --noEmit
 
 ## Settings Persistence
 
-Stored under `OF_LOBBY_DISCOVERY_SETTINGS` and `OF_LOBBY_DISCOVERY_PANEL_SIZE` via `GM_setValue`. Settings include:
+Stored under `OF_LOBBY_DISCOVERY_SETTINGS` via `GM_setValue`. The collapsed state of each panel section (Modes, Modifiers, Maps, Lobbies) is stored under `OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS`. Settings include:
 
 - Discovery criteria list
 - Discovery enabled/disabled

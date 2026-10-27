@@ -105,6 +105,28 @@ interface DiscoveryMatch {
   seeAllOnly: boolean;
 }
 
+const PANEL_SECTIONS = ['modes', 'modifiers', 'maps', 'lobbies'] as const;
+type PanelSection = (typeof PANEL_SECTIONS)[number];
+const DEFAULT_COLLAPSED_SECTIONS: Record<PanelSection, boolean> = {
+  modes: false,
+  modifiers: false,
+  maps: true,
+  lobbies: false,
+};
+
+function loadCollapsedSections(): Record<PanelSection, boolean> {
+  const saved = GM_getValue<Partial<Record<PanelSection, unknown>> | null>(
+    STORAGE_KEYS.lobbyDiscoveryCollapsedSections,
+    null
+  );
+  const collapsed = { ...DEFAULT_COLLAPSED_SECTIONS };
+  for (const section of PANEL_SECTIONS) {
+    const value = saved?.[section];
+    if (typeof value === 'boolean') collapsed[section] = value;
+  }
+  return collapsed;
+}
+
 const SEE_ALL_VIEW_ID = 'page-detailed-view';
 const SEE_ALL_MATCH_CLASS = 'of-discovery-see-all-match';
 
@@ -161,6 +183,7 @@ export class LobbyDiscoveryUI {
   private includeHostedAndCustomLobbies = true;
   private mapFilter: MapFilter = {};
   private knownMaps: Set<string> = new Set(MAP_CATALOGUE.map((entry) => entry.gameMap));
+  private collapsedSections: Record<PanelSection, boolean> = loadCollapsedSections();
   private desktopNotificationRequestId = 0;
   private activeMatchSources: Set<QueueSource> = new Set();
   private seeAllPulseActive = false;
@@ -1310,13 +1333,13 @@ export class LobbyDiscoveryUI {
       this.refreshCriteria();
     });
 
-    const mapsToggle = document.getElementById('discovery-maps-toggle');
-    const mapsBody = document.getElementById('discovery-maps-body');
-    mapsToggle?.addEventListener('click', () => {
-      if (!mapsBody) return;
-      mapsBody.hidden = !mapsBody.hidden;
-      mapsToggle.setAttribute('aria-expanded', String(!mapsBody.hidden));
-    });
+    for (const section of PANEL_SECTIONS) {
+      document.getElementById(`discovery-${section}-toggle`)?.addEventListener('click', () => {
+        this.collapsedSections[section] = !this.collapsedSections[section];
+        GM_setValue(STORAGE_KEYS.lobbyDiscoveryCollapsedSections, this.collapsedSections);
+        this.applySectionCollapse(section);
+      });
+    }
     const mapsSearch = document.getElementById('discovery-maps-search') as HTMLInputElement | null;
     mapsSearch?.addEventListener('input', () => this.filterMapChips(mapsSearch.value));
     document.getElementById('discovery-maps-clear')?.addEventListener('click', () => {
@@ -1398,6 +1421,22 @@ export class LobbyDiscoveryUI {
     `;
   }
 
+  private renderSectionToggle(section: PanelSection, label: string, asideHtml: string): string {
+    return `
+      <button type="button" class="ld-section-head ld-section-toggle" id="discovery-${section}-toggle" aria-expanded="true" aria-controls="discovery-${section}-body">
+        <span class="ld-section-label">${label}</span>
+        <span class="ld-section-head-end">${asideHtml}<span class="ld-section-chevron" aria-hidden="true"></span></span>
+      </button>
+    `;
+  }
+
+  private applySectionCollapse(section: PanelSection): void {
+    const collapsed = this.collapsedSections[section];
+    const body = document.getElementById(`discovery-${section}-body`);
+    if (body) body.hidden = collapsed;
+    document.getElementById(`discovery-${section}-toggle`)?.setAttribute('aria-expanded', String(!collapsed));
+  }
+
   private renderMapChip(gameMap: string, name: string): string {
     const safeName = escapeHtml(name);
     return `
@@ -1463,10 +1502,8 @@ export class LobbyDiscoveryUI {
       <div class="discovery-body">
         <div class="discovery-content" style="overflow-y: auto;">
           <div class="ld-section">
-            <div class="ld-section-head">
-              <div class="ld-section-label">Modes</div>
-              <div class="ld-section-aside">Pick one or both</div>
-            </div>
+            ${this.renderSectionToggle('modes', 'Modes', '<span class="ld-section-aside">Pick one or both</span>')}
+            <div class="ld-section-body" id="discovery-modes-body">
             <div class="ld-modes">
               ${this.renderModeButton('discovery-ffa', 'FFA')}
               ${this.renderModeButton('discovery-team', 'Teams')}
@@ -1552,17 +1589,20 @@ export class LobbyDiscoveryUI {
               </label>
               <div class="ld-current-game-info" id="discovery-current-game-info" style="display: none;"></div>
             </div>
+            </div>
           </div>
 
           <div class="ld-section">
-            <div class="ld-section-head">
-              <div class="ld-section-label">Modifiers</div>
-              <div class="ld-mods-legend">
+            ${this.renderSectionToggle(
+              'modifiers',
+              'Modifiers',
+              `<span class="ld-mods-legend">
                 <span class="key"><span class="swatch"></span>Any</span>
                 <span class="key"><span class="swatch req"></span>Req</span>
                 <span class="key"><span class="swatch blk"></span>Excl</span>
-              </div>
-            </div>
+              </span>`
+            )}
+            <div class="ld-section-body" id="discovery-modifiers-body">
 
             <div class="ld-mod-group">
               <div class="ld-mod-group-label">Map</div>
@@ -1600,14 +1640,12 @@ export class LobbyDiscoveryUI {
             <div class="ld-mods-hint">
               Click to cycle <strong>Any</strong> → <strong class="req">Required</strong> → <strong class="blk">Excluded</strong>.
             </div>
+            </div>
           </div>
 
-          <div class="ld-section ld-maps">
-            <button type="button" class="ld-section-head ld-maps-toggle" id="discovery-maps-toggle" aria-expanded="false" aria-controls="discovery-maps-body">
-              <span class="ld-section-label">Maps</span>
-              <span class="ld-section-aside" id="discovery-maps-summary">Any map</span>
-            </button>
-            <div id="discovery-maps-body" hidden>
+          <div class="ld-section">
+            ${this.renderSectionToggle('maps', 'Maps', '<span class="ld-section-aside" id="discovery-maps-summary">Any map</span>')}
+            <div class="ld-section-body" id="discovery-maps-body">
               <div class="ld-maps-tools">
                 <input type="search" id="discovery-maps-search" class="ld-maps-search" placeholder="Search maps" aria-label="Search maps">
                 <button type="button" class="ld-maps-clear" id="discovery-maps-clear">Clear</button>
@@ -1620,14 +1658,14 @@ export class LobbyDiscoveryUI {
           </div>
 
           <div class="ld-section">
-            <div class="ld-section-head">
-              <div class="ld-section-label">Lobbies</div>
+            ${this.renderSectionToggle('lobbies', 'Lobbies', '')}
+            <div class="ld-section-body" id="discovery-lobbies-body">
+              <label class="ld-2x" aria-pressed="false">
+                <input type="checkbox" id="discovery-hosted-toggle">
+                <span class="check">${ICON_CHECK}</span>
+                <span class="lbl"><strong>Include hosted and custom lobbies</strong></span>
+              </label>
             </div>
-            <label class="ld-2x" aria-pressed="false">
-              <input type="checkbox" id="discovery-hosted-toggle">
-              <span class="check">${ICON_CHECK}</span>
-              <span class="lbl"><strong>Include hosted and custom lobbies</strong></span>
-            </label>
           </div>
         </div>
         <div class="discovery-footer">
@@ -1644,6 +1682,7 @@ export class LobbyDiscoveryUI {
 
     this.setupEventListeners();
     this.loadUIFromSettings();
+    for (const section of PANEL_SECTIONS) this.applySectionCollapse(section);
 
     this.ffaSlider = new RangeSlider({
       containerId: 'discovery-ffa-slider-row',

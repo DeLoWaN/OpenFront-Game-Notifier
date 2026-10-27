@@ -693,18 +693,36 @@ export function getStyles(): string {
       flex: 1;
       min-width: 0;
     }
-    .ld-maps-toggle {
+    .ld-section-toggle {
       appearance: none;
       width: 100%;
       background: transparent;
       border: 0;
       padding: 0;
       font: inherit;
+      color: inherit;
       cursor: pointer;
       text-align: left;
     }
-    .ld-maps-toggle[aria-expanded="false"] { margin-bottom: 0; }
-    .ld-maps-toggle:hover .ld-section-label { color: var(--of-hud-text-1); }
+    .ld-section-toggle[aria-expanded="false"] { margin-bottom: 0; }
+    .ld-section-toggle:hover .ld-section-label { color: var(--of-hud-text-1); }
+    .ld-section-head-end {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ld-section-chevron {
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid var(--of-hud-text-4);
+      border-bottom: 1.5px solid var(--of-hud-text-4);
+      transform: translateY(-2px) rotate(45deg);
+      transition: transform ${TIMING.fast};
+    }
+    .ld-section-toggle[aria-expanded="false"] .ld-section-chevron {
+      transform: rotate(-45deg);
+    }
+    .ld-section-body[hidden] { display: none; }
     .ld-maps-tools {
       display: flex;
       gap: 6px;

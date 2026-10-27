@@ -1551,4 +1551,42 @@ describe('LobbyDiscoveryUI', () => {
       expect(chips[0]!.closest('[data-category]')?.getAttribute('data-category')).toBe('other');
     });
   });
+
+  describe('collapsible sections', () => {
+    const sections = ['modes', 'modifiers', 'maps', 'lobbies'];
+    const toggle = (name: string) => document.getElementById(`discovery-${name}-toggle`) as HTMLButtonElement;
+    const body = (name: string) => document.getElementById(`discovery-${name}-body`) as HTMLElement;
+
+    it('opens Modes, Modifiers and Lobbies and collapses Maps by default', () => {
+      ui = new LobbyDiscoveryUI();
+      expect(sections.map((name) => [name, body(name).hidden, toggle(name).getAttribute('aria-expanded')])).toEqual([
+        ['modes', false, 'true'],
+        ['modifiers', false, 'true'],
+        ['maps', true, 'false'],
+        ['lobbies', false, 'true'],
+      ]);
+    });
+
+    it('collapses and expands every section on click', () => {
+      ui = new LobbyDiscoveryUI();
+      for (const name of sections) {
+        const wasHidden = body(name).hidden;
+        toggle(name).click();
+        expect(body(name).hidden).toBe(!wasHidden);
+        expect(toggle(name).getAttribute('aria-expanded')).toBe(String(wasHidden));
+      }
+    });
+
+    it('restores the collapsed sections after a page reload', () => {
+      ui = new LobbyDiscoveryUI();
+      toggle('modes').click();
+      toggle('maps').click();
+      ui.cleanup();
+
+      ui = new LobbyDiscoveryUI();
+      expect(body('modes').hidden).toBe(true);
+      expect(body('maps').hidden).toBe(false);
+      expect(body('modifiers').hidden).toBe(false);
+    });
+  });
 });

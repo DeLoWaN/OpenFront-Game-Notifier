@@ -12,6 +12,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Filter `FFA` and `Team` public lobbies by mode, format, team count, capacity, and modifiers
 - Matching evaluates **every advertised lobby**: the live lobby, all upcoming lobbies of each queue (OpenFront's "See all" list), and hosted lobbies
 - Global **map filter**: mark maps as required or excluded, with search and categories
+- `Humans Vs Nations` matches only when its format is selected
 - Hosted and custom lobbies are included by default; one option excludes them
 - Team panel splits into `Format` (`Humans Vs Nations`) and `Number of teams` (`2`–`7`)
 - Capacity sliders use the right semantics per mode: total lobby size for `FFA`, players-per-team for `Team`
@@ -38,6 +39,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 **Smart UX**
 - Stronger highlight for your own player row (and your team card) inside the native join modal
 - Filter settings persist across reloads
+- Every panel section (Modes, Modifiers, Maps, Lobbies) collapses, and the panel remembers which ones across reloads
 - Discovery feedback automatically pauses while you're already inside a joined lobby flow
 
 ### Modifier filters
