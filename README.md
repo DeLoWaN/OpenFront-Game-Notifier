@@ -4,7 +4,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 
 ## For Players
 
-<img width="404" height="1174" alt="image" src="https://github.com/user-attachments/assets/db113419-2624-461a-b8b0-a69d956992d7" />
+<img width="380" alt="OpenFront Game Notifier panel" src="docs/images/notifier-panel.png" />
 
 ### Features
 
