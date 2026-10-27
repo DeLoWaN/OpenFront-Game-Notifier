@@ -756,4 +756,28 @@ describe('LobbyDiscoveryEngine', () => {
       expect(engine.matchesCriteria(lobby, criteriaWith({ goldMultiplier: { 2: 'blocked' } }))).toBe(false);
     });
   });
+
+  describe('Humans Vs Nations is opt-in', () => {
+    const hvn = {
+      gameID: 'hvn-opt-in',
+      publicGameType: 'special',
+      gameConfig: { gameMode: 'Team', playerTeams: 'Humans Vs Nations', maxPlayers: 40 },
+    } as any;
+    const twoTeams = {
+      gameID: 'two-teams',
+      publicGameType: 'team',
+      gameConfig: { gameMode: 'Team', playerTeams: 2, maxPlayers: 40 },
+    } as any;
+
+    it('does not match Humans Vs Nations from a Team Criterion with no format', () => {
+      const anyTeam = [{ gameMode: 'Team', teamCount: null, minPlayers: null, maxPlayers: null }] as any;
+      expect(engine.matchesCriteria(hvn, anyTeam)).toBe(false);
+      expect(engine.matchesCriteria(twoTeams, anyTeam)).toBe(true);
+    });
+
+    it('matches Humans Vs Nations when its format is selected', () => {
+      const hvnOnly = [{ gameMode: 'Team', teamCount: 'Humans Vs Nations', minPlayers: null, maxPlayers: null }] as any;
+      expect(engine.matchesCriteria(hvn, hvnOnly)).toBe(true);
+    });
+  });
 });

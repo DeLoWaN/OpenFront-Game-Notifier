@@ -74,7 +74,12 @@ export class LobbyDiscoveryEngine {
       }
 
       if (gameMode === 'Team') {
-        if (criteria.teamCount !== null && criteria.teamCount !== undefined) {
+        const hasFormat = criteria.teamCount !== null && criteria.teamCount !== undefined;
+        // Humans Vs Nations matches only when the Criterion selects it.
+        if (!hasFormat && lobbyTeamConfig === 'Humans Vs Nations') {
+          continue;
+        }
+        if (hasFormat) {
           if (criteria.teamCount === '8+') {
             if (lobbyNumTeams === null || lobbyNumTeams < 8) {
               continue;
