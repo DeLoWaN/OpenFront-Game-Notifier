@@ -20,13 +20,19 @@ export interface GameConfig {
     startingGold?: number;
     goldMultiplier?: number;
     isAlliancesDisabled?: boolean;
-    isPortsDisabled?: boolean;
     isNukesDisabled?: boolean;
     isSAMsDisabled?: boolean;
     isPeaceTime?: boolean;
     isWaterNukes?: boolean;
+    isDoomsdayClock?: boolean;
   };
   disableNations?: boolean;
+  randomSpawn?: boolean;
+  disableAlliances?: boolean | null;
+  waterNukes?: boolean | null;
+  doomsdayClock?: { enabled?: boolean; speed?: string };
+  disabledUnits?: string[];
+  trusted?: boolean;
   maxClients?: number;
   maxPlayers?: number;
   maxPlayersPerGame?: number;
@@ -42,22 +48,14 @@ export interface Lobby {
   gameConfig: GameConfig;
   maxClients?: number;
   numClients?: number;
-  publicGameType?: 'ffa' | 'team' | 'special' | string;
+  publicGameType?: 'ffa' | 'team' | 'special' | 'hosted' | string;
   startsAt?: number;
-}
-
-/**
- * WebSocket message for lobby updates
- */
-export interface LobbiesUpdateMessage {
-  type: 'lobbies_update';
-  data?: {
-    lobbies: Lobby[];
-  };
+  /** A host paid to place this private game in the Special Queue. */
+  custom?: boolean;
 }
 
 export interface PublicGamesResponse {
-  games?: Partial<Record<'ffa' | 'team' | 'special', Lobby[]>>;
+  games?: Partial<Record<'ffa' | 'team' | 'special' | 'hosted', Lobby[]>>;
   serverTime?: number;
 }
 

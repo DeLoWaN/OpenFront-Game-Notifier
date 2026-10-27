@@ -4,11 +4,13 @@
  */
 
 import { TEAM_MIN_PLAYERS_PER_TEAM } from '@/config/constants';
+import { MAP_CATALOGUE } from '@/config/mapCatalogue';
 import type { Lobby } from '@/types/game';
 import type {
   DiscoveryCriteria,
   DiscoveryGameMode,
   LobbyDiscoverySettings,
+  MapFilter,
   ModifierFilters,
   ModifierFilterState,
   NumericModifierState,
@@ -37,13 +39,20 @@ export function normalizeGameMode(
   return null;
 }
 
+const MAP_NAMES = new Map(MAP_CATALOGUE.map((entry) => [entry.gameMap, entry.name]));
+
+/** OpenFront's English name for a `gameMap` value, or the value itself for an unknown map. */
+export function getMapDisplayName(gameMap: string): string {
+  return MAP_NAMES.get(gameMap) ?? gameMap;
+}
+
 export function getLobbyGameMode(lobby: Lobby): DiscoveryGameMode | null {
   return normalizeGameMode(lobby.gameConfig?.gameMode);
 }
 
 export function getLobbyQueueSource(lobby: Lobby): QueueSource | null {
   const source = lobby.publicGameType?.toLowerCase().trim();
-  if (source === 'ffa' || source === 'team' || source === 'special') {
+  if (source === 'ffa' || source === 'team' || source === 'special' || source === 'hosted') {
     return source;
   }
   return null;
@@ -133,10 +142,55 @@ export function getLobbyModifiers(lobby: Lobby): Record<string, unknown> {
     : {};
 }
 
+/** True for a Hosted or Custom Lobby, whose host chose the configuration. */
+export function isHostConfiguredLobby(lobby: Lobby): boolean {
+  return getLobbyQueueSource(lobby) === 'hosted' || lobby.custom === true;
+}
+
+const NUKE_UNIT_TYPES = ['Atom Bomb', 'Hydrogen Bomb', 'MIRV'] as const;
+
+// A Hosted or Custom Lobby has only raw game settings, and Crowded, Hard Nations and Peace Time have no raw equivalent.
+function getHostConfiguredModifierValue(
+  lobby: Lobby,
+  key: keyof ModifierFilters
+): boolean | number | undefined {
+  const config = lobby.gameConfig;
+  const disabledUnits = config?.disabledUnits ?? [];
+
+  switch (key) {
+    case 'isCompact':
+      return config?.gameMapSize === 'Compact';
+    case 'isRandomSpawn':
+      return config?.randomSpawn === true;
+    case 'isAlliancesDisabled':
+      return config?.disableAlliances === true;
+    case 'isNukesDisabled':
+      return NUKE_UNIT_TYPES.every((unit) => disabledUnits.includes(unit));
+    case 'isSAMsDisabled':
+      return disabledUnits.includes('SAM Launcher');
+    case 'isWaterNukes':
+      return config?.waterNukes === true;
+    case 'isDoomsdayClock':
+      return config?.doomsdayClock !== undefined && config.doomsdayClock.enabled !== false;
+    case 'isTrusted':
+      return config?.trusted;
+    case 'startingGold':
+      return config?.startingGold ?? undefined;
+    case 'goldMultiplier':
+      return config?.goldMultiplier ?? undefined;
+    default:
+      return undefined;
+  }
+}
+
 export function getLobbyModifierValue(
   lobby: Lobby,
   key: keyof ModifierFilters
 ): boolean | number | undefined {
+  if (isHostConfiguredLobby(lobby)) {
+    return getHostConfiguredModifierValue(lobby, key);
+  }
+
   const modifiers = lobby.gameConfig?.publicGameModifiers;
 
   switch (key) {
@@ -150,8 +204,6 @@ export function getLobbyModifierValue(
       return modifiers?.isHardNations;
     case 'isAlliancesDisabled':
       return modifiers?.isAlliancesDisabled;
-    case 'isPortsDisabled':
-      return modifiers?.isPortsDisabled;
     case 'isNukesDisabled':
       return modifiers?.isNukesDisabled;
     case 'isSAMsDisabled':
@@ -160,6 +212,10 @@ export function getLobbyModifierValue(
       return modifiers?.isPeaceTime;
     case 'isWaterNukes':
       return modifiers?.isWaterNukes;
+    case 'isDoomsdayClock':
+      return modifiers?.isDoomsdayClock;
+    case 'isTrusted':
+      return lobby.gameConfig?.trusted;
     case 'startingGold':
       return modifiers?.startingGold ?? lobby.gameConfig?.startingGold ?? undefined;
     case 'goldMultiplier':
@@ -245,30 +301,31 @@ function formatStartingGold(value: number): string {
 }
 
 export function getActiveModifierLabels(lobby: Lobby): string[] {
-  const modifiers = lobby.gameConfig?.publicGameModifiers;
+  const has = (key: keyof ModifierFilters): boolean => Boolean(getLobbyModifierValue(lobby, key));
   const labels: string[] = [];
 
-  if (modifiers?.isCompact) labels.push('Compact');
-  if (modifiers?.isRandomSpawn) labels.push('Random');
-  if (modifiers?.isCrowded) labels.push('Crowded');
-  if (modifiers?.isHardNations) labels.push('Hard');
+  if (has('isCompact')) labels.push('Compact');
+  if (has('isRandomSpawn')) labels.push('Random');
+  if (has('isCrowded')) labels.push('Crowded');
+  if (has('isHardNations')) labels.push('Hard');
 
-  const startingGold = modifiers?.startingGold ?? lobby.gameConfig?.startingGold;
+  const startingGold = getLobbyModifierValue(lobby, 'startingGold');
   if (typeof startingGold === 'number') {
     labels.push(formatStartingGold(startingGold));
   }
 
-  const goldMultiplier = modifiers?.goldMultiplier ?? lobby.gameConfig?.goldMultiplier;
+  const goldMultiplier = getLobbyModifierValue(lobby, 'goldMultiplier');
   if (typeof goldMultiplier === 'number') {
     labels.push(`x${goldMultiplier}`);
   }
 
-  if (modifiers?.isAlliancesDisabled) labels.push('No Alliances');
-  if (modifiers?.isPortsDisabled) labels.push('No Ports');
-  if (modifiers?.isNukesDisabled) labels.push('No Nukes');
-  if (modifiers?.isSAMsDisabled) labels.push('No SAMs');
-  if (modifiers?.isPeaceTime) labels.push('Peace');
-  if (modifiers?.isWaterNukes) labels.push('Water Nukes');
+  if (has('isAlliancesDisabled')) labels.push('No Alliances');
+  if (has('isNukesDisabled')) labels.push('No Nukes');
+  if (has('isSAMsDisabled')) labels.push('No SAMs');
+  if (has('isPeaceTime')) labels.push('Peace');
+  if (has('isWaterNukes')) labels.push('Water Nukes');
+  if (has('isDoomsdayClock')) labels.push('Doomsday');
+  if (has('isTrusted')) labels.push('Trusted');
 
   return labels;
 }
@@ -281,7 +338,7 @@ export function getBrowserNotificationContent(lobby: Lobby): BrowserNotification
   const modeLabel = getLobbyModeLabel(lobby);
 
   if (mapName) {
-    titleParts.push(mapName);
+    titleParts.push(getMapDisplayName(mapName));
   }
 
   if (getLobbyGameMode(lobby) === 'Team' && teamConfig !== 'Humans Vs Nations') {
@@ -292,6 +349,15 @@ export function getBrowserNotificationContent(lobby: Lobby): BrowserNotification
     }
   } else {
     titleParts.push(modeLabel);
+  }
+
+  const queue = getLobbyQueueSource(lobby);
+  if (queue === 'hosted') {
+    titleParts.push('Hosted');
+  } else if (lobby.custom === true) {
+    titleParts.push('Custom');
+  } else if (queue === 'special') {
+    titleParts.push('Special');
   }
 
   const bodyParts: string[] = [];
@@ -358,11 +424,12 @@ export function sanitizeModifierFilters(value: unknown): ModifierFilters | undef
     isCrowded: sanitizeModifierFilterState(candidate.isCrowded),
     isHardNations: sanitizeModifierFilterState(candidate.isHardNations),
     isAlliancesDisabled: sanitizeModifierFilterState(candidate.isAlliancesDisabled),
-    isPortsDisabled: sanitizeModifierFilterState(candidate.isPortsDisabled),
     isNukesDisabled: sanitizeModifierFilterState(candidate.isNukesDisabled),
     isSAMsDisabled: sanitizeModifierFilterState(candidate.isSAMsDisabled),
     isPeaceTime: sanitizeModifierFilterState(candidate.isPeaceTime),
     isWaterNukes: sanitizeModifierFilterState(candidate.isWaterNukes),
+    isDoomsdayClock: sanitizeModifierFilterState(candidate.isDoomsdayClock),
+    isTrusted: sanitizeModifierFilterState(candidate.isTrusted),
     startingGold: sanitizeNumericModifierState(candidate.startingGold),
     goldMultiplier: sanitizeNumericModifierState(candidate.goldMultiplier),
   };
@@ -527,12 +594,27 @@ export function buildUpcomingCardModel(
   const capacity = getLobbyCapacity(lobby);
   return {
     gameID: lobby.gameID,
-    mapName: lobby.gameConfig?.gameMap?.trim() || 'Unknown map',
+    mapName: getMapDisplayName(lobby.gameConfig?.gameMap?.trim() || 'Unknown map'),
     modeText: getLobbyModeText(lobby),
     capacityLabel: capacity !== null ? `${capacity} slots` : '',
     modifierLabels: getActiveModifierLabels(lobby),
     thumbnailUrl: getLobbyMapThumbnailUrl(lobby, assetManifest, cdnBase),
   };
+}
+
+// Stores only required and blocked maps, so an unset map and 'any' read the same.
+export function sanitizeMapFilter(value: unknown): MapFilter {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return {};
+  }
+
+  const sanitized: MapFilter = {};
+  for (const [gameMap, state] of Object.entries(value as Record<string, unknown>)) {
+    if (gameMap && (state === 'required' || state === 'blocked')) {
+      sanitized[gameMap] = state;
+    }
+  }
+  return sanitized;
 }
 
 export function normalizeSettings(
@@ -555,5 +637,10 @@ export function normalizeSettings(
       typeof current?.notifyUpcomingEnabled === 'boolean'
         ? current.notifyUpcomingEnabled
         : true,
+    includeHostedAndCustomLobbies:
+      typeof current?.includeHostedAndCustomLobbies === 'boolean'
+        ? current.includeHostedAndCustomLobbies
+        : true,
+    mapFilter: sanitizeMapFilter(current?.mapFilter),
   };
 }

@@ -57,6 +57,8 @@ describe('LobbyDiscoveryHelpers', () => {
       desktopNotificationsEnabled: false,
       isTeamTwoTimesMinEnabled: false,
       notifyUpcomingEnabled: true,
+      includeHostedAndCustomLobbies: true,
+      mapFilter: {},
     });
   });
 
@@ -117,11 +119,12 @@ describe('LobbyDiscoveryHelpers', () => {
           isCrowded: 'blocked',
           isHardNations: 'required',
           isAlliancesDisabled: 'any',
-          isPortsDisabled: 'any',
           isNukesDisabled: 'any',
           isSAMsDisabled: 'any',
           isPeaceTime: 'any',
           isWaterNukes: 'any',
+          isDoomsdayClock: 'any',
+          isTrusted: 'any',
           startingGold: {
             1000000: 'any',
             5000000: 'required',
@@ -315,8 +318,72 @@ describe('LobbyDiscoveryHelpers', () => {
 
     expect(getBrowserNotificationContent(lobby)).toEqual({
       title: 'Black Sea • FFA',
-      body: '25 slots • Crowded, No Ports',
+      body: '25 slots • Crowded',
     });
+  });
+
+  it('labels Doomsday Clock and Trusted in notification content', () => {
+    const lobby = {
+      gameID: 'ffa-doom',
+      publicGameType: 'ffa',
+      gameConfig: {
+        gameMode: 'Free For All',
+        maxPlayers: 25,
+        gameMap: 'Alps',
+        trusted: true,
+        publicGameModifiers: { isDoomsdayClock: true },
+      },
+    } as any;
+
+    expect(getBrowserNotificationContent(lobby).body).toBe('25 slots • Doomsday, Trusted');
+  });
+
+  it('names the Hosted Queue and reads raw Modifiers for a Hosted Lobby notification', () => {
+    const lobby = {
+      gameID: 'hosted-notif',
+      publicGameType: 'hosted',
+      gameConfig: {
+        gameMode: 'Free For All',
+        maxPlayers: 40,
+        gameMap: 'Mars',
+        randomSpawn: true,
+        disableAlliances: true,
+      },
+    } as any;
+
+    expect(getBrowserNotificationContent(lobby)).toEqual({
+      title: 'Mars • FFA • Hosted',
+      body: '40 slots • Random, No Alliances',
+    });
+  });
+
+  it('uses the OpenFront map name and names the Special Queue in the notification title', () => {
+    const lobby = {
+      gameID: 'special-notif',
+      publicGameType: 'special',
+      gameConfig: { gameMode: 'Free For All', maxPlayers: 40, gameMap: 'ArchipelagoSea' },
+    } as any;
+
+    expect(getBrowserNotificationContent(lobby).title).toBe('Archipelago Sea • FFA • Special');
+  });
+
+  it('uses the OpenFront map name on the Up Next card and keeps an unknown map as is', () => {
+    const lobby = (gameMap: string) =>
+      ({ gameID: 'up', publicGameType: 'ffa', gameConfig: { gameMode: 'Free For All', maxPlayers: 40, gameMap } }) as any;
+
+    expect(buildUpcomingCardModel(lobby('Baikal Nuke Wars')).mapName).toBe('Baikal (Nuke Wars)');
+    expect(buildUpcomingCardModel(lobby('Brand New Map')).mapName).toBe('Brand New Map');
+  });
+
+  it('names a Custom Lobby in the notification title', () => {
+    const lobby = {
+      gameID: 'custom-notif',
+      publicGameType: 'special',
+      custom: true,
+      gameConfig: { gameMode: 'Free For All', maxPlayers: 40, gameMap: 'Mars' },
+    } as any;
+
+    expect(getBrowserNotificationContent(lobby).title).toBe('Mars • FFA • Custom');
   });
 
   describe('sanitizeCriteria — Team minPlayers floor', () => {
@@ -424,6 +491,35 @@ describe('LobbyDiscoveryHelpers', () => {
         isTeamTwoTimesMinEnabled: false,
       });
       expect(settings.criteria[0]!.teamCount).toBe('8+');
+    });
+  });
+
+  describe('normalizeSettings — removed and new settings', () => {
+    it('drops a saved Ports Disabled state', () => {
+      const settings = normalizeSettings({
+        criteria: [
+          { gameMode: 'FFA', minPlayers: null, maxPlayers: null, modifiers: { isPortsDisabled: 'required' } },
+        ],
+      } as any);
+      expect(settings.criteria[0]?.modifiers).not.toHaveProperty('isPortsDisabled');
+    });
+
+    it('keeps valid Map Filter states and drops unknown ones and any', () => {
+      const settings = normalizeSettings({
+        mapFilter: { Alps: 'required', Europe: 'blocked', Mars: 'any', Luna: 'bogus', '': 'blocked' },
+      } as any);
+      expect(settings.mapFilter).toEqual({ Alps: 'required', Europe: 'blocked' });
+    });
+
+    it('defaults the Map Filter to empty when the saved value is not an object', () => {
+      expect(normalizeSettings({ mapFilter: 'Alps' } as any).mapFilter).toEqual({});
+    });
+
+    it('defaults the Hosted and Custom option to on and keeps an explicit off', () => {
+      expect(normalizeSettings({} as any).includeHostedAndCustomLobbies).toBe(true);
+      expect(
+        normalizeSettings({ includeHostedAndCustomLobbies: false } as any).includeHostedAndCustomLobbies
+      ).toBe(false);
     });
   });
 

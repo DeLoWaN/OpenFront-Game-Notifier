@@ -136,6 +136,11 @@ export const LobbyUtils: LobbyUtilsSingleton = {
    * v0.29.0: Multiple checks to handle various page states
    */
   isOnLobbyPage(): boolean {
+    // OpenFront marks the body during a game, also in streamer mode where the URL has no `?live`.
+    if (document.body.classList.contains('in-game')) {
+      return false;
+    }
+
     // First check: If game page exists and is visible, we're definitely in game
     const pageGame = document.getElementById('page-game');
     if (pageGame && !pageGame.classList.contains('hidden')) {

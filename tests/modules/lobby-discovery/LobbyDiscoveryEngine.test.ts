@@ -633,4 +633,151 @@ describe('LobbyDiscoveryEngine', () => {
       expect(engine.matchesCriteria(lobby, make8PlusCriteria(2, 62))).toBe(false);
     });
   });
+
+  describe('Map Filter', () => {
+    const ffaCriteria = [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null }] as any;
+    const ffaOn = (gameMap: string | undefined) =>
+      ({
+        gameID: `ffa-${gameMap ?? 'none'}`,
+        publicGameType: 'ffa',
+        gameConfig: { gameMode: 'Free For All', maxPlayers: 40, gameMap },
+      }) as any;
+
+    it('rejects a lobby on a blocked map', () => {
+      expect(engine.matchesCriteria(ffaOn('Alps'), ffaCriteria, { Alps: 'blocked' })).toBe(false);
+      expect(engine.matchesCriteria(ffaOn('Europe'), ffaCriteria, { Alps: 'blocked' })).toBe(true);
+    });
+
+    it('matches only a required map once at least one map is required', () => {
+      const filter = { Alps: 'required', Europe: 'required', Mars: 'any' } as const;
+      expect(engine.matchesCriteria(ffaOn('Alps'), ffaCriteria, filter)).toBe(true);
+      expect(engine.matchesCriteria(ffaOn('Europe'), ffaCriteria, filter)).toBe(true);
+      expect(engine.matchesCriteria(ffaOn('Mars'), ffaCriteria, filter)).toBe(false);
+    });
+
+    it('lets a lobby without a map pass only when no map is required', () => {
+      expect(engine.matchesCriteria(ffaOn(undefined), ffaCriteria, { Alps: 'blocked' })).toBe(true);
+      expect(engine.matchesCriteria(ffaOn(undefined), ffaCriteria, { Alps: 'required' })).toBe(false);
+    });
+
+    it('applies the same Map Filter to every Criterion', () => {
+      const teamLobby = {
+        gameID: 'team-alps',
+        publicGameType: 'team',
+        gameConfig: { gameMode: 'Team', playerTeams: 2, maxPlayers: 40, gameMap: 'Alps' },
+      } as any;
+      const both = [
+        ...ffaCriteria,
+        { gameMode: 'Team', teamCount: null, minPlayers: null, maxPlayers: null },
+      ] as any;
+      expect(engine.matchesCriteria(teamLobby, both, { Alps: 'blocked' })).toBe(false);
+      expect(engine.matchesCriteria(ffaOn('Alps'), both, { Alps: 'blocked' })).toBe(false);
+    });
+  });
+
+  describe('Doomsday Clock and Trusted', () => {
+    const ffaWith = (modifiers: object | undefined, extra: object = {}) =>
+      ({
+        gameID: 'ffa-mod',
+        publicGameType: 'ffa',
+        gameConfig: { gameMode: 'Free For All', maxPlayers: 25, publicGameModifiers: modifiers, ...extra },
+      }) as any;
+    const criteriaWith = (modifiers: object) =>
+      [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null, modifiers }] as any;
+
+    it('requires or blocks Doomsday Clock', () => {
+      const doomsday = ffaWith({ isDoomsdayClock: true });
+      const plain = ffaWith({});
+      expect(engine.matchesCriteria(doomsday, criteriaWith({ isDoomsdayClock: 'required' }))).toBe(true);
+      expect(engine.matchesCriteria(plain, criteriaWith({ isDoomsdayClock: 'required' }))).toBe(false);
+      expect(engine.matchesCriteria(doomsday, criteriaWith({ isDoomsdayClock: 'blocked' }))).toBe(false);
+      expect(engine.matchesCriteria(plain, criteriaWith({ isDoomsdayClock: 'blocked' }))).toBe(true);
+    });
+
+    it('reads Trusted from the game configuration', () => {
+      const trusted = ffaWith({}, { trusted: true });
+      const open = ffaWith({});
+      expect(engine.matchesCriteria(trusted, criteriaWith({ isTrusted: 'required' }))).toBe(true);
+      expect(engine.matchesCriteria(open, criteriaWith({ isTrusted: 'required' }))).toBe(false);
+      expect(engine.matchesCriteria(trusted, criteriaWith({ isTrusted: 'blocked' }))).toBe(false);
+    });
+  });
+
+  describe('Hosted and Custom Lobby configuration', () => {
+    const criteriaWith = (modifiers: object) =>
+      [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null, modifiers }] as any;
+    const hosted = (config: object, extra: object = {}) =>
+      ({
+        gameID: 'hosted-1',
+        publicGameType: 'hosted',
+        gameConfig: { gameMode: 'Free For All', maxPlayers: 30, ...config },
+        ...extra,
+      }) as any;
+
+    it.each([
+      ['isRandomSpawn', { randomSpawn: true }],
+      ['isAlliancesDisabled', { disableAlliances: true }],
+      ['isWaterNukes', { waterNukes: true }],
+      ['isDoomsdayClock', { doomsdayClock: { speed: 'fast' } }],
+      ['isCompact', { gameMapSize: 'Compact' }],
+      ['isNukesDisabled', { disabledUnits: ['Missile Silo', 'Atom Bomb', 'Hydrogen Bomb', 'MIRV'] }],
+      ['isSAMsDisabled', { disabledUnits: ['SAM Launcher'] }],
+    ])('reads %s from the raw configuration of a Hosted Lobby', (key, config) => {
+      expect(engine.matchesCriteria(hosted(config), criteriaWith({ [key]: 'required' }))).toBe(true);
+      expect(engine.matchesCriteria(hosted({}), criteriaWith({ [key]: 'required' }))).toBe(false);
+    });
+
+    it('does not treat a partial nuke ban as Nukes Disabled', () => {
+      const atomOnly = hosted({ disabledUnits: ['Atom Bomb'] });
+      expect(engine.matchesCriteria(atomOnly, criteriaWith({ isNukesDisabled: 'required' }))).toBe(false);
+    });
+
+    it('reads the raw configuration of a Custom Lobby in the Special Queue', () => {
+      const custom = {
+        gameID: 'custom-1',
+        publicGameType: 'special',
+        custom: true,
+        gameConfig: { gameMode: 'Free For All', maxPlayers: 30, randomSpawn: true },
+      } as any;
+      expect(engine.matchesCriteria(custom, criteriaWith({ isRandomSpawn: 'required' }))).toBe(true);
+    });
+
+    it('treats Crowded, Hard Nations and Peace Time as absent', () => {
+      const lobby = hosted({ difficulty: 'Hard', spawnImmunityDuration: 2400 });
+      for (const key of ['isCrowded', 'isHardNations', 'isPeaceTime']) {
+        expect(engine.matchesCriteria(lobby, criteriaWith({ [key]: 'required' }))).toBe(false);
+        expect(engine.matchesCriteria(lobby, criteriaWith({ [key]: 'blocked' }))).toBe(true);
+      }
+    });
+
+    it('reads the raw gold settings of a Hosted Lobby', () => {
+      const lobby = hosted({ startingGold: 5_000_000, goldMultiplier: 2 });
+      expect(engine.matchesCriteria(lobby, criteriaWith({ startingGold: { 5000000: 'required' } }))).toBe(true);
+      expect(engine.matchesCriteria(lobby, criteriaWith({ goldMultiplier: { 2: 'blocked' } }))).toBe(false);
+    });
+  });
+
+  describe('Humans Vs Nations is opt-in', () => {
+    const hvn = {
+      gameID: 'hvn-opt-in',
+      publicGameType: 'special',
+      gameConfig: { gameMode: 'Team', playerTeams: 'Humans Vs Nations', maxPlayers: 40 },
+    } as any;
+    const twoTeams = {
+      gameID: 'two-teams',
+      publicGameType: 'team',
+      gameConfig: { gameMode: 'Team', playerTeams: 2, maxPlayers: 40 },
+    } as any;
+
+    it('does not match Humans Vs Nations from a Team Criterion with no format', () => {
+      const anyTeam = [{ gameMode: 'Team', teamCount: null, minPlayers: null, maxPlayers: null }] as any;
+      expect(engine.matchesCriteria(hvn, anyTeam)).toBe(false);
+      expect(engine.matchesCriteria(twoTeams, anyTeam)).toBe(true);
+    });
+
+    it('matches Humans Vs Nations when its format is selected', () => {
+      const hvnOnly = [{ gameMode: 'Team', teamCount: 'Humans Vs Nations', minPlayers: null, maxPlayers: null }] as any;
+      expect(engine.matchesCriteria(hvn, hvnOnly)).toBe(true);
+    });
+  });
 });

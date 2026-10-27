@@ -693,6 +693,70 @@ export function getStyles(): string {
       flex: 1;
       min-width: 0;
     }
+    .ld-section-toggle {
+      appearance: none;
+      width: 100%;
+      background: transparent;
+      border: 0;
+      padding: 0;
+      font: inherit;
+      color: inherit;
+      cursor: pointer;
+      text-align: left;
+    }
+    .ld-section-toggle[aria-expanded="false"] { margin-bottom: 0; }
+    .ld-section-toggle:hover .ld-section-label { color: var(--of-hud-text-1); }
+    .ld-section-head-end {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .ld-section-chevron {
+      width: 6px;
+      height: 6px;
+      border-right: 1.5px solid var(--of-hud-text-4);
+      border-bottom: 1.5px solid var(--of-hud-text-4);
+      transform: translateY(-2px) rotate(45deg);
+      transition: transform ${TIMING.fast};
+    }
+    .ld-section-toggle[aria-expanded="false"] .ld-section-chevron {
+      transform: rotate(-45deg);
+    }
+    .ld-section-body[hidden] { display: none; }
+    .ld-maps-tools {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 10px;
+    }
+    .ld-maps-search {
+      flex: 1;
+      min-width: 0;
+      background: var(--of-hud-bg-0);
+      border: 1px solid var(--of-hud-line-1);
+      border-radius: 7px;
+      color: var(--of-hud-text-1);
+      font: inherit;
+      font-size: 12px;
+      padding: 6px 9px;
+    }
+    .ld-maps-search:focus {
+      outline: none;
+      border-color: var(--of-hud-accent-line);
+    }
+    .ld-maps-clear {
+      appearance: none;
+      background: transparent;
+      border: 1px solid var(--of-hud-line-1);
+      border-radius: 7px;
+      color: var(--of-hud-text-3);
+      font: inherit;
+      font-size: 11px;
+      padding: 6px 10px;
+      cursor: pointer;
+    }
+    .ld-maps-clear:hover { color: var(--of-hud-text-1); }
+    .ld-mod[hidden], .ld-mod-group[hidden] { display: none; }
+
     .ld-mods-hint {
       font-size: 11px;
       color: var(--of-hud-text-4);
@@ -779,6 +843,12 @@ export function getStyles(): string {
         box-shadow ${TIMING.fast},
         filter ${TIMING.fast},
         border-color ${TIMING.fast};
+      animation: discoveryCardActiveBeacon 1.45s ease-in-out infinite;
+    }
+
+    /* A matching card in OpenFront's See All View. */
+    .of-discovery-see-all-match {
+      border-radius: 1rem;
       animation: discoveryCardActiveBeacon 1.45s ease-in-out infinite;
     }
 

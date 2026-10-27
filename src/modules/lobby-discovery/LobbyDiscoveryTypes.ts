@@ -2,7 +2,7 @@
  * Type definitions for the lobby discovery module.
  */
 
-export type QueueSource = 'ffa' | 'team' | 'special';
+export type QueueSource = 'ffa' | 'team' | 'special' | 'hosted';
 export type DiscoveryGameMode = 'FFA' | 'Team';
 export type TeamCount = 'Duos' | 'Trios' | 'Quads' | 'Humans Vs Nations' | '8+' | number;
 export type ModifierFilterState = 'any' | 'required' | 'blocked';
@@ -17,14 +17,18 @@ export interface ModifierFilters {
   isCrowded?: ModifierFilterState;
   isHardNations?: ModifierFilterState;
   isAlliancesDisabled?: ModifierFilterState;
-  isPortsDisabled?: ModifierFilterState;
   isNukesDisabled?: ModifierFilterState;
   isSAMsDisabled?: ModifierFilterState;
   isPeaceTime?: ModifierFilterState;
   isWaterNukes?: ModifierFilterState;
+  isDoomsdayClock?: ModifierFilterState;
+  isTrusted?: ModifierFilterState;
   startingGold?: NumericModifierState;
   goldMultiplier?: NumericModifierState;
 }
+
+/** Tri-state per map, keyed by the lobby's `gameMap` value. */
+export type MapFilter = Record<string, ModifierFilterState>;
 
 export interface DiscoveryCriteria {
   gameMode: DiscoveryGameMode;
@@ -42,4 +46,6 @@ export interface LobbyDiscoverySettings {
   isTeamTwoTimesMinEnabled: boolean;
   isTeamThreeTimesMinEnabled?: boolean;
   notifyUpcomingEnabled?: boolean;
+  includeHostedAndCustomLobbies?: boolean;
+  mapFilter?: MapFilter;
 }
