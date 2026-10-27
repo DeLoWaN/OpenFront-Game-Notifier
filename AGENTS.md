@@ -243,3 +243,17 @@ Version is centralized in `package.json` and propagates to:
    ```
 
 The build reads the version from `package.json` and injects it into the userscript header. Always run `npm run build:prod` after a version bump.
+
+## Agent skills
+
+### Issue tracker
+
+Issues and specs live in the GitHub Issues of DeLoWaN/OpenFront-Game-Notifier, managed with the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+The five default triage labels: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context: one root `GLOSSARY.md` and `docs/adr/`. See `docs/agents/domain.md`.
