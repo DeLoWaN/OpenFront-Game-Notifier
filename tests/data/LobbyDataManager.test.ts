@@ -1,20 +1,20 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LobbyDataManager } from '@/data/LobbyDataManager';
+import type { Lobby } from '@/types/game';
+
+function dispatchPayload(payload: unknown): void {
+  document.dispatchEvent(new CustomEvent('public-lobbies-update', { detail: { payload } }));
+}
 
 describe('LobbyDataManager', () => {
   const originalFetch = globalThis.fetch;
 
   beforeEach(() => {
     vi.useFakeTimers();
-    vi.restoreAllMocks();
     LobbyDataManager.stop();
     LobbyDataManager.subscribers = [];
     LobbyDataManager.lastLobbies = [];
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: true,
-      status: 200,
-      json: vi.fn().mockResolvedValue({ games: { ffa: [], team: [], special: [] } }),
-    }) as any;
+    globalThis.fetch = vi.fn() as any;
   });
 
   afterEach(() => {
@@ -25,54 +25,50 @@ describe('LobbyDataManager', () => {
     vi.useRealTimers();
   });
 
-  it('does not start fallback polling while push updates keep arriving', async () => {
+  it('publishes every lobby of every Queue, the Hosted Queue included, in Queue order', () => {
+    const received: Lobby[][] = [];
+    LobbyDataManager.start();
+    LobbyDataManager.subscribe((lobbies) => received.push(lobbies));
+
+    dispatchPayload({
+      serverTime: 1,
+      games: {
+        ffa: [
+          { gameID: 'ffa-0', gameConfig: { gameMode: 'Free For All' } },
+          { gameID: 'ffa-1', gameConfig: { gameMode: 'Free For All' } },
+          { gameID: 'ffa-2', gameConfig: { gameMode: 'Free For All' } },
+        ],
+        team: [{ gameID: 'team-0', gameConfig: { gameMode: 'Team' } }],
+        hosted: [{ gameID: 'hosted-0', gameConfig: { gameMode: 'Free For All' } }],
+      },
+    });
+
+    expect(received).toHaveLength(1);
+    expect(received[0]!.map((lobby) => [lobby.gameID, lobby.publicGameType])).toEqual([
+      ['ffa-0', 'ffa'],
+      ['ffa-1', 'ffa'],
+      ['ffa-2', 'ffa'],
+      ['team-0', 'team'],
+      ['hosted-0', 'hosted'],
+    ]);
+  });
+
+  it('never calls an HTTP endpoint, even when no feed update arrives', async () => {
     LobbyDataManager.start();
 
-    for (let index = 0; index < 3; index += 1) {
-      document.dispatchEvent(
-        new CustomEvent('public-lobbies-update', {
-          detail: {
-            payload: {
-              lobbies: [
-                {
-                  gameID: `push-${index}`,
-                  publicGameType: 'ffa',
-                  gameConfig: { gameMode: 'Free For All' },
-                },
-              ],
-            },
-          },
-        })
-      );
-
-      await vi.advanceTimersByTimeAsync(LobbyDataManager.pollingRate);
-    }
+    await vi.advanceTimersByTimeAsync(60_000);
 
     expect(globalThis.fetch).not.toHaveBeenCalled();
   });
 
-  it('starts fallback polling after push updates go quiet', async () => {
+  it('stops publishing after stop()', () => {
+    const received: Lobby[][] = [];
     LobbyDataManager.start();
+    LobbyDataManager.subscribe((lobbies) => received.push(lobbies));
+    LobbyDataManager.stop();
 
-    await vi.advanceTimersByTimeAsync(LobbyDataManager.pollingRate * 2);
+    dispatchPayload({ games: { ffa: [{ gameID: 'late', gameConfig: { gameMode: 'Free For All' } }] } });
 
-    expect(globalThis.fetch).toHaveBeenCalledTimes(1);
-  });
-
-  it('keeps stale lobbies when polling returns a non-ok response', async () => {
-    LobbyDataManager.lastLobbies = [
-      { gameID: 'stale-lobby', publicGameType: 'ffa', gameConfig: { gameMode: 'Free For All' } } as any,
-    ];
-    globalThis.fetch = vi.fn().mockResolvedValue({
-      ok: false,
-      status: 500,
-      json: vi.fn(),
-    }) as any;
-
-    await LobbyDataManager.fetchData();
-
-    expect(LobbyDataManager.lastLobbies).toEqual([
-      { gameID: 'stale-lobby', publicGameType: 'ffa', gameConfig: { gameMode: 'Free For All' } },
-    ]);
+    expect(received).toHaveLength(0);
   });
 });

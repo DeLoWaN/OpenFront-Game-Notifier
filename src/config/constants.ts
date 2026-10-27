@@ -4,7 +4,6 @@
 
 export const CONFIG = {
   threadCount: 20,
-  lobbyPollingRate: 1000,
 } as const;
 
 /**

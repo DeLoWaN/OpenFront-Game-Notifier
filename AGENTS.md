@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-This userscript (**OpenFront Game Notifier**) is a **notify-first** lobby discovery tool for OpenFront.io. It surfaces public lobbies that match user-defined criteria (game mode, player counts, team configuration, modifiers) — including each slot's **upcoming** game — and alerts the user via in-page UI, sound, and optional desktop notifications. It **never auto-joins**: it never programmatically clicks join controls and never navigates from background logic, matching, watchers, or timers. The only join affordance is a **manual quick-join** — clicking an Up Next card navigates to OpenFront's own join modal in direct response to that user click, where the user still confirms entry through OpenFront's controls.
+This userscript (**OpenFront Game Notifier**) is a **notify-first** lobby discovery tool for OpenFront.io. It surfaces public lobbies that match user-defined criteria (game mode, player counts, team configuration, modifiers, map) — across every lobby OpenFront advertises, including the "See all" list — and alerts the user via in-page UI, sound, and optional desktop notifications. It **never auto-joins**: it never programmatically clicks join controls and never navigates from background logic, matching, watchers, or timers. The only join affordance is a **manual quick-join** — clicking an Up Next card navigates to OpenFront's own join modal in direct response to that user click, where the user still confirms entry through OpenFront's controls.
 
 It also enhances OpenFront's native join-lobby modal by highlighting the current player and their team.
 
@@ -28,6 +28,7 @@ The userscript is built from modular TypeScript source in `src/` and compiled to
 ├── src/
 │   ├── config/
 │   │   ├── constants.ts     # CONFIG, STORAGE_KEYS, Z_INDEX
+│   │   ├── mapCatalogue.ts  # OpenFront maps, names and categories for the Map Filter
 │   │   └── theme.ts         # COLORS, SPACING, design tokens
 │   ├── types/
 │   │   ├── game.d.ts
@@ -41,7 +42,7 @@ The userscript is built from modular TypeScript source in `src/` and compiled to
 │   │   ├── SoundUtils.ts
 │   │   └── URLObserver.ts
 │   ├── data/
-│   │   └── LobbyDataManager.ts        # WebSocket + HTTP fallback
+│   │   └── LobbyDataManager.ts        # public-lobbies-update event, subscriber pattern
 │   ├── modules/
 │   │   └── lobby-discovery/
 │   │       ├── LobbyDiscoveryTypes.ts
@@ -66,7 +67,7 @@ Unidirectional dependency flow:
 2. **Types** — TypeScript interfaces
 3. **Styles** — CSS-in-JS using theme tokens
 4. **Utils** — pure helpers and DOM/audio utilities
-5. **Data** — `LobbyDataManager` (WebSocket with HTTP polling fallback, subscriber pattern)
+5. **Data** — `LobbyDataManager` (OpenFront's `public-lobbies-update` event, subscriber pattern)
 6. **Modules** — `lobby-discovery` (panel UI + matching engine + native modal highlighter)
 7. **Main** — wires everything together
 
@@ -98,7 +99,7 @@ npm run type-check  # tsc --noEmit
 - `CurrentPlayerHighlighter.ts` — additive enhancer for OpenFront's native join-lobby modal
 
 **Data Layer** ([src/data/](src/data/)):
-- `LobbyDataManager.ts` — WebSocket connection with automatic HTTP fallback, subscriber pattern
+- `LobbyDataManager.ts` — reads every Queue (FFA, Team, Special, Hosted) from OpenFront's `public-lobbies-update` event, subscriber pattern
 
 ---
 
@@ -106,10 +107,12 @@ npm run type-check  # tsc --noEmit
 
 ### 1. Lobby Discovery (notify-only)
 
-- **Criteria-based matching**: filter by game mode (FFA / Team), player count range, team format (Duos / Trios / Quads / Humans Vs Nations / 2–7 teams), and lobby modifiers (compact, random spawn, crowded, hard nations, alliances/ports/nukes/SAMs disabled, peace time, starting gold, gold multiplier).
-- **Three notification channels**: in-page panel highlight on the matching queue card, sound alert, and (optional) browser desktop notification.
+- **Criteria-based matching**: filter by game mode (FFA / Team), player count range, team format (Duos / Trios / Quads / Humans Vs Nations / 2–7 teams), and lobby modifiers (compact, random spawn, crowded, hard nations, alliances/nukes/SAMs disabled, peace time, water nukes, Doomsday Clock, Trusted, starting gold, gold multiplier).
+- **Map Filter**: one global tri-state list of maps that applies to every Criterion (see `docs/adr/0001-global-map-filter.md`).
+- **Every advertised lobby**: all lobbies of every Queue are evaluated, Hosted and Custom Lobbies included (a global option excludes them). See `GLOSSARY.md` for Live Lobby and Upcoming Lobby.
+- **Three notification channels**: in-page highlight (the queue card for a Live Lobby, the Up Next card for the next lobby, the "See all" button and the See All View card for any other lobby), sound alert, and (optional) browser desktop notification. Clicking the desktop notification of a lobby that only the See All View shows opens that view.
 - **Search timer**: shows how long the current search has been running.
-- **Sleep when in-game**: panel hides while a game is live (URL has `?live`).
+- **Sleep when in-game**: panel hides while a game is live (`body.in-game`, or the URL has `?live`).
 
 ### 2. Current Player Highlight on Native Modal
 
@@ -118,9 +121,8 @@ npm run type-check  # tsc --noEmit
 
 ### 3. Smart Lobby Data Pipeline
 
-- **WebSocket-first**: real-time lobby updates via WebSocket.
-- **HTTP fallback**: after 3 failed WebSocket connection attempts, falls back to polling.
-- **URL-aware sleep**: stops processing while a game is live.
+- **Event-driven**: OpenFront's page owns the lobby WebSocket and dispatches `public-lobbies-update`; the script only listens.
+- **Sleep while in game**: stops processing while a game is live.
 
 ---
 
@@ -133,6 +135,7 @@ Stored under `OF_LOBBY_DISCOVERY_SETTINGS` and `OF_LOBBY_DISCOVERY_PANEL_SIZE` v
 - Sound enabled/disabled
 - Desktop notifications enabled/disabled
 - `isTeamTwoTimesMinEnabled` constraint flag
+- `notifyUpcomingEnabled`, `includeHostedAndCustomLobbies` and the global `mapFilter`
 
 `normalizeSettings` in `LobbyDiscoveryHelpers.ts` validates and applies defaults on load.
 
@@ -141,7 +144,7 @@ Stored under `OF_LOBBY_DISCOVERY_SETTINGS` and `OF_LOBBY_DISCOVERY_PANEL_SIZE` v
 ## Project Context
 
 Integrates with:
-- OpenFront.io public lobby endpoint and WebSocket feed
+- OpenFront.io `public-lobbies-update` event, `game-mode-selector` and `detailed-view-modal` (See All View) elements
 - OpenFront.io game configuration shape
 - Tampermonkey / Greasemonkey
 
@@ -178,13 +181,13 @@ const data = await new Promise((resolve) => {
 });
 ```
 
-`data.games` is keyed by `"ffa"`, `"team"`, `"special"`. Each value is an array of `Lobby` objects — the game UI always shows index `[0]` of each source; the notifier only evaluates `[0]` as the "featured" lobby for that slot.
+`data.games` is keyed by Queue: `"ffa"`, `"team"`, `"special"`, `"hosted"`. Each value is an array of up to six `Lobby` objects. The home page shows index `[0]` of FFA, Team and Special (the Live Lobby); the "See all" button opens the See All View (`detailed-view-modal`), which lists every lobby. The notifier evaluates every lobby of every Queue (see `GLOSSARY.md`).
 
 > **`gameConfig.playerTeams` is polymorphic.** OpenFront encodes a team game's structure two ways: as a **number** (the team count, e.g. `6` → "6 teams") or as a **named format string** — `"Duos"`/`"Trios"`/`"Quads"` (a fixed players-per-team of 2/3/4, with the team count *derived* as `floor(capacity / playersPerTeam)`), or `"Humans Vs Nations"` (a distinct format with no per-team structure). Both forms appear in the live feed simultaneously. Because "Quads" + capacity 24 and numeric `6` + capacity 24 both render as "6 teams of 4", code that compares against the *team count* MUST resolve named formats to their derived count first — never compare a number against the raw `playerTeams` (`6 !== "Quads"`). The matcher in `LobbyDiscoveryEngine` does this via `resolveLobbyTeamCount`.
 
 ### How to run the matcher against live data
 
-Inline the logic from `LobbyDiscoveryHelpers.ts` + `LobbyDiscoveryEngine.ts` directly in `page.evaluate()` (pure functions, no imports needed). Then iterate over the lobbies, annotate each with `{ source, featured, matched, wouldPulse, failReason }`, and return the array. This gives a full picture of what the notifier would do without running the full bundle.
+Inline the logic from `LobbyDiscoveryHelpers.ts` + `LobbyDiscoveryEngine.ts` directly in `page.evaluate()` (pure functions, no imports needed). Then iterate over the lobbies, annotate each with `{ queue, index, matched, signal }`, and return the array. This gives a full picture of what the notifier would do without running the full bundle.
 
 Skeleton (expand with real helper implementations):
 
@@ -194,13 +197,12 @@ page.evaluate(() => {
   // getLobbyCapacity, getPlayersPerTeam, matchesCriteria inline here
   const criteria = [ /* test criteria */ ];
   const data = document.querySelector('game-mode-selector')?.lobbies;
-  const seenSources = new Set();
-  return Object.entries(data.games).flatMap(([source, lobbies]) =>
-    lobbies.map(lobby => {
-      const featured = !seenSources.has(source);
-      if (featured) seenSources.add(source);
+  return Object.entries(data.games).flatMap(([queue, lobbies]) =>
+    lobbies.map((lobby, index) => {
       const matched = matchesCriteria(lobby, criteria);
-      return { source, featured, map: lobby.gameConfig?.gameMap, matched, wouldPulse: matched && featured };
+      // Live Lobby → home card pulse; index 1 → Up Next card; the rest and Hosted → "See all" pulse.
+      const signal = queue !== 'hosted' && index === 0 ? 'card' : queue !== 'hosted' && index === 1 ? 'up-next' : 'see-all';
+      return { queue, index, map: lobby.gameConfig?.gameMap, matched, signal };
     })
   );
 });
@@ -210,10 +212,10 @@ page.evaluate(() => {
 
 | Symptom | Likely cause |
 |---|---|
-| `matched: true, wouldPulse: false` | Matching lobby is at `[1]` or later — blocked by a non-matching featured lobby at `[0]` |
+| Home cards never pulse though `matched: true, signal: 'card'` | OpenFront changed the `game-mode-selector` grid; update `getQueueCardElements` (FFA cell `sm:col-start-1 sm:row-start-2`, then a `<section>` with the Team card, the Special card and the "See all" heading) |
 | `matched: false` for HvN lobby | `getPlayersPerTeam('Humans Vs Nations', cap)` returns `cap`; players/team filter compares against full capacity |
 | `matched: false` for a Duos/Trios/Quads lobby | A numeric NUMBER OF TEAMS criterion is being compared against the raw named `playerTeams` instead of the derived team count — resolve `"Quads"`+cap to `floor(cap/4)` first (see `resolveLobbyTeamCount`) |
-| Up Next cards show black/empty map art | The asset globals weren't found, so `getLobbyMapThumbnailUrl` fell back to a non-existent relative path. OpenFront moved them: read `window.BOOTSTRAP_CONFIG.assetManifest` / `.cdnBase` (fallbacks `globalThis.__ASSET_MANIFEST__` / `__CDN_BASE__`) — mirror OpenFront's `getAssetManifest`/`getCdnBase` in `src/core/AssetUrls.ts`. The legacy `ASSET_MANIFEST`/`CDN_BASE` globals were removed in v0.32 |
+| Up Next cards show black/empty map art | The asset globals weren't found, so `getLobbyMapThumbnailUrl` fell back to a non-existent relative path. OpenFront moved them: read `window.BOOTSTRAP_CONFIG.assetManifest` / `.cdnBase` (fallbacks `globalThis.__ASSET_MANIFEST__` / `__CDN_BASE__`) — mirror OpenFront's `getAssetManifest`/`getCdnBase` in `packages/shared/src/AssetUrls.ts`. The legacy `ASSET_MANIFEST`/`CDN_BASE` globals were removed in v0.32 |
 | No lobbies at all | Navigated to `/play` instead of `/`; the data feed doesn't start there |
 
 # Version Management

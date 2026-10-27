@@ -10,7 +10,9 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 
 **Lobby discovery**
 - Filter `FFA` and `Team` public lobbies by mode, format, team count, capacity, and modifiers
-- Matching evaluates both the **live** lobby and the **upcoming** lobby for each slot, so a match is detected whether the game is live now or queued next
+- Matching evaluates **every advertised lobby**: the live lobby, all upcoming lobbies of each queue (OpenFront's "See all" list), and hosted lobbies
+- Global **map filter**: mark maps as required or excluded, with search and categories
+- Hosted and custom lobbies are included by default; one option excludes them
 - Team panel splits into `Format` (`Humans Vs Nations`) and `Number of teams` (`2`–`7`)
 - Capacity sliders use the right semantics per mode: total lobby size for `FFA`, players-per-team for `Team`
 - Per-team slider uses log-scaled stops with editable steppers; optional `2×` lock pins the max to twice the minimum
@@ -29,8 +31,9 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Pulse highlight on the matching homepage queue card the moment a lobby matches
 - Optional sound alert on new matches
 - Upcoming matches alert with the same highlight and sound as live matches; a toggle gates upcoming notifications (display them silently, or alert on them)
+- A match further down a queue, or in a hosted lobby, pulses OpenFront's "See all" button and highlights its card in the See all view; clicking its desktop notification opens that view
 - Optional desktop notification when the OpenFront tab is in the background
-- Sound on game start, triggered by OpenFront's own `?live` URL transition
+- Sound on game start, triggered by OpenFront's own `?live` URL transition or its `in-game` page state (streamer mode)
 
 **Smart UX**
 - Stronger highlight for your own player row (and your team card) inside the native join modal
@@ -44,11 +47,12 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Crowded
 - Hard Nations
 - Alliances Disabled
-- Ports Disabled
 - Nukes Disabled
 - SAMs Disabled
 - Peace Time
 - Water Nukes
+- Doomsday Clock
+- Trusted
 - Starting Gold `1M`, `5M`, `25M`
 - Gold Multiplier `x2`
 
@@ -88,7 +92,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 ├── src/
 │   ├── config/                                 # constants, theme tokens
 │   ├── data/
-│   │   └── LobbyDataManager.ts                 # WebSocket + HTTP polling fallback
+│   │   └── LobbyDataManager.ts                 # OpenFront's public-lobbies-update event
 │   ├── modules/
 │   │   └── lobby-discovery/
 │   │       ├── CurrentPlayerHighlighter.ts     # additive native-modal enhancer
@@ -134,11 +138,11 @@ npm run type-check   # tsc --noEmit
 
 ### Storage keys
 
-- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, sound/desktop preferences, `2×` toggle
+- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, map filter, sound/desktop preferences, upcoming and hosted options, `2×` toggle
 
 ### Testing
 
-Vitest with JSDOM. The suite covers the matching engine, helpers, panel UI, the native-modal highlighter, and the `LobbyDataManager` connection fallback.
+Vitest with JSDOM. The suite covers the matching engine, helpers, panel UI, the native-modal highlighter, and the `LobbyDataManager` feed parsing.
 
 ```bash
 npm run test

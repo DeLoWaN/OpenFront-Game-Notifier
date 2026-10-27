@@ -5,6 +5,7 @@
 import type { Lobby } from '@/types/game';
 import type {
   DiscoveryCriteria,
+  MapFilter,
   ModifierFilters,
   NumericModifierState,
 } from './LobbyDiscoveryTypes';
@@ -22,19 +23,25 @@ const BOOLEAN_MODIFIER_KEYS: Array<keyof ModifierFilters> = [
   'isCrowded',
   'isHardNations',
   'isAlliancesDisabled',
-  'isPortsDisabled',
   'isNukesDisabled',
   'isSAMsDisabled',
   'isPeaceTime',
   'isWaterNukes',
+  'isDoomsdayClock',
+  'isTrusted',
 ];
 
 export class LobbyDiscoveryEngine {
   matchesCriteria(
     lobby: Lobby,
-    criteriaList: DiscoveryCriteria[]
+    criteriaList: DiscoveryCriteria[],
+    mapFilter: MapFilter = {}
   ): boolean {
     if (!lobby || !lobby.gameConfig || !criteriaList || criteriaList.length === 0) {
+      return false;
+    }
+
+    if (!this.matchesMapFilter(lobby.gameConfig.gameMap, mapFilter)) {
       return false;
     }
 
@@ -149,6 +156,17 @@ export class LobbyDiscoveryEngine {
       return Math.floor(lobbyCapacity / playersPerTeam);
     }
     return null;
+  }
+
+  private matchesMapFilter(gameMap: string | undefined, mapFilter: MapFilter): boolean {
+    if (gameMap !== undefined && mapFilter[gameMap] === 'blocked') {
+      return false;
+    }
+    const hasRequiredMap = Object.values(mapFilter).some((state) => state === 'required');
+    if (hasRequiredMap) {
+      return gameMap !== undefined && mapFilter[gameMap] === 'required';
+    }
+    return true;
   }
 
   private matchesModifiers(

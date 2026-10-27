@@ -2,6 +2,8 @@ export interface BrowserNotificationPayload {
   title: string;
   body: string;
   tag: string;
+  /** Runs after the window gets focus, when the user clicks the notification. */
+  onClick?: () => void;
 }
 
 interface BrowserNotificationUtilsSingleton {
@@ -59,6 +61,7 @@ export const BrowserNotificationUtils: BrowserNotificationUtilsSingleton = {
       });
       notification.onclick = () => {
         this.focusWindow();
+        payload.onClick?.();
         notification.close();
       };
       return true;

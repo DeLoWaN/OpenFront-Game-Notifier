@@ -78,6 +78,34 @@ describe('BrowserNotificationUtils', () => {
     expect(close).toHaveBeenCalledTimes(1);
   });
 
+  it('runs the click action after focusing the window, and only on click', () => {
+    let clickHandler: VoidFunction | undefined;
+    const NotificationMock = vi.fn().mockImplementation(function (this: any) {
+      this.close = vi.fn();
+      return this;
+    }) as any;
+    NotificationMock.permission = 'granted';
+    vi.spyOn(document, 'hidden', 'get').mockReturnValue(true);
+    vi.spyOn(document, 'visibilityState', 'get').mockReturnValue('hidden');
+    vi.spyOn(document, 'hasFocus').mockReturnValue(false);
+    Object.defineProperty(NotificationMock.prototype, 'onclick', {
+      configurable: true,
+      set(handler) {
+        clickHandler = handler;
+      },
+    });
+    globalThis.Notification = NotificationMock;
+    const order: string[] = [];
+    vi.mocked(window.focus).mockImplementation(() => order.push('focus'));
+    const onClick = vi.fn(() => order.push('action'));
+
+    BrowserNotificationUtils.show({ title: 't', body: 'b', tag: 'k', onClick });
+    expect(onClick).not.toHaveBeenCalled();
+
+    (clickHandler as VoidFunction)();
+    expect(order).toEqual(['focus', 'action']);
+  });
+
   it('does not report support when the native Notification API is unavailable', () => {
     const gmNotification = vi.fn();
     delete (globalThis as any).Notification;

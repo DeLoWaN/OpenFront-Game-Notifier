@@ -11,6 +11,7 @@ import type { Lobby } from '@/types/game';
 import type {
   DiscoveryCriteria,
   LobbyDiscoverySettings,
+  MapFilter,
   ModifierFilters,
   ModifierFilterState,
   QueueSource,
@@ -24,9 +25,16 @@ import {
   getBrowserNotificationContent,
   getGameDetailsText,
   getLobbyQueueSource,
+  isHostConfiguredLobby,
   normalizeSettings,
 } from './LobbyDiscoveryHelpers';
 import { RangeSlider } from '@/modules/lobby-discovery/RangeSlider';
+import {
+  MAP_CATALOGUE,
+  MAP_CATEGORY_LABELS,
+  MAP_CATEGORY_ORDER,
+  type MapCategory,
+} from '@/config/mapCatalogue';
 
 const STARTING_GOLD_VALUES = [1_000_000, 5_000_000, 25_000_000] as const;
 const GOLD_MULTIPLIER_VALUES = [2] as const;
@@ -37,11 +45,12 @@ const MODIFIER_BOOLEAN_IDS = [
   'modifier-isCrowded',
   'modifier-isHardNations',
   'modifier-isAlliancesDisabled',
-  'modifier-isPortsDisabled',
   'modifier-isNukesDisabled',
   'modifier-isSAMsDisabled',
   'modifier-isPeaceTime',
   'modifier-isWaterNukes',
+  'modifier-isDoomsdayClock',
+  'modifier-isTrusted',
 ] as const;
 
 const TEAM_PRESET_IDS: Array<[string, string, number | null]> = [
@@ -89,6 +98,39 @@ interface LobbySlot {
   upcoming?: Lobby;
 }
 
+interface DiscoveryMatch {
+  lobby: Lobby;
+  queue: QueueSource;
+  // Only the See All View shows this lobby: it is past index 1 or in the Hosted Queue.
+  seeAllOnly: boolean;
+}
+
+const SEE_ALL_VIEW_ID = 'page-detailed-view';
+const SEE_ALL_MATCH_CLASS = 'of-discovery-see-all-match';
+
+type PageWindow = Window & {
+  showPage?: (pageId: string) => void;
+  BOOTSTRAP_CONFIG?: { assetManifest?: Record<string, string>; cdnBase?: string };
+  __ASSET_MANIFEST__?: Record<string, string>;
+  __CDN_BASE__?: string;
+};
+
+// OpenFront's own globals live on the page window, not on the userscript sandbox window.
+function getPageWindow(): PageWindow {
+  try {
+    if (typeof unsafeWindow !== 'undefined') {
+      return unsafeWindow as unknown as PageWindow;
+    }
+  } catch {
+    // unsafeWindow not granted — fall through to the sandbox window
+  }
+  return window as PageWindow;
+}
+
+function nextTriState(state: ModifierFilterState): ModifierFilterState {
+  return state === 'any' ? 'required' : state === 'required' ? 'blocked' : 'any';
+}
+
 function escapeHtml(value: string): string {
   return value
     .replace(/&/g, '&amp;')
@@ -116,8 +158,15 @@ export class LobbyDiscoveryUI {
   private soundEnabled = true;
   private desktopNotificationsEnabled = false;
   private notifyUpcomingEnabled = true;
+  private includeHostedAndCustomLobbies = true;
+  private mapFilter: MapFilter = {};
+  private knownMaps: Set<string> = new Set(MAP_CATALOGUE.map((entry) => entry.gameMap));
   private desktopNotificationRequestId = 0;
   private activeMatchSources: Set<QueueSource> = new Set();
+  private seeAllPulseActive = false;
+  private seeAllMatchIds: Set<string> = new Set();
+  private seeAllObserver: MutationObserver | null = null;
+  private observedSeeAllView: HTMLElement | null = null;
   private seenLobbies: Set<string> = new Set();
   private desktopNotifiedLobbies: Set<string> = new Set();
   private isTeamTwoTimesMinEnabled = false;
@@ -174,6 +223,8 @@ export class LobbyDiscoveryUI {
     this.discoveryEnabled = settings.discoveryEnabled;
     this.isTeamTwoTimesMinEnabled = settings.isTeamTwoTimesMinEnabled;
     this.notifyUpcomingEnabled = settings.notifyUpcomingEnabled ?? true;
+    this.includeHostedAndCustomLobbies = settings.includeHostedAndCustomLobbies ?? true;
+    this.mapFilter = settings.mapFilter ?? {};
   }
 
   private saveSettings(): void {
@@ -184,6 +235,8 @@ export class LobbyDiscoveryUI {
       desktopNotificationsEnabled: this.desktopNotificationsEnabled,
       isTeamTwoTimesMinEnabled: this.isTeamTwoTimesMinEnabled,
       notifyUpcomingEnabled: this.notifyUpcomingEnabled,
+      includeHostedAndCustomLobbies: this.includeHostedAndCustomLobbies,
+      mapFilter: this.mapFilter,
     } satisfies LobbyDiscoverySettings);
   }
 
@@ -234,20 +287,27 @@ export class LobbyDiscoveryUI {
     gameInfoElement.textContent = `Current game: ${getGameDetailsText(currentLobby)}`;
   }
 
-  /**
-   * Group the flattened lobby snapshot by source into its live (`[0]`) and
-   * upcoming (`[1]`) entries. OpenFront's feed provides at most these two per
-   * slot, in that order; `extractLobbies` preserves the ordering.
-   */
-  private parseSlots(lobbies: Lobby[]): Map<QueueSource, LobbySlot> {
-    const slots = new Map<QueueSource, LobbySlot>();
+  /** Group the flattened lobby snapshot by Queue, keeping the feed order. */
+  private parseQueues(lobbies: Lobby[]): Map<QueueSource, Lobby[]> {
+    const queues = new Map<QueueSource, Lobby[]>();
     for (const lobby of lobbies) {
-      const source = getLobbyQueueSource(lobby);
-      if (!source) continue;
-      const slot = slots.get(source) ?? {};
-      if (!slot.live) slot.live = lobby;
-      else if (!slot.upcoming) slot.upcoming = lobby;
-      slots.set(source, slot);
+      const queue = getLobbyQueueSource(lobby);
+      if (!queue) continue;
+      const queueLobbies = queues.get(queue) ?? [];
+      queueLobbies.push(lobby);
+      queues.set(queue, queueLobbies);
+    }
+    return queues;
+  }
+
+  /** The Up Next strip shows the first two lobbies of the FFA, Team and Special Queues. */
+  private toUpNextSlots(queues: Map<QueueSource, Lobby[]>): Map<QueueSource, LobbySlot> {
+    const slots = new Map<QueueSource, LobbySlot>();
+    for (const queue of UPCOMING_SOURCE_ORDER) {
+      const queueLobbies = queues.get(queue);
+      if (queueLobbies?.length) {
+        slots.set(queue, { live: queueLobbies[0], upcoming: queueLobbies[1] });
+      }
     }
     return slots;
   }
@@ -257,7 +317,9 @@ export class LobbyDiscoveryUI {
       this.updateCurrentGameInfo();
       this.syncSearchTimer();
 
-      const slots = this.parseSlots(lobbies);
+      const queues = this.parseQueues(lobbies);
+      const slots = this.toUpNextSlots(queues);
+      this.addFeedOnlyMaps(lobbies);
 
       if (
         !this.discoveryEnabled ||
@@ -267,6 +329,7 @@ export class LobbyDiscoveryUI {
         this.seenLobbies.clear();
         this.desktopNotifiedLobbies.clear();
         this.updateQueueCardPulses(new Set());
+        this.updateSeeAllSignals(false, new Set());
         // Display is independent of notification gating: still surface the
         // upcoming games (without any match highlight) while on the lobby page.
         this.renderUpcomingStrip(slots, new Set());
@@ -274,30 +337,29 @@ export class LobbyDiscoveryUI {
         return;
       }
 
-      // Live (featured `[0]`) matches pulse the native queue card. Upcoming
-      // (`[1]`) matches highlight our own Up Next card and are gated behind the
-      // notifyUpcoming toggle. Dedup keys include gameID, so live vs upcoming
-      // for the same slot dedupe independently.
+      // Signals: Live Lobby → home card; index 1 → Up Next card; others and Hosted → "See all" button.
       const liveMatchSources = new Set<QueueSource>();
       const upcomingMatchSources = new Set<QueueSource>();
+      const seeAllMatchIds = new Set<string>();
+      let hasSeeAllOnlyMatch = false;
       const matchedKeys = new Set<string>();
-      const newMatches: Lobby[] = [];
+      const newMatches: DiscoveryMatch[] = [];
       let hasNewMatch = false;
 
       const debugEnabled = isDebugEnabled();
-      const evaluate = (
-        lobby: Lobby | undefined,
-        source: QueueSource,
-        kind: 'live' | 'upcoming'
-      ): void => {
-        if (!lobby) return;
-        const matched = this.engine.matchesCriteria(lobby, this.criteriaList);
+      const evaluate = (lobby: Lobby, queue: QueueSource, index: number): void => {
+        if (!this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby)) return;
+
+        const isLive = queue !== 'hosted' && index === 0;
+        const seeAllOnly = queue === 'hosted' || index > 1;
+        const matched = this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter);
         if (debugEnabled) {
           console.log('[OF Discovery]', {
             lobbyId: lobby.gameID,
-            source,
-            kind,
+            queue,
+            index,
             mode: lobby.gameConfig?.gameMode,
+            map: lobby.gameConfig?.gameMap,
             playerTeams: lobby.gameConfig?.playerTeams,
             modifiers: lobby.gameConfig?.publicGameModifiers,
             hostGold: {
@@ -310,26 +372,29 @@ export class LobbyDiscoveryUI {
         }
         if (!matched) return;
 
-        if (kind === 'live') {
-          liveMatchSources.add(source);
+        if (isLive) {
+          liveMatchSources.add(queue);
         } else {
-          // Upcoming matches notify (and highlight) only when the toggle is on.
           if (!this.notifyUpcomingEnabled) return;
-          upcomingMatchSources.add(source);
+          if (seeAllOnly) hasSeeAllOnlyMatch = true;
+          else upcomingMatchSources.add(queue);
         }
+        seeAllMatchIds.add(lobby.gameID);
 
         const notificationKey = this.getNotificationKey(lobby);
         matchedKeys.add(notificationKey);
         if (!this.seenLobbies.has(notificationKey)) hasNewMatch = true;
-        if (!this.desktopNotifiedLobbies.has(notificationKey)) newMatches.push(lobby);
+        if (!this.desktopNotifiedLobbies.has(notificationKey)) {
+          newMatches.push({ lobby, queue, seeAllOnly });
+        }
       };
 
-      for (const [source, slot] of slots) {
-        evaluate(slot.live, source, 'live');
-        evaluate(slot.upcoming, source, 'upcoming');
+      for (const [queue, queueLobbies] of queues) {
+        queueLobbies.forEach((lobby, index) => evaluate(lobby, queue, index));
       }
 
       this.updateQueueCardPulses(liveMatchSources);
+      this.updateSeeAllSignals(hasSeeAllOnlyMatch, seeAllMatchIds);
       this.renderUpcomingStrip(slots, upcomingMatchSources);
       if (hasNewMatch) {
         this.lastMatchTime = Date.now();
@@ -337,13 +402,15 @@ export class LobbyDiscoveryUI {
       }
       if (this.desktopNotificationsEnabled) {
         const deliveredKeys = new Set<string>();
-        for (const lobby of newMatches) {
+        for (const { lobby, queue, seeAllOnly } of newMatches) {
           const content = getBrowserNotificationContent(lobby);
           const key = this.getNotificationKey(lobby);
           const delivered = BrowserNotificationUtils.show({
             title: content.title,
             body: content.body,
             tag: key,
+            // Runs only from the user's click on the notification.
+            onClick: seeAllOnly ? () => this.openSeeAllView(queue) : undefined,
           });
           if (delivered) deliveredKeys.add(key);
         }
@@ -366,6 +433,7 @@ export class LobbyDiscoveryUI {
   private getNotificationKey(lobby: Lobby): string {
     return JSON.stringify({
       gameID: lobby.gameID,
+      map: lobby.gameConfig?.gameMap ?? null,
       mode: lobby.gameConfig?.gameMode ?? null,
       playerTeams: lobby.gameConfig?.playerTeams ?? lobby.gameConfig?.teamCount ?? null,
       capacity: lobby.gameConfig?.maxPlayers ?? lobby.maxClients ?? null,
@@ -376,8 +444,9 @@ export class LobbyDiscoveryUI {
   private isDiscoveryFeedbackAllowed(): boolean {
     if (!LobbyUtils.isOnLobbyPage()) return false;
 
+    // Opening the See All View hides the play page; matching must keep running there.
     const pagePlay = document.getElementById('page-play');
-    if (pagePlay?.classList.contains('hidden')) return false;
+    if (pagePlay?.classList.contains('hidden') && !this.isSeeAllViewVisible()) return false;
 
     const publicLobby = document.querySelector('public-lobby') as
       | { isLobbyHighlighted?: boolean }
@@ -401,38 +470,32 @@ export class LobbyDiscoveryUI {
     const selector = document.querySelector('game-mode-selector') as HTMLElement | null;
     if (!selector) return {};
 
-    const desktopGrid = Array.from(selector.querySelectorAll('div')).find((element) =>
+    const grid = Array.from(selector.querySelectorAll('div')).find((element) =>
       element.className.includes('sm:grid-cols-[2fr_1fr]')
     );
-    if (!(desktopGrid instanceof HTMLElement)) return {};
+    if (!(grid instanceof HTMLElement)) return {};
 
-    // Find columns by class, not by position. When a lobby slot is absent Lit
-    // renders `nothing` (no DOM node), so positional destructuring breaks.
-    // Left col: `hidden sm:block` (FFA). Right col: `hidden sm:flex sm:flex-col`.
-    const gridChildren = Array.from(desktopGrid.children) as HTMLElement[];
-    const leftColumn = gridChildren.find((el) => el.className.includes('sm:block'));
-    const rightColumn = gridChildren.find((el) => el.className.includes('sm:flex-col'));
-    const rightSections = rightColumn ? (Array.from(rightColumn.children) as HTMLElement[]) : [];
+    // Lit skips the cell of an absent Queue, so the Team and Special positions come from the lobby data.
+    const gridChildren = Array.from(grid.children) as HTMLElement[];
+    const ffaCell = gridChildren.find(
+      (el) => el.className.includes('sm:col-start-1') && el.className.includes('sm:row-start-2')
+    );
+    const section = gridChildren.find((el) => el.tagName === 'SECTION');
+    const cardCells = section
+      ? (Array.from(section.children) as HTMLElement[]).filter((el) => el.tagName === 'DIV')
+      : [];
 
-    // The right column renders special first, team second — but only the present
-    // slots get a DOM node (Lit uses `nothing` for absent ones). Use the lobby
-    // data to know which slots are live so we can map sections correctly.
-    // Note: `selector.lobbies` is the Lit JS property updated synchronously;
-    // the 16 ms deferred re-apply in scheduleQueueCardPulseSync() ensures the
-    // DOM has caught up by the time pulses are finalised.
     const games = (selector as unknown as { lobbies?: { games?: Record<string, unknown[]> } })
       .lobbies?.games;
-    const hasSpecial = Array.isArray(games?.['special']) && games!['special'].length > 0;
     const hasTeam = Array.isArray(games?.['team']) && games!['team'].length > 0;
-
-    // Map sections: if both present → [0]=special, [1]=team; if only one → [0]=that one.
-    const specialSection = hasSpecial ? rightSections[0] : undefined;
-    const teamSection = hasTeam ? (hasSpecial ? rightSections[1] : rightSections[0]) : undefined;
+    const hasSpecial = Array.isArray(games?.['special']) && games!['special'].length > 0;
+    const teamCell = hasTeam ? cardCells[0] : undefined;
+    const specialCell = hasSpecial ? cardCells[hasTeam ? 1 : 0] : undefined;
 
     return {
-      ffa: leftColumn?.querySelector('button') as HTMLElement | undefined,
-      special: specialSection?.querySelector('button') as HTMLElement | undefined,
-      team: teamSection?.querySelector('button') as HTMLElement | undefined,
+      ffa: ffaCell?.querySelector('button') as HTMLElement | undefined,
+      team: teamCell?.querySelector('button') as HTMLElement | undefined,
+      special: specialCell?.querySelector('button') as HTMLElement | undefined,
     };
   }
 
@@ -440,6 +503,59 @@ export class LobbyDiscoveryUI {
     this.activeMatchSources = new Set(nextSources);
     this.applyQueueCardPulses();
     this.scheduleQueueCardPulseSync();
+  }
+
+  private isSeeAllViewVisible(): boolean {
+    const view = document.getElementById(SEE_ALL_VIEW_ID);
+    return !!view && !view.classList.contains('hidden');
+  }
+
+  private getSeeAllButton(): HTMLElement | null {
+    return document.querySelector(
+      'game-mode-selector button[class~="group/upcoming"]'
+    ) as HTMLElement | null;
+  }
+
+  private updateSeeAllSignals(pulse: boolean, matchIds: Set<string>): void {
+    this.seeAllPulseActive = pulse;
+    this.seeAllMatchIds = matchIds;
+    this.applySeeAllSignals();
+  }
+
+  private applySeeAllSignals(): void {
+    this.getSeeAllButton()?.classList.toggle('of-discovery-card-active', this.seeAllPulseActive);
+    this.observeSeeAllView();
+    this.applySeeAllHighlights();
+  }
+
+  // The See All View renders its cards lazily and re-renders them on every feed
+  // update, so the highlight is re-applied whenever its children change.
+  private observeSeeAllView(): void {
+    const view = document.getElementById(SEE_ALL_VIEW_ID);
+    if (!view || view === this.observedSeeAllView) return;
+    this.seeAllObserver?.disconnect();
+    this.seeAllObserver = new MutationObserver(() => this.applySeeAllHighlights());
+    this.seeAllObserver.observe(view, { childList: true, subtree: true });
+    this.observedSeeAllView = view;
+  }
+
+  private applySeeAllHighlights(): void {
+    const view = document.getElementById(SEE_ALL_VIEW_ID);
+    if (!view) return;
+    for (const slot of Array.from(view.querySelectorAll<HTMLElement>('[data-lobby-slot]'))) {
+      slot.classList.toggle(SEE_ALL_MATCH_CLASS, this.seeAllMatchIds.has(slot.dataset.lobbySlot ?? ''));
+    }
+  }
+
+  /** Opens the See All View on the lobby's Queue. Call only from a user click. */
+  private openSeeAllView(queue: QueueSource): void {
+    getPageWindow().showPage?.(SEE_ALL_VIEW_ID);
+    // The view has no Hosted tab; its default "All" tab shows every Queue.
+    if (queue === 'hosted') return;
+    const view = document.getElementById(SEE_ALL_VIEW_ID) as
+      | (HTMLElement & { open?: (args: { tab: string }) => void })
+      | null;
+    view?.open?.({ tab: queue });
   }
 
   private applyQueueCardPulses(): void {
@@ -456,6 +572,7 @@ export class LobbyDiscoveryUI {
     this.pulseSyncTimeout = setTimeout(() => {
       this.pulseSyncTimeout = null;
       this.applyQueueCardPulses();
+      this.applySeeAllSignals();
       // Lit re-renders the native grid; re-apply the Up Next strip from the
       // last known state so it survives a re-render that lands within 16 ms.
       this.renderUpcomingStrip(this.lastUpcomingSlots, this.lastUpcomingMatchSources);
@@ -468,31 +585,14 @@ export class LobbyDiscoveryUI {
    * (e.g. unsafeWindow not granted, or in tests).
    */
   private getAssetContext(): { manifest: Record<string, string> | null; cdnBase: string | null } {
-    type AssetGlobals = {
-      BOOTSTRAP_CONFIG?: { assetManifest?: Record<string, string>; cdnBase?: string };
-      __ASSET_MANIFEST__?: Record<string, string>;
-      __CDN_BASE__?: string;
-    };
-    let win: AssetGlobals | undefined;
-    try {
-      if (typeof unsafeWindow !== 'undefined') {
-        win = unsafeWindow as unknown as AssetGlobals;
-      }
-    } catch {
-      // unsafeWindow not granted — fall through to the page window
-    }
-    if (!win && typeof window !== 'undefined') {
-      win = window as unknown as AssetGlobals;
-    }
+    const win = getPageWindow();
     // OpenFront v0.32 reads assets from window.BOOTSTRAP_CONFIG, with the
     // globalThis.__ASSET_MANIFEST__/__CDN_BASE__ pair as its own fallback. Mirror
     // that precedence so upcoming cards reuse the exact fingerprinted CDN
-    // thumbnails; see OpenFront src/core/AssetUrls.ts (getAssetManifest/getCdnBase).
-    // The earlier ASSET_MANIFEST/CDN_BASE globals were removed in v0.32, so reading
-    // them yielded null and every card fell back to a non-existent relative path.
+    // thumbnails; see OpenFront packages/shared/src/AssetUrls.ts (getAssetManifest/getCdnBase).
     return {
-      manifest: win?.BOOTSTRAP_CONFIG?.assetManifest ?? win?.__ASSET_MANIFEST__ ?? null,
-      cdnBase: win?.BOOTSTRAP_CONFIG?.cdnBase ?? win?.__CDN_BASE__ ?? null,
+      manifest: win.BOOTSTRAP_CONFIG?.assetManifest ?? win.__ASSET_MANIFEST__ ?? null,
+      cdnBase: win.BOOTSTRAP_CONFIG?.cdnBase ?? win.__CDN_BASE__ ?? null,
     };
   }
 
@@ -767,7 +867,10 @@ export class LobbyDiscoveryUI {
 
   private setModifierState(id: string, state: ModifierFilterState): void {
     const button = document.getElementById(id) as HTMLButtonElement | null;
-    if (!button) return;
+    if (button) this.applyTriState(button, state);
+  }
+
+  private applyTriState(button: HTMLElement, state: ModifierFilterState): void {
     button.dataset.state = state;
     button.setAttribute('aria-pressed', String(state !== 'any'));
     const baseLabel = button.dataset.modName ?? button.getAttribute('aria-label') ?? '';
@@ -784,10 +887,83 @@ export class LobbyDiscoveryUI {
   }
 
   private cycleModifierState(id: string): void {
-    const cur = this.getModifierState(id);
-    const next: ModifierFilterState =
-      cur === 'any' ? 'required' : cur === 'required' ? 'blocked' : 'any';
-    this.setModifierState(id, next);
+    this.setModifierState(id, nextTriState(this.getModifierState(id)));
+  }
+
+  private getMapChips(): HTMLButtonElement[] {
+    return Array.from(
+      document.querySelectorAll<HTMLButtonElement>('#discovery-maps-body [data-game-map]')
+    );
+  }
+
+  private cycleMapState(chip: HTMLButtonElement): void {
+    const gameMap = chip.dataset.gameMap ?? '';
+    const next = nextTriState(this.mapFilter[gameMap] ?? 'any');
+    const mapFilter = { ...this.mapFilter };
+    if (next === 'any') delete mapFilter[gameMap];
+    else mapFilter[gameMap] = next;
+    this.setMapFilter(mapFilter);
+  }
+
+  private setMapFilter(mapFilter: MapFilter): void {
+    this.mapFilter = mapFilter;
+    this.syncMapChips();
+    this.saveSettings();
+    this.syncSearchTimer({ resetStart: true });
+    this.processLobbies(this.lastLobbies);
+  }
+
+  private syncMapChips(): void {
+    for (const chip of this.getMapChips()) {
+      this.applyTriState(chip, this.mapFilter[chip.dataset.gameMap ?? ''] ?? 'any');
+    }
+    const states = Object.values(this.mapFilter);
+    const required = states.filter((state) => state === 'required').length;
+    const blocked = states.filter((state) => state === 'blocked').length;
+    const parts = [
+      ...(required > 0 ? [`${required} required`] : []),
+      ...(blocked > 0 ? [`${blocked} excluded`] : []),
+    ];
+    const summary = document.getElementById('discovery-maps-summary');
+    if (summary) summary.textContent = parts.length > 0 ? parts.join(' · ') : 'Any map';
+  }
+
+  private filterMapChips(query: string): void {
+    const needle = query.trim().toLowerCase();
+    for (const chip of this.getMapChips()) {
+      chip.hidden = needle !== '' && !(chip.dataset.modName ?? '').toLowerCase().includes(needle);
+    }
+    for (const group of Array.from(
+      document.querySelectorAll<HTMLElement>('#discovery-maps-body [data-category]')
+    )) {
+      group.hidden = !group.querySelector('[data-game-map]:not([hidden])');
+    }
+  }
+
+  // A map that OpenFront added after the catalogue was generated still gets a chip.
+  private addFeedOnlyMaps(lobbies: Lobby[]): void {
+    for (const lobby of lobbies) {
+      const gameMap = lobby.gameConfig?.gameMap?.trim();
+      if (!gameMap || this.knownMaps.has(gameMap)) continue;
+      this.knownMaps.add(gameMap);
+      const mods = this.ensureMapGroup('other');
+      if (!mods) continue;
+      mods.insertAdjacentHTML('beforeend', this.renderMapChip(gameMap, gameMap));
+      const chip = mods.lastElementChild as HTMLButtonElement;
+      chip.addEventListener('click', () => this.cycleMapState(chip));
+      this.applyTriState(chip, this.mapFilter[gameMap] ?? 'any');
+      const search = document.getElementById('discovery-maps-search') as HTMLInputElement | null;
+      this.filterMapChips(search?.value ?? '');
+    }
+  }
+
+  private ensureMapGroup(category: MapCategory): HTMLElement | null {
+    const groups = document.getElementById('discovery-maps-groups');
+    if (!groups) return null;
+    const existing = groups.querySelector(`[data-category="${category}"] .ld-mods`);
+    if (existing) return existing as HTMLElement;
+    groups.insertAdjacentHTML('beforeend', this.renderMapGroup(category, ''));
+    return groups.querySelector(`[data-category="${category}"] .ld-mods`);
   }
 
   private getNumericModifierState(
@@ -807,11 +983,12 @@ export class LobbyDiscoveryUI {
       isCrowded: this.getModifierState('modifier-isCrowded'),
       isHardNations: this.getModifierState('modifier-isHardNations'),
       isAlliancesDisabled: this.getModifierState('modifier-isAlliancesDisabled'),
-      isPortsDisabled: this.getModifierState('modifier-isPortsDisabled'),
       isNukesDisabled: this.getModifierState('modifier-isNukesDisabled'),
       isSAMsDisabled: this.getModifierState('modifier-isSAMsDisabled'),
       isPeaceTime: this.getModifierState('modifier-isPeaceTime'),
       isWaterNukes: this.getModifierState('modifier-isWaterNukes'),
+      isDoomsdayClock: this.getModifierState('modifier-isDoomsdayClock'),
+      isTrusted: this.getModifierState('modifier-isTrusted'),
       startingGold: this.getNumericModifierState({
         1000000: 'modifier-startingGold-1000000',
         5000000: 'modifier-startingGold-5000000',
@@ -972,11 +1149,12 @@ export class LobbyDiscoveryUI {
       this.setModifierState('modifier-isCrowded', modifiers.isCrowded ?? 'any');
       this.setModifierState('modifier-isHardNations', modifiers.isHardNations ?? 'any');
       this.setModifierState('modifier-isAlliancesDisabled', modifiers.isAlliancesDisabled ?? 'any');
-      this.setModifierState('modifier-isPortsDisabled', modifiers.isPortsDisabled ?? 'any');
       this.setModifierState('modifier-isNukesDisabled', modifiers.isNukesDisabled ?? 'any');
       this.setModifierState('modifier-isSAMsDisabled', modifiers.isSAMsDisabled ?? 'any');
       this.setModifierState('modifier-isPeaceTime', modifiers.isPeaceTime ?? 'any');
       this.setModifierState('modifier-isWaterNukes', modifiers.isWaterNukes ?? 'any');
+      this.setModifierState('modifier-isDoomsdayClock', modifiers.isDoomsdayClock ?? 'any');
+      this.setModifierState('modifier-isTrusted', modifiers.isTrusted ?? 'any');
 
       for (const value of STARTING_GOLD_VALUES) {
         this.setModifierState(
@@ -1008,6 +1186,14 @@ export class LobbyDiscoveryUI {
     if (twoTimes) {
       twoTimes.checked = this.isTeamTwoTimesMinEnabled;
       this.syncChipState('discovery-team-two-times');
+    }
+
+    this.syncMapChips();
+
+    const hostedToggle = document.getElementById('discovery-hosted-toggle') as HTMLInputElement | null;
+    if (hostedToggle) {
+      hostedToggle.checked = this.includeHostedAndCustomLobbies;
+      this.syncChipState('discovery-hosted-toggle');
     }
 
     this.updateFilterCount();
@@ -1060,6 +1246,8 @@ export class LobbyDiscoveryUI {
     for (const id of MODIFIER_BOOLEAN_IDS) this.setModifierState(id, 'any');
     for (const v of STARTING_GOLD_VALUES) this.setModifierState(`modifier-startingGold-${v}`, 'any');
     for (const v of GOLD_MULTIPLIER_VALUES) this.setModifierState(`modifier-goldMultiplier-${v}`, 'any');
+    this.mapFilter = {};
+    this.syncMapChips();
 
     this.ffaSlider?.setRange(1, 125);
     this.teamSlider?.setRange(TEAM_MIN_PLAYERS_PER_TEAM, TEAM_MAX_PLAYERS_PER_TEAM);
@@ -1120,6 +1308,30 @@ export class LobbyDiscoveryUI {
       this.syncChipState('discovery-team-two-times');
       this.teamSlider?.applyLockState();
       this.refreshCriteria();
+    });
+
+    const mapsToggle = document.getElementById('discovery-maps-toggle');
+    const mapsBody = document.getElementById('discovery-maps-body');
+    mapsToggle?.addEventListener('click', () => {
+      if (!mapsBody) return;
+      mapsBody.hidden = !mapsBody.hidden;
+      mapsToggle.setAttribute('aria-expanded', String(!mapsBody.hidden));
+    });
+    const mapsSearch = document.getElementById('discovery-maps-search') as HTMLInputElement | null;
+    mapsSearch?.addEventListener('input', () => this.filterMapChips(mapsSearch.value));
+    document.getElementById('discovery-maps-clear')?.addEventListener('click', () => {
+      this.setMapFilter({});
+    });
+    for (const chip of this.getMapChips()) {
+      chip.addEventListener('click', () => this.cycleMapState(chip));
+    }
+
+    const hostedToggle = document.getElementById('discovery-hosted-toggle') as HTMLInputElement | null;
+    hostedToggle?.addEventListener('change', () => {
+      this.includeHostedAndCustomLobbies = hostedToggle.checked;
+      this.syncChipState('discovery-hosted-toggle');
+      this.saveSettings();
+      this.processLobbies(this.lastLobbies);
     });
 
     document.getElementById('discovery-reset')?.addEventListener('click', () => {
@@ -1184,6 +1396,36 @@ export class LobbyDiscoveryUI {
         <span class="ld-mod-name">${name}</span>
       </button>
     `;
+  }
+
+  private renderMapChip(gameMap: string, name: string): string {
+    const safeName = escapeHtml(name);
+    return `
+      <button type="button" class="ld-mod" data-game-map="${escapeHtml(gameMap)}" data-state="any" data-mod-name="${safeName}" aria-pressed="false" aria-label="${safeName}">
+        <span class="ld-mod-ind"></span>
+        <span class="ld-mod-name">${safeName}</span>
+      </button>
+    `;
+  }
+
+  private renderMapGroup(category: MapCategory, chipsHtml: string): string {
+    return `
+      <div class="ld-mod-group" data-category="${category}">
+        <div class="ld-mod-group-label">${MAP_CATEGORY_LABELS[category]}</div>
+        <div class="ld-mods">${chipsHtml}</div>
+      </div>
+    `;
+  }
+
+  private renderMapGroups(): string {
+    return MAP_CATEGORY_ORDER.map((category) => {
+      const entries = MAP_CATALOGUE.filter((entry) => entry.categories.includes(category));
+      if (entries.length === 0) return '';
+      return this.renderMapGroup(
+        category,
+        entries.map((entry) => this.renderMapChip(entry.gameMap, entry.name)).join('')
+      );
+    }).join('');
   }
 
   private renderIconButton(id: string, title: string, svg: string): string {
@@ -1336,11 +1578,12 @@ export class LobbyDiscoveryUI {
               <div class="ld-mod-group-label">Gameplay</div>
               <div class="ld-mods">
                 ${this.renderModifierChip('modifier-isAlliancesDisabled', 'Alliances Off')}
-                ${this.renderModifierChip('modifier-isPortsDisabled', 'Ports Off')}
                 ${this.renderModifierChip('modifier-isNukesDisabled', 'Nukes Off')}
                 ${this.renderModifierChip('modifier-isSAMsDisabled', 'SAMs Off')}
                 ${this.renderModifierChip('modifier-isPeaceTime', 'Peace Time')}
                 ${this.renderModifierChip('modifier-isWaterNukes', 'Water Nukes')}
+                ${this.renderModifierChip('modifier-isDoomsdayClock', 'Doomsday Clock')}
+                ${this.renderModifierChip('modifier-isTrusted', 'Trusted')}
               </div>
             </div>
 
@@ -1357,6 +1600,34 @@ export class LobbyDiscoveryUI {
             <div class="ld-mods-hint">
               Click to cycle <strong>Any</strong> → <strong class="req">Required</strong> → <strong class="blk">Excluded</strong>.
             </div>
+          </div>
+
+          <div class="ld-section ld-maps">
+            <button type="button" class="ld-section-head ld-maps-toggle" id="discovery-maps-toggle" aria-expanded="false" aria-controls="discovery-maps-body">
+              <span class="ld-section-label">Maps</span>
+              <span class="ld-section-aside" id="discovery-maps-summary">Any map</span>
+            </button>
+            <div id="discovery-maps-body" hidden>
+              <div class="ld-maps-tools">
+                <input type="search" id="discovery-maps-search" class="ld-maps-search" placeholder="Search maps" aria-label="Search maps">
+                <button type="button" class="ld-maps-clear" id="discovery-maps-clear">Clear</button>
+              </div>
+              <div id="discovery-maps-groups">${this.renderMapGroups()}</div>
+              <div class="ld-mods-hint">
+                Applies to every mode. With a <strong class="req">Required</strong> map, only required maps match.
+              </div>
+            </div>
+          </div>
+
+          <div class="ld-section">
+            <div class="ld-section-head">
+              <div class="ld-section-label">Lobbies</div>
+            </div>
+            <label class="ld-2x" aria-pressed="false">
+              <input type="checkbox" id="discovery-hosted-toggle">
+              <span class="check">${ICON_CHECK}</span>
+              <span class="lbl"><strong>Include hosted and custom lobbies</strong></span>
+            </label>
           </div>
         </div>
         <div class="discovery-footer">
@@ -1419,6 +1690,7 @@ export class LobbyDiscoveryUI {
       this.stopTimer();
       this.stopGameInfoUpdates();
       this.updateQueueCardPulses(new Set());
+      this.updateSeeAllSignals(false, new Set());
       this.hideUpcomingStrip();
     } else {
       this.panel.classList.remove('hidden');
@@ -1437,6 +1709,10 @@ export class LobbyDiscoveryUI {
     }
     this.activeMatchSources.clear();
     this.applyQueueCardPulses();
+    this.updateSeeAllSignals(false, new Set());
+    this.seeAllObserver?.disconnect();
+    this.seeAllObserver = null;
+    this.observedSeeAllView = null;
     this.upcomingStrip?.parentNode?.removeChild(this.upcomingStrip);
     this.upcomingStrip = null;
     this.lastUpcomingSlots = new Map();
