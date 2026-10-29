@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getBoardStyles } from '@/styles/boardStyles';
-import { BOARD_COLORS, BOARD_SIZES, COLORS, TIMING } from '@/config/theme';
+import { BOARD_COLORS, BOARD_SIZES, COLORS } from '@/config/theme';
 
 describe('Lobby Board styles', () => {
   afterEach(() => {
@@ -65,16 +65,13 @@ describe('Lobby Board styles', () => {
     expect(css).toMatch(/\.of-board-card-dim:hover \{[^}]*opacity: 0\.[5-9]/);
   });
 
-  it('shows the hover state at once and fades it out when the pointer leaves', () => {
-    // The hover rules set a zero duration, so only the way back uses the base transitions.
-    expect(ruleBody('.of-board-card:hover')).toContain('transition-duration: 0s;');
-    expect(ruleBody('.of-board-card:hover::after')).toContain('transition-duration: 0s;');
-    expect(ruleBody('.of-board-card:hover .of-board-text')).toContain('transition-duration: 0s;');
-    expect(ruleBody('.of-board-card')).toMatch(new RegExp(`transition: opacity ${TIMING.normal}`));
+  it('switches the hover state on and off at once, so only one card looks highlighted', () => {
+    for (const selector of ['.of-board-card', '.of-board-card::after', '.of-board-text']) {
+      expect(ruleBody(selector)).not.toContain('transition');
+    }
   });
 
   it('marks the card under the pointer with a 2 px inner frame and a lighter text column', () => {
-    expect(ruleBody('.of-board-card::after')).toMatch(new RegExp(`transition: box-shadow ${TIMING.fast}`));
     expect(ruleBody('.of-board-card:hover::after')).toContain('box-shadow: inset 0 0 0 2px var(--of-hud-text-3);');
     expect(ruleBody('.of-board-card-match:hover::after')).toContain(
       `box-shadow: inset 0 0 0 2px ${BOARD_COLORS.live};`
@@ -82,14 +79,10 @@ describe('Lobby Board styles', () => {
     // The match frame at rest is 1 px, so the hover frame is visibly thicker.
     expect(ruleBody('.of-board-card-match::after')).toContain(`box-shadow: inset 0 0 0 1px ${BOARD_COLORS.live};`);
 
-    expect(ruleBody('.of-board-text')).toMatch(new RegExp(`transition: background-color ${TIMING.fast}`));
     expect(ruleBody('.of-board-card:hover .of-board-text')).toContain(
       `background-color: ${BOARD_COLORS.textColumnHover};`
     );
     expect(colorOf(BOARD_COLORS.textColumnHover)).not.toBe(colorOf(COLORS.bgSecondary));
-
-    const media = getBoardStyles().match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n    \}\n/)?.[0] ?? '';
-    expect(media).toMatch(/\.of-board-card::after,\s*\.of-board-text \{\s*transition: none;/);
   });
 
   it('puts the thumbnail in a 112 px column on the left, at full opacity', () => {
