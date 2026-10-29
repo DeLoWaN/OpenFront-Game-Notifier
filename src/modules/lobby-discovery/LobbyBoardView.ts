@@ -482,7 +482,11 @@ export class LobbyBoardView {
     const percent = document.createElement('em');
     percent.className = 'of-board-percent';
     gauge.append(fill, playersLabel, percent);
-    card.append(thumb, text, gauge);
+    const join = this.createSpan('of-board-join');
+    join.textContent = 'Join ›';
+    // The aria-label of the card already names the action.
+    join.setAttribute('aria-hidden', 'true');
+    card.append(thumb, text, gauge, join);
 
     this.cardParts.set(card, { thumb, nameLine, name, formatLine, format, modifiers, gauge, fill, players, percent });
     this.cards.set(gameID, card);

@@ -69,6 +69,14 @@ export const BOARD_COLORS = {
   textColumnHover: '#1d2126',
   /** The text column of a matching card under the pointer: the rest colour with an orange tint. */
   matchTextColumnHover: '#362318',
+  /** The "Join ›" label at the right end of the gauge, at rest. */
+  joinRest: '#3f4349',
+  joinRestText: '#d6d4ce',
+  /** The "Join ›" label of a hovered card that does not match. */
+  joinHover: '#4c5057',
+  joinHoverText: '#e4e2dc',
+  /** The "Join ›" label of a hovered card while matching is off. It stays grey, because orange means a match. */
+  joinNeutralHover: '#565a61',
 } as const;
 
 /** Sizes of the Lobby Board, in px. */
@@ -77,6 +85,8 @@ export const BOARD_SIZES = {
   thumbWidthPx: 112,
   /** The height of the players gauge along the bottom of a card. */
   gaugeHeightPx: 18,
+  /** The width of the "Join ›" slot at the right end of the gauge band. */
+  joinWidthPx: 58,
   /** The smallest card height, gauge included. A card with more modifier lines grows. */
   cardMinHeightPx: 120,
   /** The space between two rows and between two columns of the board. */

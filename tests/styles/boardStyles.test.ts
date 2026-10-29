@@ -151,14 +151,15 @@ describe('Lobby Board styles', () => {
     expect(getBoardStyles()).not.toContain(':has(> .of-board-new)');
   });
 
-  it('draws the players gauge as an 18 px band along the whole card bottom, with room reserved for it', () => {
+  it('draws the players gauge as an 18 px band along the card bottom, with room reserved for it', () => {
     const card = ruleBody('.of-board-card');
     expect(card).toContain('--of-board-gauge-height: 18px;');
     expect(card).toContain('padding: 0 0 var(--of-board-gauge-height);');
     const gauge = ruleBody('.of-board-gauge');
     expect(gauge).toContain('position: absolute;');
     expect(gauge).toContain('left: 0;');
-    expect(gauge).toContain('right: 0;');
+    // The gauge track ends where the Join slot starts.
+    expect(gauge).toContain('right: var(--of-board-join-width);');
     expect(gauge).toContain('bottom: 0;');
     expect(gauge).toContain('height: var(--of-board-gauge-height);');
     expect(gauge).toContain(`background: ${BOARD_COLORS.gaugeTrack};`);
@@ -179,6 +180,44 @@ describe('Lobby Board styles', () => {
     expect(percent).not.toContain('margin-left: auto;');
     expect(percent).toContain('margin-left: 5px;');
     expect(percent).toMatch(/font: 700 10(\.5)?px\/1 /);
+  });
+
+  it('puts a "Join ›" label in a fixed 58 px slot at the right end of the gauge band, under the frame overlay', () => {
+    expect(BOARD_SIZES.joinWidthPx).toBe(58);
+    expect(ruleBody('.of-board-card')).toContain('--of-board-join-width: 58px;');
+    // The fill width is a percentage of the gauge, which ends before the slot, and its text never runs under the slot.
+    expect(ruleBody('.of-board-gauge')).toContain('overflow: hidden;');
+    expect(ruleBody('.of-board-fill')).toContain('left: 0;');
+
+    const join = ruleBody('.of-board-join');
+    expect(join).toContain('position: absolute;');
+    expect(join).toContain('right: 0;');
+    expect(join).toContain('bottom: 0;');
+    expect(join).toContain('width: var(--of-board-join-width);');
+    expect(join).toContain('height: var(--of-board-gauge-height);');
+    expect(join).toContain(`background: ${BOARD_COLORS.joinRest};`);
+    expect(join).toContain(`color: ${BOARD_COLORS.joinRestText};`);
+    expect(zIndexOf('.of-board-join')).toBeGreaterThan(zIndexOf('.of-board-gauge'));
+    expect(zIndexOf('.of-board-join')).toBeLessThan(zIndexOf('.of-board-card::after'));
+  });
+
+  it('turns the Join label solid orange on a hovered match, and only a lighter grey on any other hovered card', () => {
+    const matchHover = ruleBody('.of-board-card-match:hover .of-board-join');
+    expect(matchHover).toContain(`background: ${BOARD_COLORS.live};`);
+    expect(matchHover).toContain(`color: ${BOARD_COLORS.onLive};`);
+
+    const dimHover = ruleBody('.of-board-card-dim:hover .of-board-join');
+    expect(dimHover).toContain(`background: ${BOARD_COLORS.joinHover};`);
+    expect(dimHover).toContain(`color: ${BOARD_COLORS.joinHoverText};`);
+
+    // Orange means a match, so the label stays grey while no card can match.
+    const offHover = ruleBody('.of-board-matching-off .of-board-card:hover .of-board-join');
+    expect(offHover).toContain(`background: ${BOARD_COLORS.joinNeutralHover};`);
+    expect(offHover).not.toContain(BOARD_COLORS.live);
+
+    const greys = [BOARD_COLORS.joinRest, BOARD_COLORS.joinHover, BOARD_COLORS.joinNeutralHover].map(colorOf);
+    expect(new Set(greys).size).toBe(3);
+    expect(greys).not.toContain(colorOf(BOARD_COLORS.live));
   });
 
   it('shows the thumbnail without a bottom gradient', () => {

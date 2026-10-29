@@ -315,6 +315,33 @@ describe('Lobby Board', () => {
       navSpy.mockRestore();
     });
 
+    it('shows a "Join ›" label on every card that is not a control of its own: a click on it is a click on the card', () => {
+      const navSpy = vi
+        .spyOn(LobbyDiscoveryUI.prototype as any, 'navigateToGame')
+        .mockImplementation(() => {});
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), team('team-0'), hosted('hosted-0')] as any, NOW);
+
+      const cards = Array.from(document.querySelectorAll<HTMLElement>('.of-board-card'));
+      expect(cards).toHaveLength(3);
+      for (const card of cards) {
+        const label = card.querySelector<HTMLElement>(':scope > .of-board-join');
+        expect(label?.tagName).toBe('SPAN');
+        expect(label?.textContent).toBe('Join ›');
+        // The card's aria-label already names the action.
+        expect(label?.getAttribute('aria-hidden')).toBe('true');
+        expect(card.querySelector('button, a, [role="button"], [tabindex]')).toBeNull();
+      }
+      expect(navSpy).not.toHaveBeenCalled();
+
+      cardIn('team', 0)!.querySelector<HTMLElement>('.of-board-join')!.click();
+
+      expect(navSpy).toHaveBeenCalledTimes(1);
+      expect(navSpy).toHaveBeenCalledWith('/game/team-0');
+      navSpy.mockRestore();
+    });
+
     it('opens the join window of a lobby that is far down a Queue', () => {
       const navSpy = vi
         .spyOn(LobbyDiscoveryUI.prototype as any, 'navigateToGame')
@@ -647,6 +674,7 @@ describe('Lobby Board', () => {
         'of-board-thumb',
         'of-board-text',
         'of-board-gauge',
+        'of-board-join',
       ]);
       const thumb = card.querySelector('.of-board-thumb')!;
       expect(thumb.querySelector('img')).toBeTruthy();

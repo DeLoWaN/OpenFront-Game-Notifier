@@ -94,6 +94,7 @@ export function getBoardStyles(): string {
       /* The gauge height is also the bottom padding that keeps the content above the gauge. */
       --of-board-thumb-width: ${BOARD_SIZES.thumbWidthPx}px;
       --of-board-gauge-height: ${BOARD_SIZES.gaugeHeightPx}px;
+      --of-board-join-width: ${BOARD_SIZES.joinWidthPx}px;
       position: relative;
       box-sizing: border-box;
       flex: 1;
@@ -189,16 +190,18 @@ export function getBoardStyles(): string {
       white-space: nowrap;
       color: ${BOARD_COLORS.onAccent};
     }
+    /* The gauge ends where the Join slot starts, so the fill percentage applies to the shorter track. */
     .of-board-gauge {
       position: absolute;
       left: 0;
-      right: 0;
+      right: var(--of-board-join-width);
       bottom: 0;
       z-index: 1;
       box-sizing: border-box;
       height: var(--of-board-gauge-height);
       display: flex;
       align-items: center;
+      overflow: hidden;
       border-top: 1px solid var(--of-hud-line-3);
       background: ${BOARD_COLORS.gaugeTrack};
     }
@@ -236,6 +239,27 @@ export function getBoardStyles(): string {
       font-style: normal;
       color: var(--of-hud-text-2);
       text-shadow: 0 1px 2px ${BOARD_COLORS.gaugeTextShadow};
+    }
+    /* A label inside the card, not a control: the click on the card is the only one that navigates. */
+    .of-board-join {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      box-sizing: border-box;
+      width: var(--of-board-join-width);
+      height: var(--of-board-gauge-height);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid var(--of-hud-line-3);
+      background: ${BOARD_COLORS.joinRest};
+      color: ${BOARD_COLORS.joinRestText};
+      font: 800 10px/1 ${FONTS.mono};
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
     }
     .of-board-mods {
       display: flex;
@@ -291,6 +315,11 @@ export function getBoardStyles(): string {
     .of-board-card-match:hover .of-board-text {
       background-color: ${BOARD_COLORS.matchTextColumnHover};
     }
+    .of-board-card-match:hover .of-board-join {
+      border-top-color: ${BOARD_COLORS.live};
+      background: ${BOARD_COLORS.live};
+      color: ${BOARD_COLORS.onLive};
+    }
     .of-board-card-dim {
       opacity: 0.3;
       filter: grayscale(0.7);
@@ -301,11 +330,19 @@ export function getBoardStyles(): string {
     .of-board-card-dim:hover::after {
       box-shadow: inset 0 0 0 1px var(--of-hud-text-3);
     }
+    .of-board-card-dim:hover .of-board-join {
+      background: ${BOARD_COLORS.joinHover};
+      color: ${BOARD_COLORS.joinHoverText};
+    }
     .of-board-matching-off .of-board-card:hover::after {
       box-shadow: inset 0 0 0 2px var(--of-hud-text-3);
     }
     .of-board-matching-off .of-board-card:hover .of-board-text {
       background-color: ${BOARD_COLORS.textColumnHover};
+    }
+    .of-board-matching-off .of-board-card:hover .of-board-join {
+      background: ${BOARD_COLORS.joinNeutralHover};
+      color: var(--of-hud-text-1);
     }
     .of-board-new {
       flex: none;
