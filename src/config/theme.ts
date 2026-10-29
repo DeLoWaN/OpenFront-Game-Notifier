@@ -60,9 +60,8 @@ export const BOARD_COLORS = {
   chip: 'rgba(255, 255, 255, 0.08)',
   blockedBg: 'rgba(200, 70, 50, 0.25)',
   blockedText: '#f2c4bb',
-  /** The fade at the bottom of a card thumbnail. */
-  scrimClear: 'rgba(10, 6, 16, 0)',
-  scrimStrong: 'rgba(10, 6, 16, 0.85)',
+  /** The panel behind the text of a card. The thumbnail shows through it. */
+  panel: 'rgba(10, 6, 16, 0.60)',
 } as const;
 
 export const FONTS = {

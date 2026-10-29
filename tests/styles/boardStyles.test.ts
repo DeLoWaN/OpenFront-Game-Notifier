@@ -44,6 +44,31 @@ describe('Lobby Board styles', () => {
     expect(css).toMatch(/\.of-board-card-dim:hover \{[^}]*opacity: 0\.[5-9]/);
   });
 
+  it('puts the text block of a card on a dark panel that reaches the card edges', () => {
+    mountStyles();
+    const card = document.createElement('button');
+    card.className = 'of-board-card';
+    const body = document.createElement('span');
+    body.className = 'of-board-body';
+    card.append(body);
+    document.body.append(card);
+
+    const style = getComputedStyle(body);
+    expect(style.backgroundColor).toBe(colorOf(BOARD_COLORS.panel));
+    expect(colorOf(BOARD_COLORS.panel)).toBe('rgba(10, 6, 16, 0.6)');
+    // The card padding is 8 px: a negative margin lets the panel reach the edges.
+    expect(style.marginLeft).toBe('-8px');
+    expect(style.marginRight).toBe('-8px');
+    expect(style.marginBottom).toBe('-8px');
+    expect(getBoardStyles()).toMatch(/\.of-board-body \{[^}]*border-top: 1px solid/);
+  });
+
+  it('shows the thumbnail without a bottom gradient', () => {
+    const css = getBoardStyles();
+    expect(css).not.toContain('of-board-thumb::after');
+    expect(css).not.toContain('linear-gradient');
+  });
+
   it('keeps the flash of a notification click inside the card', () => {
     mountStyles();
     const card = document.createElement('button');

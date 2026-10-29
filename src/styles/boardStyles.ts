@@ -122,12 +122,6 @@ export function getBoardStyles(): string {
       object-fit: cover;
       opacity: 0.55;
     }
-    .of-board-thumb::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, ${BOARD_COLORS.scrimClear} 30%, ${BOARD_COLORS.scrimStrong} 100%);
-    }
     .of-board-top,
     .of-board-body {
       position: relative;
@@ -140,10 +134,15 @@ export function getBoardStyles(): string {
       align-items: center;
       gap: 4px;
     }
+    /* The negative margin cancels the card padding, so the panel reaches the card edges. */
     .of-board-body {
       display: flex;
       flex-direction: column;
       gap: 3px;
+      margin: 0 -8px -8px;
+      padding: 7px 8px 8px;
+      border-top: 1px solid var(--of-hud-line-3);
+      background: ${BOARD_COLORS.panel};
     }
     .of-board-badge {
       padding: 2px 6px;
