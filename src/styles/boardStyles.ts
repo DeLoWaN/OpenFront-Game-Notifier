@@ -231,8 +231,7 @@ export function getBoardStyles(): string {
     }
     .of-board-percent {
       position: relative;
-      margin-left: auto;
-      padding-right: 8px;
+      margin-left: 5px;
       font: 700 10px/1 ${FONTS.mono};
       font-style: normal;
       color: var(--of-hud-text-2);

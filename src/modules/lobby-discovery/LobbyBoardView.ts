@@ -547,7 +547,7 @@ export class LobbyBoardView {
     parts.gauge.classList.toggle('of-board-gauge-hot', model.fillPercent >= NEARLY_FULL_PERCENT);
     parts.fill.style.width = `${model.fillPercent}%`;
     this.setText(parts.players, getBoardPlayersText(model.players, model.capacity));
-    this.setText(parts.percent, model.capacity === null ? '' : `${model.fillPercent}%`);
+    this.setText(parts.percent, model.capacity === null ? '' : `· ${model.fillPercent}%`);
 
     this.reconcileChildren(
       parts.modifiers,

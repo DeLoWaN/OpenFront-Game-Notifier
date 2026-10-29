@@ -696,7 +696,11 @@ describe('Lobby Board', () => {
       expect(text(cardIn('team', 1), '.of-board-format')).toBe('7 teams of 16');
 
       expect(text(cardIn('ffa', 0), '.of-board-gauge .of-board-players')).toBe('10 / 40 players');
-      expect(text(cardIn('ffa', 0), '.of-board-gauge .of-board-percent')).toBe('25%');
+      // The percentage follows the count, so it never hides the end of a nearly full fill.
+      expect(text(cardIn('ffa', 0), '.of-board-gauge .of-board-percent')).toBe('· 25%');
+      expect(cardIn('ffa', 0)?.querySelector('.of-board-players')?.nextElementSibling?.className).toBe(
+        'of-board-percent'
+      );
       expect(
         cardIn('ffa', 0)?.querySelector<HTMLElement>('.of-board-gauge .of-board-fill')?.style.width
       ).toBe('25%');
@@ -875,7 +879,7 @@ describe('Lobby Board', () => {
       expect(after.querySelector('.of-board-fill')).toBe(fill);
       expect(fill.style.width).toBe('75%');
       expect(text(after, '.of-board-players')).toBe('30 / 40 players');
-      expect(text(after, '.of-board-percent')).toBe('75%');
+      expect(text(after, '.of-board-percent')).toBe('· 75%');
     });
 
     it('hides a thumbnail image that fails to load, and shows the image again for a new map', () => {

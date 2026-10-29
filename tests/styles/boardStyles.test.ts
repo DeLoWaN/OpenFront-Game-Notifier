@@ -170,13 +170,14 @@ describe('Lobby Board styles', () => {
     expect(colorOf(BOARD_COLORS.gaugeFillHot)).toBe('rgba(232, 96, 12, 0.65)');
   });
 
-  it('writes the gauge text in bold mono white with a light shadow, the count left and the percentage right', () => {
+  it('writes the gauge text in bold mono white with a light shadow, the percentage right after the count', () => {
     const players = ruleBody('.of-board-players');
     expect(players).toMatch(/font: 700 10(\.5)?px\/1 /);
     expect(players).toContain(`color: ${BOARD_COLORS.text};`);
     expect(players).toContain(`text-shadow: 0 1px 2px ${BOARD_COLORS.gaugeTextShadow};`);
     const percent = ruleBody('.of-board-percent');
-    expect(percent).toContain('margin-left: auto;');
+    expect(percent).not.toContain('margin-left: auto;');
+    expect(percent).toContain('margin-left: 5px;');
     expect(percent).toMatch(/font: 700 10(\.5)?px\/1 /);
   });
 
