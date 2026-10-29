@@ -2,10 +2,7 @@
  * CSS of the Lobby Board.
  */
 
-import { BOARD_COLORS, COLORS, FONTS, RADIUS, TIMING } from '@/config/theme';
-
-const THUMB_WIDTH_PX = 84;
-const GAUGE_HEIGHT_PX = 18;
+import { BOARD_COLORS, BOARD_SIZES, COLORS, FONTS, RADIUS, TIMING } from '@/config/theme';
 
 export function getBoardStyles(): string {
   return `
@@ -44,7 +41,7 @@ export function getBoardStyles(): string {
     .of-board-grid {
       display: grid;
       grid-template-columns: 54px repeat(4, minmax(0, 1fr));
-      gap: 8px 10px;
+      gap: ${BOARD_SIZES.gridGapPx}px;
       align-items: stretch;
       padding: 14px 16px 16px;
     }
@@ -88,20 +85,20 @@ export function getBoardStyles(): string {
     }
     .of-board-empty {
       flex: 1;
-      min-height: 84px;
+      min-height: ${BOARD_SIZES.cardMinHeightPx}px;
       border: 1px dashed var(--of-hud-line-1);
       border-radius: ${RADIUS.lg};
     }
 
     .of-board-card {
       /* The gauge height is also the bottom padding that keeps the content above the gauge. */
-      --of-board-thumb-width: ${THUMB_WIDTH_PX}px;
-      --of-board-gauge-height: ${GAUGE_HEIGHT_PX}px;
+      --of-board-thumb-width: ${BOARD_SIZES.thumbWidthPx}px;
+      --of-board-gauge-height: ${BOARD_SIZES.gaugeHeightPx}px;
       position: relative;
       box-sizing: border-box;
       flex: 1;
       min-width: 0;
-      min-height: 92px;
+      min-height: ${BOARD_SIZES.cardMinHeightPx}px;
       display: flex;
       align-items: stretch;
       padding: 0 0 var(--of-board-gauge-height);
@@ -134,10 +131,7 @@ export function getBoardStyles(): string {
       object-fit: cover;
     }
     .of-board-countdown {
-      position: absolute;
-      top: 5px;
-      left: 5px;
-      z-index: 1;
+      flex: none;
       padding: 1px 6px;
       border-radius: 4px;
       background: ${BOARD_COLORS.live};
@@ -155,7 +149,15 @@ export function getBoardStyles(): string {
       padding: 10px 10px 11px;
       background: var(--of-hud-bg-1);
     }
+    /* The name takes the free width, so it wraps before the "New" badge and the countdown. */
+    .of-board-nameline {
+      display: flex;
+      align-items: flex-start;
+      gap: 6px;
+      min-width: 0;
+    }
     .of-board-map {
+      flex: 1;
       min-width: 0;
       overflow-wrap: anywhere;
       font-size: 14px;
@@ -293,21 +295,16 @@ export function getBoardStyles(): string {
       filter: none;
     }
     .of-board-new {
-      position: absolute;
-      top: 6px;
-      right: 6px;
-      z-index: 2;
-      padding: 2px 6px;
+      flex: none;
+      padding: 1px 6px;
       border-radius: 4px;
       background: ${COLORS.accent};
       font-size: 10px;
       font-weight: 800;
+      line-height: 1.6;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       color: ${BOARD_COLORS.onNew};
-    }
-    .of-board-card:has(> .of-board-new) .of-board-map {
-      padding-right: 34px;
     }
     /* The flash follows a click on a notification. Its glow is inset, so it stays in the card. */
     @keyframes ofBoardFlash {

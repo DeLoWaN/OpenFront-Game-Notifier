@@ -71,6 +71,7 @@ const SVG_NS = 'http://www.w3.org/2000/svg';
 /** The nodes of a card that change with its model. They are built once and then updated in place. */
 interface CardParts {
   thumb: HTMLElement;
+  nameLine: HTMLElement;
   name: HTMLElement;
   formatLine: HTMLElement;
   format: HTMLElement;
@@ -460,12 +461,14 @@ export class LobbyBoardView {
 
     const thumb = this.createSpan('of-board-thumb');
     const name = this.createSpan('of-board-map');
+    const nameLine = this.createSpan('of-board-nameline');
+    nameLine.append(name);
     const format = this.createSpan('of-board-format');
     const formatLine = this.createSpan('of-board-formatline');
     formatLine.append(format);
     const modifiers = this.createSpan('of-board-mods');
     const text = this.createSpan('of-board-text');
-    text.append(name, formatLine, modifiers);
+    text.append(nameLine, formatLine, modifiers);
 
     const gauge = this.createSpan('of-board-gauge');
     const fill = document.createElement('i');
@@ -479,7 +482,7 @@ export class LobbyBoardView {
     gauge.append(fill, playersLabel, percent);
     card.append(thumb, text, gauge);
 
-    this.cardParts.set(card, { thumb, name, formatLine, format, modifiers, gauge, fill, players, percent });
+    this.cardParts.set(card, { thumb, nameLine, name, formatLine, format, modifiers, gauge, fill, players, percent });
     this.cards.set(gameID, card);
     return card;
   }
@@ -504,15 +507,16 @@ export class LobbyBoardView {
     return span;
   }
 
-  /** Shows the "New" badge of a card. The badge is a child that updateCard never touches. */
+  /** Shows the "New" badge on the map name line, before the countdown. updateCard never touches the badge. */
   private applyNewBadge(card: HTMLButtonElement, isNew: boolean): void {
-    const badge = Array.from(card.children).find((child) => child.classList.contains('of-board-new'));
+    const nameLine = this.cardParts.get(card)?.nameLine;
+    if (!nameLine) return;
+    const badge = nameLine.querySelector('.of-board-new');
     if (isNew) {
       if (badge) return;
-      const newBadge = document.createElement('span');
-      newBadge.className = 'of-board-new';
+      const newBadge = this.createSpan('of-board-new');
       newBadge.textContent = 'New';
-      card.append(newBadge);
+      nameLine.insertBefore(newBadge, nameLine.querySelector('.of-board-countdown'));
     } else {
       badge?.remove();
     }
@@ -528,7 +532,7 @@ export class LobbyBoardView {
     if (!parts) return;
 
     this.updateThumbnail(parts.thumb, model.thumbnailUrl);
-    this.updateCountdown(parts.thumb, model.countdownTargetMs);
+    this.updateCountdown(parts.nameLine, model.countdownTargetMs);
 
     this.setText(parts.name, model.mapName);
     this.setText(parts.format, model.formatText);
@@ -557,16 +561,16 @@ export class LobbyBoardView {
     card.setAttribute('aria-label', `Open ${model.mapName} in OpenFront's join modal`);
   }
 
-  /** Shows the countdown pill on the thumbnail. Its text is set by tickCountdowns, which knows the clock offset. */
-  private updateCountdown(thumb: HTMLElement, targetMs: number | null): void {
-    let countdown = thumb.querySelector<HTMLElement>('.of-board-countdown');
+  /** Shows the countdown pill at the end of the map name line. tickCountdowns sets its text with the clock offset. */
+  private updateCountdown(nameLine: HTMLElement, targetMs: number | null): void {
+    let countdown = nameLine.querySelector<HTMLElement>('.of-board-countdown');
     if (targetMs === null) {
       countdown?.remove();
       return;
     }
     if (!countdown) {
       countdown = this.createSpan('of-board-countdown');
-      thumb.append(countdown);
+      nameLine.append(countdown);
     }
     countdown.dataset.countdownTo = String(targetMs);
   }

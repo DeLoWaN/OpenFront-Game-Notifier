@@ -67,6 +67,18 @@ export const BOARD_COLORS = {
   gaugeTextShadow: 'rgba(0, 0, 0, 0.7)',
 } as const;
 
+/** Sizes of the Lobby Board, in px. */
+export const BOARD_SIZES = {
+  /** The width of the map thumbnail on the left of a card. */
+  thumbWidthPx: 112,
+  /** The height of the players gauge along the bottom of a card. */
+  gaugeHeightPx: 18,
+  /** The smallest card height, gauge included. A card with more modifier lines grows. */
+  cardMinHeightPx: 120,
+  /** The space between two rows and between two columns of the board. */
+  gridGapPx: 12,
+} as const;
+
 export const FONTS = {
   body: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
   display: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",

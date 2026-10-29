@@ -172,6 +172,25 @@ describe('Lobby Board alerts', () => {
       expect(newBadge('ffa-3')).toBeNull();
     });
 
+    it('puts the badge on the map name line, just left of the countdown', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      const withStart = (queue: any[]) => [{ ...queue[0], startsAt: NOW + 60_000 }, ...queue.slice(1)];
+      ui.receiveLobbyUpdate(withStart(ffaQueue(false)) as any, NOW);
+      ui.receiveLobbyUpdate(
+        withStart([{ ...ffa('ffa-0', 40) }, ...ffaQueue(false).slice(1)]) as any,
+        NOW
+      );
+
+      const nameLine = card('ffa-0')?.querySelector('.of-board-nameline');
+      expect(Array.from(nameLine?.children ?? []).map((child) => child.className)).toEqual([
+        'of-board-map',
+        'of-board-new',
+        'of-board-countdown',
+      ]);
+    });
+
     it('keeps the badge across feed updates, without a second alert', () => {
       bigFfaSettings();
 

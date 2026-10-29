@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getBoardStyles } from '@/styles/boardStyles';
-import { BOARD_COLORS } from '@/config/theme';
+import { BOARD_COLORS, BOARD_SIZES } from '@/config/theme';
 
 describe('Lobby Board styles', () => {
   afterEach(() => {
@@ -65,8 +65,9 @@ describe('Lobby Board styles', () => {
     expect(css).toMatch(/\.of-board-card-dim:hover \{[^}]*opacity: 0\.[5-9]/);
   });
 
-  it('puts the thumbnail in an 84 px column on the left, at full opacity', () => {
-    expect(ruleBody('.of-board-card')).toContain('--of-board-thumb-width: 84px;');
+  it('puts the thumbnail in a 112 px column on the left, at full opacity', () => {
+    expect(BOARD_SIZES.thumbWidthPx).toBe(112);
+    expect(ruleBody('.of-board-card')).toContain('--of-board-thumb-width: 112px;');
     const thumb = ruleBody('.of-board-thumb');
     expect(thumb).toContain('width: var(--of-board-thumb-width);');
     expect(thumb).toContain('flex: none;');
@@ -81,21 +82,34 @@ describe('Lobby Board styles', () => {
     expect(text).toContain('min-width: 0;');
   });
 
-  it('shows the countdown dark on orange at the top-left corner of the thumbnail', () => {
+  it('makes a card at least 120 px tall and spaces the cards 12 px apart', () => {
+    expect(BOARD_SIZES.cardMinHeightPx).toBe(120);
+    expect(BOARD_SIZES.gridGapPx).toBe(12);
+    expect(ruleBody('.of-board-card')).toContain('min-height: 120px;');
+    expect(ruleBody('.of-board-empty')).toContain('min-height: 120px;');
+    expect(ruleBody('.of-board-grid')).toContain('gap: 12px;');
+  });
+
+  it('ends the map name line with the countdown, dark on orange, and lets the name wrap before it', () => {
+    const nameLine = ruleBody('.of-board-nameline');
+    expect(nameLine).toContain('display: flex;');
+    expect(nameLine).toContain('align-items: flex-start;');
+    const map = ruleBody('.of-board-map');
+    expect(map).toContain('flex: 1;');
+    expect(map).toContain('min-width: 0;');
     const countdown = ruleBody('.of-board-countdown');
-    expect(countdown).toContain('position: absolute;');
-    expect(countdown).toMatch(/top: \d+px;/);
-    expect(countdown).toMatch(/left: \d+px;/);
+    expect(countdown).not.toContain('position: absolute;');
+    expect(countdown).toContain('flex: none;');
     expect(countdown).toContain(`background: ${BOARD_COLORS.live};`);
     expect(countdown).toContain(`color: ${BOARD_COLORS.onLive};`);
     expect(colorOf(BOARD_COLORS.onLive)).toBe('rgb(10, 6, 16)');
   });
 
-  it('puts the "New" badge at the top-right corner, away from the countdown, and keeps the map name clear of it', () => {
+  it('keeps the "New" badge in the flow of the name line, so it never covers the countdown or the name', () => {
     const badge = ruleBody('.of-board-new');
-    expect(badge).toMatch(/right: \d+px;/);
-    expect(badge).not.toMatch(/left:/);
-    expect(ruleBody('.of-board-card:has(> .of-board-new) .of-board-map')).toMatch(/padding-right: \d+px;/);
+    expect(badge).not.toContain('position: absolute;');
+    expect(badge).toContain('flex: none;');
+    expect(getBoardStyles()).not.toContain(':has(> .of-board-new)');
   });
 
   it('draws the players gauge as an 18 px band along the whole card bottom, with room reserved for it', () => {

@@ -181,7 +181,7 @@ describe('Lobby Board', () => {
     expect(cell('special', 1)?.querySelector('.of-board-empty')).toBeTruthy();
 
     const countdown = (queue: string, row: number) =>
-      cardIn(queue, row)?.querySelector('.of-board-thumb .of-board-countdown')?.textContent ?? null;
+      cardIn(queue, row)?.querySelector('.of-board-nameline .of-board-countdown')?.textContent ?? null;
     expect(countdown('ffa', 0)).toBe('1:05');
     expect(countdown('team', 0)).toBe('0:05');
     expect(countdown('special', 0)).toBe('10:00');
@@ -617,7 +617,7 @@ describe('Lobby Board', () => {
             : 'neutral',
       ]);
 
-    it('puts the thumbnail on the left, the text column on the right and the players gauge last', () => {
+    it('puts the thumbnail on the left, the text column with the countdown on the right and the players gauge last', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate([ffa('ffa-0', { startsAt: NOW + 30_000 })] as any, NOW);
 
@@ -629,14 +629,21 @@ describe('Lobby Board', () => {
       ]);
       const thumb = card.querySelector('.of-board-thumb')!;
       expect(thumb.querySelector('img')).toBeTruthy();
-      // The countdown is the only text on the thumbnail.
-      expect(thumb.textContent).toBe('0:30');
+      // The thumbnail shows the map only.
+      expect(thumb.textContent).toBe('');
       const textColumn = card.querySelector('.of-board-text')!;
       expect(Array.from(textColumn.children).map((child) => child.className)).toEqual([
-        'of-board-map',
+        'of-board-nameline',
         'of-board-formatline',
         'of-board-mods',
       ]);
+      // The countdown ends the map name line.
+      const nameLine = card.querySelector('.of-board-nameline')!;
+      expect(Array.from(nameLine.children).map((child) => child.className)).toEqual([
+        'of-board-map',
+        'of-board-countdown',
+      ]);
+      expect(nameLine.querySelector('.of-board-countdown')?.textContent).toBe('0:30');
     });
 
     it('shows no Queue Position, mode or Hosted label on a card', () => {
@@ -799,7 +806,7 @@ describe('Lobby Board', () => {
         NOW
       );
 
-      const badge = cardIn('hosted', 0)?.querySelector<HTMLElement>('.of-board-thumb .of-board-countdown');
+      const badge = cardIn('hosted', 0)?.querySelector<HTMLElement>('.of-board-nameline .of-board-countdown');
       expect(badge?.textContent).toBe('1:30');
       expect(badge?.dataset.countdownTo).toBe(String(NOW + 90_000));
 
