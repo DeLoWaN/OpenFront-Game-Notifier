@@ -136,11 +136,11 @@ describe('LobbyDiscoveryFilters', () => {
 
       const chip = byId(container, 'modifier-isCompact');
       chip.click();
-      expect(instance.getSettings().criteria[0].modifiers?.isCompact).toBe('required');
+      expect(instance.getSettings().criteria[0]!.modifiers?.isCompact).toBe('required');
       chip.click();
-      expect(instance.getSettings().criteria[0].modifiers?.isCompact).toBe('blocked');
+      expect(instance.getSettings().criteria[0]!.modifiers?.isCompact).toBe('blocked');
       chip.click();
-      expect(instance.getSettings().criteria[0].modifiers?.isCompact).toBe('any');
+      expect(instance.getSettings().criteria[0]!.modifiers?.isCompact).toBe('any');
       expect(changes).toEqual(['criteria', 'criteria', 'criteria']);
     });
 
@@ -216,7 +216,7 @@ describe('LobbyDiscoveryFilters', () => {
       max.dispatchEvent(new Event('change', { bubbles: true }));
 
       expect(changes).toEqual(['criteria']);
-      expect(instance.getSettings().criteria[0].maxPlayers).toBe(40);
+      expect(instance.getSettings().criteria[0]!.maxPlayers).toBe(40);
     });
   });
 
