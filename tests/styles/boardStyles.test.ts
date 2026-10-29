@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getBoardStyles } from '@/styles/boardStyles';
-import { BOARD_COLORS } from '@/config/theme';
+import { BOARD_COLORS, SPACING } from '@/config/theme';
 
 describe('Lobby Board styles', () => {
   afterEach(() => {
@@ -27,15 +27,33 @@ describe('Lobby Board styles', () => {
     expect(getBoardStyles()).not.toContain('infinite');
   });
 
-  it('frames a matching card in orange, inside the card', () => {
+  /** The declarations of the first rule that has this exact selector. */
+  const ruleBody = (selector: string): string => {
+    const escaped = selector.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return getBoardStyles().match(new RegExp(`(?<!,)\\n\\s*${escaped} \\{([^}]*)\\}`))?.[1] ?? '';
+  };
+
+  it('frames a matching card in orange with an overlay above the thumbnail and the text panel', () => {
     mountStyles();
     const card = document.createElement('button');
     card.className = 'of-board-card of-board-card-match';
     document.body.append(card);
 
-    const style = getComputedStyle(card);
-    expect(style.borderColor).toBe(colorOf(BOARD_COLORS.live));
-    expect(style.boxShadow).toMatch(/^inset /);
+    expect(getComputedStyle(card).borderColor).toBe(colorOf(BOARD_COLORS.live));
+    // The thumbnail and the text panel paint over a shadow on the card itself.
+    expect(getComputedStyle(card).boxShadow).toBe('');
+
+    const overlay = ruleBody('.of-board-card::after');
+    expect(overlay).toMatch(/position: absolute;/);
+    expect(overlay).toMatch(/inset: 0;/);
+    expect(overlay).toMatch(/pointer-events: none;/);
+    const overlayZ = Number(overlay.match(/z-index: (\d+);/)?.[1]);
+    const bodyZ = Number(ruleBody('.of-board-top,\n    .of-board-body').match(/z-index: (\d+);/)?.[1]);
+    expect(overlayZ).toBeGreaterThan(bodyZ);
+
+    const frame = ruleBody('.of-board-card-match::after');
+    expect(frame).toContain(BOARD_COLORS.live);
+    expect(frame).toMatch(/box-shadow: inset /);
   });
 
   it('dims a card that does not match to 0.3 or less and restores it on hover', () => {
@@ -56,10 +74,13 @@ describe('Lobby Board styles', () => {
     const style = getComputedStyle(body);
     expect(style.backgroundColor).toBe(colorOf(BOARD_COLORS.panel));
     expect(colorOf(BOARD_COLORS.panel)).toBe('rgba(10, 6, 16, 0.6)');
-    // The card padding is 8 px: a negative margin lets the panel reach the edges.
-    expect(style.marginLeft).toBe('-8px');
-    expect(style.marginRight).toBe('-8px');
-    expect(style.marginBottom).toBe('-8px');
+    // The card padding and the negative margin of the panel share one custom property.
+    const bodyRule = ruleBody('.of-board-body');
+    expect(bodyRule).toContain(
+      'margin: 0 calc(-1 * var(--of-board-card-padding)) calc(-1 * var(--of-board-card-padding));'
+    );
+    expect(ruleBody('.of-board-card')).toContain('padding: var(--of-board-card-padding);');
+    expect(ruleBody('.of-board-card')).toContain(`--of-board-card-padding: ${SPACING.sm};`);
     expect(getBoardStyles()).toMatch(/\.of-board-body \{[^}]*border-top: 1px solid/);
   });
 
@@ -69,14 +90,10 @@ describe('Lobby Board styles', () => {
     expect(css).not.toContain('linear-gradient');
   });
 
-  it('keeps the flash of a notification click inside the card', () => {
-    mountStyles();
-    const card = document.createElement('button');
-    card.className = 'of-board-card of-board-card-flash';
-    document.body.append(card);
-
-    expect(getComputedStyle(card).animation).toContain('ofBoardFlash');
-    const keyframes = getBoardStyles().match(/@keyframes ofBoardFlash \{[\s\S]*?\n    \}/)?.[0] ?? '';
+  it('keeps the flash of a notification click inside the card, on the overlay', () => {
+    const css = getBoardStyles();
+    expect(ruleBody('.of-board-card.of-board-card-flash::after')).toContain('animation: ofBoardFlash');
+    const keyframes = css.match(/@keyframes ofBoardFlash \{[\s\S]*?\n    \}/)?.[0] ?? '';
     expect(keyframes).not.toBe('');
     const shadows = keyframes.match(/box-shadow:[^;]*;/g) ?? [];
     expect(shadows.length).toBeGreaterThan(0);
@@ -86,6 +103,14 @@ describe('Lobby Board styles', () => {
         expect(layer.trim()).toMatch(/^inset /);
       }
     }
+  });
+
+  it('does not animate the flash when the user prefers reduced motion, and keeps a static outline', () => {
+    const css = getBoardStyles();
+    const media = css.match(/@media \(prefers-reduced-motion: reduce\) \{[\s\S]*?\n    \}\n/)?.[0] ?? '';
+    expect(media).toContain('.of-board-card.of-board-card-flash::after');
+    expect(media).toContain('animation: none;');
+    expect(media).toMatch(/box-shadow: inset 0 0 0 4px/);
   });
 
   it.each(['boardStyles.ts', 'boardChromeStyles.ts'])(

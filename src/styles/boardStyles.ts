@@ -2,7 +2,7 @@
  * CSS of the Lobby Board.
  */
 
-import { BOARD_COLORS, COLORS, FONTS, RADIUS, TIMING } from '@/config/theme';
+import { BOARD_COLORS, COLORS, FONTS, RADIUS, SPACING, TIMING } from '@/config/theme';
 
 export function getBoardStyles(): string {
   return `
@@ -91,6 +91,8 @@ export function getBoardStyles(): string {
     }
 
     .of-board-card {
+      /* The text panel cancels this padding with a negative margin to reach the card edges. */
+      --of-board-card-padding: ${SPACING.sm};
       position: relative;
       flex: 1;
       min-width: 0;
@@ -100,7 +102,7 @@ export function getBoardStyles(): string {
       justify-content: space-between;
       align-items: stretch;
       gap: 6px;
-      padding: 8px;
+      padding: var(--of-board-card-padding);
       overflow: hidden;
       border: 1px solid var(--of-hud-line-2);
       border-radius: ${RADIUS.lg};
@@ -134,13 +136,12 @@ export function getBoardStyles(): string {
       align-items: center;
       gap: 4px;
     }
-    /* The negative margin cancels the card padding, so the panel reaches the card edges. */
     .of-board-body {
       display: flex;
       flex-direction: column;
       gap: 3px;
-      margin: 0 -8px -8px;
-      padding: 7px 8px 8px;
+      margin: 0 calc(-1 * var(--of-board-card-padding)) calc(-1 * var(--of-board-card-padding));
+      padding: 7px var(--of-board-card-padding) var(--of-board-card-padding);
       border-top: 1px solid var(--of-hud-line-3);
       background: ${BOARD_COLORS.panel};
     }
@@ -239,9 +240,20 @@ export function getBoardStyles(): string {
       font-style: italic;
       color: var(--of-hud-text-4);
     }
-    /* The frame stays inside the card, so it never touches a neighbour. */
+    /* The overlay paints the frame and the flash above the thumbnail and the text panel.
+       It stays inside the card, so it never touches a neighbour. */
+    .of-board-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      border-radius: inherit;
+      pointer-events: none;
+    }
     .of-board-card-match {
       border-color: ${BOARD_COLORS.live};
+    }
+    .of-board-card-match::after {
       box-shadow: inset 0 0 0 1px ${BOARD_COLORS.live};
     }
     .of-board-card-dim {
@@ -275,8 +287,14 @@ export function getBoardStyles(): string {
         box-shadow: inset 0 0 0 4px ${BOARD_COLORS.live}, inset 0 0 28px ${BOARD_COLORS.liveGlow};
       }
     }
-    .of-board-card.of-board-card-flash {
+    .of-board-card.of-board-card-flash::after {
       animation: ofBoardFlash 0.5s ease-in-out 4;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .of-board-card.of-board-card-flash::after {
+        animation: none;
+        box-shadow: inset 0 0 0 4px ${BOARD_COLORS.live};
+      }
     }
   `;
 }
