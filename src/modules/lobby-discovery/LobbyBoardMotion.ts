@@ -24,6 +24,11 @@ export function canAnimate(): boolean {
   return !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 }
 
+/** Ends the running animations of a card, so its box has no in-flight transform. */
+export function finishAnimations(card: HTMLElement): void {
+  card.getAnimations?.().forEach((animation) => animation.finish());
+}
+
 /** Reads where a card is. Returns null for a card that is not in a cell. */
 export function readPlacement(card: HTMLElement): CardPlacement | null {
   const cell = card.parentElement;

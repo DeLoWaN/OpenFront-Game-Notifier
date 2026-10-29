@@ -20,6 +20,7 @@ import {
 import {
   appearCard,
   canAnimate,
+  finishAnimations,
   readPlacement,
   slideCard,
   type CardPlacement,
@@ -247,6 +248,8 @@ export class LobbyBoardView {
 
   /** Slides the cards that changed cell and fades in the new ones. The first render with cards has no motion. */
   private playMotion(placementsBefore: Map<string, CardPlacement>, createdCards: HTMLButtonElement[]): void {
+    // A card in the middle of a slide or a fade-in has a transform that shifts its box.
+    for (const card of this.cards.values()) finishAnimations(card);
     for (const [gameID, from] of placementsBefore) {
       const card = this.cards.get(gameID);
       const to = card ? readPlacement(card) : null;

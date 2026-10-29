@@ -824,6 +824,7 @@ describe('Lobby Board', () => {
 
     afterEach(() => {
       delete (HTMLElement.prototype as any).animate;
+      delete (HTMLElement.prototype as any).getAnimations;
       delete (HTMLElement.prototype as any).getBoundingClientRect;
       delete (window as any).matchMedia;
     });
@@ -864,6 +865,38 @@ describe('Lobby Board', () => {
       expect(animated('team-0')).toEqual([]);
       expect(animated('team-1')).toEqual([]);
       expect(appears()).toEqual([]);
+    });
+
+    it('finishes the running animations of a card before it reads the new place', () => {
+      const log: string[] = [];
+      const fake = (id: string) => ({ finish: () => log.push(`finish ${id}`) });
+      (HTMLElement.prototype as any).getAnimations = function (this: HTMLElement) {
+        return [fake(this.dataset.gameId ?? '')];
+      };
+      const readRect = (HTMLElement.prototype as any).getBoundingClientRect;
+      (HTMLElement.prototype as any).getBoundingClientRect = function (this: HTMLElement) {
+        if (this.classList.contains('of-board-card')) log.push(`read ${this.dataset.gameId}`);
+        return readRect.call(this);
+      };
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+      log.length = 0;
+
+      // ffa-0 starts: ffa-1 moves up while it may still run an earlier animation.
+      ui.receiveLobbyUpdate([ffa('ffa-1')] as any, NOW);
+
+      const finishAt = log.indexOf('finish ffa-1');
+      const lastRead = log.lastIndexOf('read ffa-1');
+      expect(finishAt).toBeGreaterThanOrEqual(0);
+      expect(finishAt).toBeLessThan(lastRead);
+    });
+
+    it('does not fail when the browser has no getAnimations', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+
+      expect(() => ui!.receiveLobbyUpdate([ffa('ffa-1')] as any, NOW)).not.toThrow();
+      expect(slides().map(({ card }) => card.dataset.gameId)).toEqual(['ffa-1']);
     });
 
     it('keeps the same card nodes while it animates', () => {
