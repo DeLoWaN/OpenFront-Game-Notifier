@@ -41,6 +41,28 @@ export const COLORS = {
   error: '#d27a6b',
 } as const;
 
+/** Colours of the Lobby Board, which sit on a dark violet surface of their own. */
+export const BOARD_COLORS = {
+  surface: 'rgba(16, 10, 24, 0.92)',
+  /** The orange of the Live row, the countdown badge and a nearly full bar. */
+  live: '#e8600c',
+  text: '#fff',
+  textSoft: '#ddd',
+  /** The text on the accent tag. */
+  onAccent: '#0d0a14',
+  /** The text on the "New" badge. */
+  onNew: '#0a0610',
+  fill: '#9fb8a6',
+  badgeBg: 'rgba(0, 0, 0, 0.6)',
+  track: 'rgba(255, 255, 255, 0.09)',
+  chip: 'rgba(255, 255, 255, 0.08)',
+  blockedBg: 'rgba(200, 70, 50, 0.25)',
+  blockedText: '#f2c4bb',
+  /** The fade at the bottom of a card thumbnail. */
+  scrimClear: 'rgba(10, 6, 16, 0)',
+  scrimStrong: 'rgba(10, 6, 16, 0.85)',
+} as const;
+
 export const FONTS = {
   body: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
   display: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",

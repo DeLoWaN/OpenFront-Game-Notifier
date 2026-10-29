@@ -2,7 +2,7 @@
  * CSS of the Lobby Board.
  */
 
-import { COLORS, FONTS, RADIUS, TIMING } from '@/config/theme';
+import { BOARD_COLORS, COLORS, FONTS, RADIUS, TIMING } from '@/config/theme';
 
 export function getBoardStyles(): string {
   return `
@@ -17,7 +17,7 @@ export function getBoardStyles(): string {
       margin-left: calc(50% - 50vw + 16px);
       border: 1px solid var(--of-hud-line-2);
       border-radius: ${RADIUS.xl};
-      background: rgba(16, 10, 24, 0.92);
+      background: ${BOARD_COLORS.surface};
       color: var(--of-hud-text-1);
       font-family: ${FONTS.body};
       overflow: hidden;
@@ -75,7 +75,7 @@ export function getBoardStyles(): string {
       color: var(--of-hud-text-4);
     }
     .of-board-rowlabel-live {
-      color: #e8600c;
+      color: ${BOARD_COLORS.live};
       text-transform: uppercase;
     }
     .of-board-cell {
@@ -104,7 +104,7 @@ export function getBoardStyles(): string {
       border: 1px solid var(--of-hud-line-2);
       border-radius: ${RADIUS.lg};
       background: var(--of-hud-bg-1);
-      color: #fff;
+      color: ${BOARD_COLORS.text};
       text-align: left;
       cursor: pointer;
       transition: opacity ${TIMING.normal}, border-color ${TIMING.fast};
@@ -125,7 +125,7 @@ export function getBoardStyles(): string {
       content: '';
       position: absolute;
       inset: 0;
-      background: linear-gradient(180deg, rgba(10, 6, 16, 0) 30%, rgba(10, 6, 16, 0.85) 100%);
+      background: linear-gradient(180deg, ${BOARD_COLORS.scrimClear} 30%, ${BOARD_COLORS.scrimStrong} 100%);
     }
     .of-board-top,
     .of-board-body {
@@ -148,19 +148,19 @@ export function getBoardStyles(): string {
       padding: 2px 6px;
       border: 1px solid var(--of-hud-line-3);
       border-radius: 4px;
-      background: rgba(0, 0, 0, 0.6);
+      background: ${BOARD_COLORS.badgeBg};
       font-size: 10px;
       font-weight: 800;
       letter-spacing: 0.5px;
       text-transform: uppercase;
       line-height: 1.3;
       white-space: nowrap;
-      color: #ddd;
+      color: ${BOARD_COLORS.textSoft};
     }
     .of-board-badge[data-countdown-to] {
       border-color: transparent;
-      background: #e8600c;
-      color: #fff;
+      background: ${BOARD_COLORS.live};
+      color: ${BOARD_COLORS.text};
       font-family: ${FONTS.mono};
     }
     .of-board-tag {
@@ -172,7 +172,7 @@ export function getBoardStyles(): string {
       letter-spacing: 0.5px;
       text-transform: uppercase;
       line-height: 1.3;
-      color: #0d0a14;
+      color: ${BOARD_COLORS.onAccent};
     }
     .of-board-map {
       max-width: 100%;
@@ -199,16 +199,16 @@ export function getBoardStyles(): string {
       min-width: 40px;
       height: 5px;
       border-radius: 3px;
-      background: rgba(255, 255, 255, 0.09);
+      background: ${BOARD_COLORS.track};
       overflow: hidden;
     }
     .of-board-fill {
       display: block;
       height: 100%;
-      background: #9fb8a6;
+      background: ${BOARD_COLORS.fill};
     }
     .of-board-bar-hot .of-board-fill {
-      background: #e8600c;
+      background: ${BOARD_COLORS.live};
     }
     .of-board-mods {
       display: flex;
@@ -218,7 +218,7 @@ export function getBoardStyles(): string {
     .of-board-mod {
       padding: 1px 6px;
       border-radius: 4px;
-      background: rgba(255, 255, 255, 0.08);
+      background: ${BOARD_COLORS.chip};
       font-size: 11px;
       white-space: nowrap;
       color: var(--of-hud-text-2);
@@ -227,12 +227,12 @@ export function getBoardStyles(): string {
       background: var(--of-hud-accent-soft);
       box-shadow: inset 0 0 0 1px var(--of-hud-accent);
       font-weight: 700;
-      color: #fff;
+      color: ${BOARD_COLORS.text};
     }
     .of-board-mod-blocked {
-      background: rgba(200, 70, 50, 0.25);
+      background: ${BOARD_COLORS.blockedBg};
       text-decoration: line-through;
-      color: #f2c4bb;
+      color: ${BOARD_COLORS.blockedText};
     }
     .of-board-nomods {
       font-size: 11px;
@@ -261,7 +261,7 @@ export function getBoardStyles(): string {
       font-weight: 800;
       letter-spacing: 0.5px;
       text-transform: uppercase;
-      color: #0a0610;
+      color: ${BOARD_COLORS.onNew};
     }
     .of-board-card-pulse {
       animation: discoveryCardActiveBeacon 1.45s ease-in-out infinite;

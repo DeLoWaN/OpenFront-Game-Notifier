@@ -1,3 +1,5 @@
+import { readFileSync } from 'fs';
+import { resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getBoardStyles } from '@/styles/boardStyles';
 
@@ -20,4 +22,12 @@ describe('Lobby Board styles', () => {
     expect(animation).toContain('0.5s');
     expect(animation).not.toContain('infinite');
   });
+
+  it.each(['boardStyles.ts', 'boardChromeStyles.ts'])(
+    'takes every colour of %s from the theme tokens',
+    (file) => {
+      const source = readFileSync(resolve(__dirname, '../../src/styles', file), 'utf8');
+      expect(source.match(/#[0-9a-fA-F]{3,8}\b|rgba?\(/g)).toBeNull();
+    }
+  );
 });
