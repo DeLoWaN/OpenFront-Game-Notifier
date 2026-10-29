@@ -230,6 +230,22 @@ describe('Lobby Board alerts', () => {
         expect(newBadge('ffa-4')).toBeNull();
       });
 
+      it('keeps the badge when the window blurs because focus moves into an iframe of the page', () => {
+        bigFfaSettings();
+
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+        // The document still has focus: the focus is inside one of its frames.
+        const hasFocus = vi.spyOn(document, 'hasFocus').mockReturnValue(true);
+        window.dispatchEvent(new Event('blur'));
+        expect(newBadge('ffa-4')).toBeTruthy();
+
+        hasFocus.mockReturnValue(false);
+        window.dispatchEvent(new Event('blur'));
+        expect(newBadge('ffa-4')).toBeNull();
+        hasFocus.mockRestore();
+      });
+
       it('removes the badge when the tab becomes hidden, and not when it becomes visible', () => {
         bigFfaSettings();
 

@@ -138,7 +138,7 @@ export class LobbyDiscoveryUI {
     this.createUI();
     this.updateSleepState();
     URLObserver.subscribe(() => this.updateSleepState());
-    window.addEventListener('blur', this.handleFocusLost);
+    window.addEventListener('blur', this.handleWindowBlur);
     document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
@@ -425,6 +425,12 @@ export class LobbyDiscoveryUI {
   private readonly handleFocusLost = (): void => {
     this.boardAlerts.clear();
     this.updateLobbyBoard(this.lastLobbies);
+  };
+
+  private readonly handleWindowBlur = (): void => {
+    // The window also blurs when focus moves into an iframe of the page. The document keeps focus then.
+    if (document.hasFocus()) return;
+    this.handleFocusLost();
   };
 
   private readonly handleVisibilityChange = (): void => {
@@ -771,7 +777,7 @@ export class LobbyDiscoveryUI {
 
   cleanup(): void {
     this.isDisposed = true;
-    window.removeEventListener('blur', this.handleFocusLost);
+    window.removeEventListener('blur', this.handleWindowBlur);
     document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     this.stopTimer();
     this.stopGameInfoUpdates();
