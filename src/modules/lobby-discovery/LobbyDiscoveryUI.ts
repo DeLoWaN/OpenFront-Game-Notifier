@@ -275,11 +275,7 @@ export class LobbyDiscoveryUI {
       const queues = this.parseQueues(lobbies);
       this.filters.addFeedOnlyMaps(lobbies);
 
-      if (
-        !this.discoveryEnabled ||
-        this.criteriaList.length === 0 ||
-        !this.isDiscoveryFeedbackAllowed()
-      ) {
+      if (!this.discoveryEnabled || this.criteriaList.length === 0) {
         this.seenLobbies.clear();
         this.desktopNotifiedLobbies.clear();
         this.boardAlerts.clear();
@@ -339,6 +335,19 @@ export class LobbyDiscoveryUI {
 
       for (const [queue, queueLobbies] of queues) {
         queueLobbies.forEach((lobby, index) => evaluate(lobby, queue, index));
+      }
+
+      if (!this.isDiscoveryFeedbackAllowed()) {
+        // A lobby that keeps matching stays seen, so it does not alert again when the window closes.
+        this.seenLobbies = new Set([...this.seenLobbies].filter((key) => matchedKeys.has(key)));
+        this.desktopNotifiedLobbies = new Set(
+          [...this.desktopNotifiedLobbies].filter((key) => matchedKeys.has(key))
+        );
+        this.boardAlerts.retain(matchedKeys);
+        this.updateQueueCardPulses(new Set());
+        this.updateSeeAllSignals(false, new Set());
+        this.updateStatusText();
+        return;
       }
 
       // The Lobby Board shows the matches itself: only the original page needs these signals.

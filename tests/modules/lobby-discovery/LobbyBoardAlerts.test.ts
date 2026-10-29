@@ -293,6 +293,66 @@ describe('Lobby Board alerts', () => {
         expect(document.querySelector('.of-discovery-card-active')).toBeNull();
       }
     );
+
+    it.each(gates)(
+      'alerts for a lobby that matches when %s opens and closes without a feed update in between',
+      (_name, open, close) => {
+        bigFfaSettings();
+        open();
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+        close();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+        // The lobby began to match while the window hid the alerts: it alerts once, when they come back.
+        expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
+        expect(card('ffa-4')?.querySelector('.of-board-new')).toBeTruthy();
+      }
+    );
+
+    it('does not alert again for a lobby that keeps matching while a window opens and closes', () => {
+      bigFfaSettings();
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
+      expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(1);
+
+      setJoinLobby('joined-lobby');
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      setJoinLobby('');
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
+      expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(1);
+    });
+
+    it('alerts again for a lobby that stops matching while a window is open and matches again after', () => {
+      bigFfaSettings();
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      setJoinLobby('joined-lobby');
+      ui.receiveLobbyUpdate(ffaQueue(false) as any, NOW);
+      setJoinLobby('');
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(2);
+    });
+
+    it('shows the badge and the pulse of an earlier alert again when the window closes', () => {
+      bigFfaSettings();
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      setJoinLobby('joined-lobby');
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      expect(card('ffa-4')?.querySelector('.of-board-new')).toBeNull();
+
+      setJoinLobby('');
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      expect(card('ffa-4')?.querySelector('.of-board-new')).toBeTruthy();
+    });
   });
 
   describe('desktop notification click', () => {
