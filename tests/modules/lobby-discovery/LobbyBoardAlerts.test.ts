@@ -245,6 +245,70 @@ describe('Lobby Board alerts', () => {
     });
   });
 
+  describe('desktop notification click', () => {
+    const card = (gameID: string): HTMLElement | null =>
+      document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
+    let scrolled: Element[];
+
+    beforeEach(() => {
+      scrolled = [];
+      // jsdom does not implement scrollIntoView.
+      (HTMLElement.prototype as any).scrollIntoView = function (this: Element) {
+        scrolled.push(this);
+      };
+    });
+
+    afterEach(() => {
+      delete (HTMLElement.prototype as any).scrollIntoView;
+    });
+
+    it('scrolls the card into view and flashes it, only when the user clicks', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(1);
+      expect(card('ffa-4')?.classList).not.toContain('of-board-card-flash');
+      expect(scrolled).toEqual([]);
+
+      // The notification utility focuses the tab, then runs this action.
+      vi.mocked(BrowserNotificationUtils.show).mock.calls[0]![0].onClick!();
+
+      expect(card('ffa-4')?.classList).toContain('of-board-card-flash');
+      expect(scrolled).toEqual([card('ffa-4')]);
+
+      vi.advanceTimersByTime(2_000);
+      expect(card('ffa-4')?.classList).not.toContain('of-board-card-flash');
+    });
+
+    it('does nothing when the lobby has left the feed before the click', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      ui.receiveLobbyUpdate(ffaQueue(true).slice(0, 4) as any, NOW);
+
+      expect(() => vi.mocked(BrowserNotificationUtils.show).mock.calls[0]![0].onClick!()).not.toThrow();
+      expect(scrolled).toEqual([]);
+    });
+
+    it('opens the See All View for a lobby of Queue Position 4 when the Lobby Board cannot show', () => {
+      bigFfaSettings();
+      // OpenFront's home grid is gone, so the board has no place to mount.
+      document.querySelector('game-mode-selector')!.innerHTML = '';
+      const showPage = vi.fn();
+      (window as any).showPage = showPage;
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      vi.mocked(BrowserNotificationUtils.show).mock.calls[0]![0].onClick!();
+
+      expect(showPage).toHaveBeenCalledWith('page-detailed-view');
+      delete (window as any).showPage;
+    });
+  });
+
   describe('Up Next removal', () => {
     it('renders no Up Next element and saves no "notify upcoming" value', () => {
       bigFfaSettings({ notifyUpcomingEnabled: false });

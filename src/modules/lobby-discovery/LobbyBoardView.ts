@@ -6,7 +6,7 @@
  */
 
 import type { Lobby } from '@/types/game';
-import type { QueueSource } from './LobbyDiscoveryTypes';
+import type { DiscoveryCriteria, QueueSource } from './LobbyDiscoveryTypes';
 import type { CardAlertState } from './LobbyBoardAlerts';
 import {
   BOARD_QUEUES,
@@ -41,11 +41,14 @@ export interface LobbyBoardState {
   matchedIds: Set<string> | null;
   /** Offset to add to the local clock to get the feed's clock. */
   clockOffsetMs: number;
+  /** The active Criteria. They tell which Modifiers a card shows as required or blocked. */
+  criteria?: DiscoveryCriteria[];
   /** The alert state of every card that has one, by `gameID`. */
   alerts: Map<string, CardAlertState>;
 }
 
 const BOARD_ID = 'of-lobby-board';
+const FLASH_DURATION_MS = 2_000;
 const GRID_CLASS_MARKER = 'sm:grid-cols-[2fr_1fr]';
 
 interface SavedStyle {
@@ -66,6 +69,7 @@ export class LobbyBoardView {
   private rowCount = -1;
   private cards = new Map<string, HTMLButtonElement>();
   private signatures = new Map<string, string>();
+  private flashTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
   constructor(private readonly options: LobbyBoardOptions) {}
 
@@ -106,7 +110,7 @@ export class LobbyBoardView {
           continue;
         }
         liveIds.add(lobby.gameID);
-        const model = buildBoardCardModel(lobby, queue, row, manifest, cdnBase);
+        const model = buildBoardCardModel(lobby, queue, row, manifest, cdnBase, state.criteria);
         const card = this.cards.get(lobby.gameID) ?? this.createCard(lobby.gameID);
         this.updateCard(card, model);
         this.applyAlertState(card, state.alerts.get(lobby.gameID));
@@ -130,6 +134,27 @@ export class LobbyBoardView {
     }
   }
 
+  /** True while the board is on the page and visible. */
+  isShowing(): boolean {
+    return !!this.root?.isConnected && this.root.style.display !== 'none';
+  }
+
+  /** Scrolls a card into view and flashes it. Does nothing when the lobby is not on the board. */
+  flashCard(gameID: string): void {
+    const card = this.cards.get(gameID);
+    if (!card) return;
+    card.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+    clearTimeout(this.flashTimers.get(gameID));
+    card.classList.add('of-board-card-flash');
+    this.flashTimers.set(
+      gameID,
+      setTimeout(() => {
+        this.flashTimers.delete(gameID);
+        card.classList.remove('of-board-card-flash');
+      }, FLASH_DURATION_MS)
+    );
+  }
+
   /** Hides the board and gives OpenFront's lobby area back as it was. */
   hide(): void {
     this.stopTicking();
@@ -139,6 +164,8 @@ export class LobbyBoardView {
 
   dispose(): void {
     this.stopTicking();
+    for (const timer of this.flashTimers.values()) clearTimeout(timer);
+    this.flashTimers.clear();
     this.restorePage();
     this.root?.remove();
     this.root = null;
@@ -331,7 +358,7 @@ export class LobbyBoardView {
   }
 
   private updateCard(card: HTMLButtonElement, model: BoardCardModel): void {
-    const signature = JSON.stringify([model.mapName, model.thumbnailUrl, model.badge]);
+    const signature = JSON.stringify(model);
     if (this.signatures.get(model.gameID) === signature) return;
     this.signatures.set(model.gameID, signature);
 
@@ -358,7 +385,57 @@ export class LobbyBoardView {
     name.className = 'of-board-map';
     name.textContent = model.mapName;
 
+    const top = document.createElement('span');
+    top.className = 'of-board-top';
+    top.append(badge);
+    for (const tagText of model.tags) {
+      const tag = document.createElement('span');
+      tag.className = 'of-board-tag';
+      tag.textContent = tagText;
+      top.append(tag);
+    }
+
+    const format = document.createElement('span');
+    format.className = 'of-board-format';
+    format.textContent = model.formatText;
+
+    const modifiers = document.createElement('span');
+    modifiers.className = 'of-board-mods';
+    if (model.modifiers.length === 0) {
+      const none = document.createElement('span');
+      none.className = 'of-board-nomods';
+      none.textContent = 'No modifiers';
+      modifiers.append(none);
+    }
+    for (const modifier of model.modifiers) {
+      const chip = document.createElement('span');
+      chip.className = `of-board-mod${modifier.state === 'neutral' ? '' : ` of-board-mod-${modifier.state}`}`;
+      chip.textContent = modifier.name;
+      modifiers.append(chip);
+    }
+
+    const body = document.createElement('span');
+    body.className = 'of-board-body';
+    body.append(name, format, this.buildPlayers(model), modifiers);
+
     card.setAttribute('aria-label', `Open ${model.mapName} in OpenFront's join modal`);
-    card.replaceChildren(thumb, badge, name);
+    card.replaceChildren(thumb, top, body);
+  }
+
+  private buildPlayers(model: BoardCardModel): HTMLElement {
+    const row = document.createElement('span');
+    row.className = 'of-board-playersrow';
+    const count = document.createElement('span');
+    count.className = 'of-board-players';
+    count.textContent =
+      model.capacity === null ? String(model.players ?? '') : `${model.players ?? 0} / ${model.capacity}`;
+    const bar = document.createElement('span');
+    bar.className = `of-board-bar${model.fillPercent >= 80 ? ' of-board-bar-hot' : ''}`;
+    const fill = document.createElement('i');
+    fill.className = 'of-board-fill';
+    fill.style.width = `${model.fillPercent}%`;
+    bar.append(fill);
+    row.append(count, bar);
+    return row;
   }
 }

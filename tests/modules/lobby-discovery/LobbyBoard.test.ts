@@ -471,4 +471,171 @@ describe('Lobby Board', () => {
       expect(board()?.querySelectorAll('.of-board-card')).toHaveLength(1);
     });
   });
+
+  describe('card content', () => {
+    const text = (card: HTMLElement | null, selector: string) =>
+      card?.querySelector(selector)?.textContent ?? null;
+    const modifiers = (card: HTMLElement | null) =>
+      Array.from(card?.querySelectorAll<HTMLElement>('.of-board-mod') ?? []).map((el) => [
+        el.textContent,
+        el.classList.contains('of-board-mod-required')
+          ? 'required'
+          : el.classList.contains('of-board-mod-blocked')
+            ? 'blocked'
+            : 'neutral',
+      ]);
+
+    it('shows the team format in plain words, the players and the capacity with a fill bar', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [
+          ffa('ffa-0', { numClients: 10 }, { maxPlayers: 40 }),
+          team('team-0', { numClients: 6 }, { playerTeams: 'Quads', maxPlayers: 44 }),
+          team('team-1', { numClients: 5 }, { playerTeams: 7, maxPlayers: 112 }),
+        ] as any,
+        NOW
+      );
+
+      expect(text(cardIn('ffa', 0), '.of-board-format')).toBe('Free for all · 40 players');
+      expect(text(cardIn('team', 0), '.of-board-format')).toBe('Quads · 11 teams of 4');
+      expect(text(cardIn('team', 1), '.of-board-format')).toBe('7 teams of 16');
+
+      expect(text(cardIn('ffa', 0), '.of-board-players')).toBe('10 / 40');
+      expect(
+        cardIn('ffa', 0)?.querySelector<HTMLElement>('.of-board-fill')?.style.width
+      ).toBe('25%');
+      expect(text(cardIn('team', 0), '.of-board-players')).toBe('6 / 44');
+    });
+
+    it('lists every active Modifier by its full name, without truncating it', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [
+          ffa('ffa-0', {}, {
+            publicGameModifiers: { isRandomSpawn: true, startingGold: 5_000_000, goldMultiplier: 2 },
+          }),
+        ] as any,
+        NOW
+      );
+
+      expect(modifiers(cardIn('ffa', 0))).toEqual([
+        ['Random Spawn', 'neutral'],
+        ['Start Gold 5M', 'neutral'],
+        ['Gold ×2', 'neutral'],
+      ]);
+    });
+
+    it('says "No modifiers" on a card without Modifiers', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+      expect(modifiers(cardIn('ffa', 0))).toEqual([]);
+      expect(text(cardIn('ffa', 0), '.of-board-nomods')).toBe('No modifiers');
+    });
+
+    it('makes a required Modifier stand out and strikes out a blocked one', () => {
+      store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
+        criteria: [
+          {
+            gameMode: 'FFA',
+            teamCount: null,
+            minPlayers: null,
+            maxPlayers: null,
+            modifiers: { isRandomSpawn: 'required', isCrowded: 'blocked' },
+          },
+        ],
+        discoveryEnabled: true,
+        soundEnabled: false,
+        isTeamTwoTimesMinEnabled: false,
+      });
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [
+          ffa('ffa-0', {}, { publicGameModifiers: { isRandomSpawn: true, isPeaceTime: true } }),
+          ffa('ffa-1', {}, { publicGameModifiers: { isRandomSpawn: true, isCrowded: true } }),
+        ] as any,
+        NOW
+      );
+
+      expect(modifiers(cardIn('ffa', 0))).toEqual([
+        ['Random Spawn', 'required'],
+        ['Peace Time', 'neutral'],
+      ]);
+      expect(modifiers(cardIn('ffa', 1))).toEqual([
+        ['Random Spawn', 'required'],
+        ['Crowded', 'blocked'],
+      ]);
+    });
+
+    it('updates the Modifier states when a filter changes', () => {
+      store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
+        criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null }],
+        discoveryEnabled: true,
+        soundEnabled: false,
+        isTeamTwoTimesMinEnabled: false,
+      });
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [ffa('ffa-0', {}, { publicGameModifiers: { isRandomSpawn: true } })] as any,
+        NOW
+      );
+      expect(modifiers(cardIn('ffa', 0))).toEqual([['Random Spawn', 'neutral']]);
+
+      const chip = document.getElementById('modifier-isRandomSpawn') as HTMLButtonElement;
+      chip.click();
+
+      expect(modifiers(cardIn('ffa', 0))).toEqual([['Random Spawn', 'required']]);
+    });
+
+    it('tags a Hosted Lobby "Hosted" and a Custom Lobby "Custom"', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [
+          ffa('ffa-0'),
+          special('special-0'),
+          special('special-1', { custom: true }),
+          hosted('hosted-0'),
+        ] as any,
+        NOW
+      );
+
+      const tags = (card: HTMLElement | null) =>
+        Array.from(card?.querySelectorAll('.of-board-tag') ?? []).map((el) => el.textContent);
+      expect(tags(cardIn('ffa', 0))).toEqual([]);
+      expect(tags(cardIn('special', 0))).toEqual([]);
+      expect(tags(cardIn('special', 1))).toEqual(['Custom']);
+      expect(tags(cardIn('hosted', 0))).toEqual(['Hosted']);
+    });
+
+    it('shows a countdown on a Hosted Lobby that has autoStartAt', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [ffa('ffa-0'), hosted('hosted-0', { autoStartAt: NOW + 90_000 })] as any,
+        NOW
+      );
+
+      const badge = cardIn('hosted', 0)?.querySelector<HTMLElement>('.of-board-badge');
+      expect(badge?.textContent).toBe('1:30');
+      expect(badge?.dataset.countdownTo).toBe(String(NOW + 90_000));
+
+      vi.advanceTimersByTime(10_000);
+      expect(badge?.textContent).toBe('1:20');
+    });
+
+    it('does not show "Queue 0" on a Hosted Lobby without autoStartAt', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), hosted('hosted-0'), hosted('hosted-1')] as any, NOW);
+
+      expect(text(cardIn('hosted', 0), '.of-board-badge')).toBe('Waiting');
+      expect(text(cardIn('hosted', 1), '.of-board-badge')).toBe('Queue 1');
+    });
+
+    it('redraws the card when its player count changes', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 10 })] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 30 })] as any, NOW);
+
+      expect(text(cardIn('ffa', 0), '.of-board-players')).toBe('30 / 40');
+    });
+  });
 });

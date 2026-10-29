@@ -1188,8 +1188,14 @@ describe('LobbyDiscoveryUI', () => {
       expect(slotHighlighted('ffa-3')).toBe(true);
     });
 
+    // Without the Lobby Board the home page is OpenFront's own: its grid is gone here.
+    function removeHomepageGrid(): void {
+      document.querySelector('game-mode-selector')!.innerHTML = '';
+    }
+
     it('opens the See All View on the Queue only when the user clicks the notification', () => {
       mountSeeAll(['ffa-0', 'ffa-1', 'ffa-2', 'ffa-3']);
+      removeHomepageGrid();
       bigFfaSettings();
       const showPage = vi.fn();
       (window as any).showPage = showPage;
@@ -1209,6 +1215,7 @@ describe('LobbyDiscoveryUI', () => {
     });
 
     it('leaves the notification click of a Live Lobby match to focus the tab only', () => {
+      removeHomepageGrid();
       bigFfaSettings();
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate([ffaLobby('ffa-0', 40)] as any);
