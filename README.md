@@ -1,6 +1,6 @@
 # OpenFront Game Notifier
 
-A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and notifies you when one matches your filters — via in-page highlight, sound, and optional desktop notification. It surfaces each slot's **upcoming** game in an "Up Next" area and enhances OpenFront's native join modal. Never auto-joins.
+A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and notifies you when one matches your filters — via in-page highlight, sound, and optional desktop notification. It shows every advertised lobby on a **Lobby Board** in place of the lobby area of the home page, and enhances OpenFront's native join modal. Never auto-joins.
 
 ## For Players
 
@@ -19,21 +19,17 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Per-team slider uses log-scaled stops with editable steppers; optional `2×` lock pins the max to twice the minimum
 - Tri-state modifier filters cycle `Any` → `Required` → `Excluded`, grouped by `Map` / `Gameplay` / `Economy`
 
-**Up Next**
-- Dedicated "Up Next" area shows each slot's queued-next game (`FFA`, `Special`, `Team`) alongside the native lobby cards — map, mode, team format, capacity, and active modifiers
-- Cards are visually marked not-live and show an "up next" indicator instead of a fabricated countdown (the feed assigns a start time only once a game goes live)
-- Slots with no upcoming game show an explicit fallback rather than a stale card
-- Clicking an upcoming card navigates to OpenFront's own join modal — manual quick-join only, you still confirm entry there
-
-<img width="946" height="352" alt="image" src="https://github.com/user-attachments/assets/e9d14503-90de-4a8a-93ae-ce460f82e4d0" />
-
+**Lobby Board**
+- Shows every advertised lobby of every queue (`FFA`, `Team`, `Special`, `Hosted`) at once: one column per queue, one row per queue position
+- Each card shows the map, the team format, the players and the active modifiers
+- A card that matches your filters is in full colour; the other cards are greyed but stay visible
+- Clicking a card navigates to OpenFront's own join modal — manual quick-join only, you still confirm entry there
 
 **Alerts**
-- Pulse highlight on the matching homepage queue card the moment a lobby matches
+- A lobby alerts once when it starts to match, at any queue position. It alerts again if it stops matching and then matches again
+- The card of a new match shows a "New" badge until your pointer passes over it, and pulses for 10 seconds
 - Optional sound alert on new matches
-- Upcoming matches alert with the same highlight and sound as live matches; a toggle gates upcoming notifications (display them silently, or alert on them)
-- A match further down a queue, or in a hosted lobby, pulses OpenFront's "See all" button and highlights its card in the See all view; clicking its desktop notification opens that view
-- Optional desktop notification when the OpenFront tab is in the background
+- Optional desktop notification when the OpenFront tab is in the background; clicking it brings the tab to the front and flashes the card on the board
 - Sound on game start, triggered by OpenFront's own `?live` URL transition or its `in-game` page state (streamer mode)
 
 **Smart UX**
@@ -76,8 +72,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 2. In the `OpenFront Game Notifier` panel, enable `FFA`, `Team`, or both.
 3. For `Team`, optionally toggle `Humans Vs Nations` and pick allowed team counts (`2`–`7`).
 4. Set capacity bounds; click modifier chips to require or exclude them.
-5. When a queue card pulses on the homepage, click it yourself to join.
-6. Check the `Up Next` area to see each slot's queued game; click a card to open OpenFront's join modal for it.
+5. When a card on the Lobby Board gets a "New" badge and pulses, click it yourself to open OpenFront's join modal for that lobby.
 
 ### What this doesn't do
 
@@ -140,7 +135,7 @@ npm run type-check   # tsc --noEmit
 
 ### Storage keys
 
-- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, map filter, sound/desktop preferences, upcoming and hosted options, `2×` toggle
+- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, map filter, sound/desktop preferences, hosted option, `2×` toggle
 
 ### Testing
 
