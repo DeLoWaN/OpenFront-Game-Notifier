@@ -125,6 +125,10 @@
       cursor: pointer;
       transition: opacity ${u.normal}, border-color ${u.fast};
     }
+    /* The hover state shows at once; the base transitions only fade it out. */
+    .of-board-card:hover {
+      transition-duration: 0s;
+    }
     .of-board-thumb {
       position: relative;
       z-index: 0;
@@ -163,6 +167,7 @@
     }
     .of-board-card:hover .of-board-text {
       background-color: ${p.textColumnHover};
+      transition-duration: 0s;
     }
     /* The name takes the free width, so it wraps before the "New" badge and the countdown. */
     .of-board-nameline {
@@ -299,6 +304,7 @@
     /* The frame of the card under the pointer grows to 2 px, inside the card. */
     .of-board-card:hover::after {
       box-shadow: inset 0 0 0 2px var(--of-hud-text-3);
+      transition-duration: 0s;
     }
     .of-board-card-match {
       border-color: ${p.live};
