@@ -383,7 +383,7 @@ export class LobbyDiscoveryUI {
             body: content.body,
             tag: key,
             // Runs only from the user's click on the notification.
-            onClick: this.getNotificationClickAction(lobby, queue, seeAllOnly),
+            onClick: () => this.handleNotificationClick(lobby.gameID, queue, seeAllOnly),
           });
           if (delivered) deliveredKeys.add(key);
         }
@@ -407,17 +407,13 @@ export class LobbyDiscoveryUI {
   }
 
   /**
-   * The action that runs after the tab gets focus, when the user clicks a
-   * desktop notification. On the Lobby Board it flashes the card. Without the
-   * board, a lobby that the home page does not show opens the See All View.
+   * Runs after the tab gets focus, when the user clicks a desktop notification.
+   * On the Lobby Board it flashes the card. Without the board, a lobby that the
+   * home page does not show opens the See All View. The mode is read at click time.
    */
-  private getNotificationClickAction(
-    lobby: Lobby,
-    queue: QueueSource,
-    seeAllOnly: boolean
-  ): (() => void) | undefined {
-    if (this.lobbyBoard.isShowing()) return () => this.lobbyBoard.flashCard(lobby.gameID);
-    return seeAllOnly ? () => this.openSeeAllView(queue) : undefined;
+  private handleNotificationClick(gameID: string, queue: QueueSource, seeAllOnly: boolean): void {
+    if (this.lobbyBoard.isShowing()) this.lobbyBoard.flashCard(gameID);
+    else if (seeAllOnly) this.openSeeAllView(queue);
   }
 
   private startBoardAlert(key: string, gameID: string): void {

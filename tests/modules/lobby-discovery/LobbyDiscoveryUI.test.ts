@@ -1228,7 +1228,14 @@ describe('LobbyDiscoveryUI', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate([ffaLobby('ffa-0', 40)] as any);
 
-      expect(vi.mocked(BrowserNotificationUtils.show).mock.calls[0]![0].onClick).toBeUndefined();
+      const showPage = vi.fn();
+      (window as any).showPage = showPage;
+      try {
+        vi.mocked(BrowserNotificationUtils.show).mock.calls[0]![0].onClick?.();
+        expect(showPage).not.toHaveBeenCalled();
+      } finally {
+        delete (window as any).showPage;
+      }
     });
   });
 

@@ -286,6 +286,56 @@ describe('Original page switch', () => {
         delete (window as any).showPage;
       }
     });
+
+    describe('when the mode changes between the alert and the click', () => {
+      const flashed = (gameID: string): boolean =>
+        !!document
+          .querySelector(`.of-board-card[data-game-id="${gameID}"]`)
+          ?.classList.contains('of-board-card-flash');
+      const clickNotificationOf = (gameID: string): void => {
+        const call = vi
+          .mocked(BrowserNotificationUtils.show)
+          .mock.calls.find(([options]) => options.tag?.includes(gameID))!;
+        call[0].onClick?.();
+      };
+
+      beforeEach(() => {
+        // jsdom does not implement scrollIntoView.
+        (HTMLElement.prototype as any).scrollIntoView = () => {};
+      });
+
+      afterEach(() => {
+        delete (HTMLElement.prototype as any).scrollIntoView;
+        delete (window as any).showPage;
+      });
+
+      it('opens the See All View when the player turned the Lobby Board off after the alert', () => {
+        bigFfaSettings();
+        const showPage = vi.fn();
+        (window as any).showPage = showPage;
+        start().receiveLobbyUpdate(matchingFeed(), NOW);
+
+        switchIn(boardHead())!.click();
+        clickNotificationOf('ffa-3');
+
+        expect(showPage).toHaveBeenCalledWith('page-detailed-view');
+        expect(flashed('ffa-3')).toBe(false);
+      });
+
+      it('flashes the card when the player turned the Lobby Board on after the alert', () => {
+        bigFfaSettings();
+        store.set(STORAGE_KEYS.lobbyBoardMode, 'original');
+        const showPage = vi.fn();
+        (window as any).showPage = showPage;
+        start().receiveLobbyUpdate(matchingFeed(), NOW);
+
+        switchIn(panel())!.click();
+        clickNotificationOf('ffa-3');
+
+        expect(flashed('ffa-3')).toBe(true);
+        expect(showPage).not.toHaveBeenCalled();
+      });
+    });
   });
 
   describe('alerts follow the same rules in both modes', () => {
