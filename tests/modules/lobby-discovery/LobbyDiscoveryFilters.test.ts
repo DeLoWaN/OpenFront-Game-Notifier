@@ -121,9 +121,10 @@ describe('LobbyDiscoveryFilters', () => {
       flip(byId<HTMLInputElement>(container, 'discovery-ffa'));
 
       expect(changes).toEqual(['criteria']);
-      expect(instance.getSettings().criteria).toEqual([
-        expect.objectContaining({ gameMode: 'FFA', teamCount: null }),
-      ]);
+      const [criterion] = instance.getSettings().criteria;
+      expect(instance.getSettings().criteria).toHaveLength(1);
+      expect(criterion?.gameMode).toBe('FFA');
+      expect(criterion?.teamCount).toBeNull();
       expect(byId(container, 'discovery-filter-count').textContent).toBe('1');
       expect(byId(container, 'discovery-filter-word').textContent).toBe('filter');
     });
