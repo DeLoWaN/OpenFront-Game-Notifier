@@ -14,6 +14,7 @@ describe('LobbyDataManager', () => {
     LobbyDataManager.stop();
     LobbyDataManager.subscribers = [];
     LobbyDataManager.lastLobbies = [];
+    LobbyDataManager.lastServerTime = null;
     globalThis.fetch = vi.fn() as any;
   });
 
@@ -21,6 +22,7 @@ describe('LobbyDataManager', () => {
     LobbyDataManager.stop();
     LobbyDataManager.subscribers = [];
     LobbyDataManager.lastLobbies = [];
+    LobbyDataManager.lastServerTime = null;
     globalThis.fetch = originalFetch;
     vi.useRealTimers();
   });
@@ -51,6 +53,22 @@ describe('LobbyDataManager', () => {
       ['team-0', 'team'],
       ['hosted-0', 'hosted'],
     ]);
+  });
+
+  it("passes the feed's serverTime to subscribers, and null when the feed has none", () => {
+    const received: Array<number | null> = [];
+    LobbyDataManager.start();
+    LobbyDataManager.subscribe((_lobbies, serverTime) => received.push(serverTime));
+
+    dispatchPayload({
+      serverTime: 1_700_000_000_000,
+      games: { ffa: [{ gameID: 'ffa-0', gameConfig: { gameMode: 'Free For All' } }] },
+    });
+    dispatchPayload({
+      games: { ffa: [{ gameID: 'ffa-0', gameConfig: { gameMode: 'Free For All' } }] },
+    });
+
+    expect(received).toEqual([1_700_000_000_000, null]);
   });
 
   it('never calls an HTTP endpoint, even when no feed update arrives', async () => {
