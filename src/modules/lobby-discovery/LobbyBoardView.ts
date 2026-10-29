@@ -273,6 +273,8 @@ export class LobbyBoardView {
     }
     // OpenFront gives the lobby row a fixed height.
     this.setStyle(pageGrid, 'grid-template-rows', 'auto');
+    // The board is wider than the page column; its width must not stretch the `auto` minimum of the tracks.
+    this.setStyle(pageGrid, 'grid-template-columns', 'minmax(0, 2fr) minmax(0, 1fr)');
 
     for (
       let ancestor = pageGrid.parentElement;

@@ -340,6 +340,19 @@ describe('Lobby Board', () => {
       expect(isHidden('side-section')).toBe(false);
     });
 
+    it('keeps the page grid tracks from growing with the board while it shows', () => {
+      const grid = document.getElementById('lobby-grid') as HTMLElement;
+      expect(grid.style.gridTemplateColumns).toBe('');
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+      expect(grid.style.gridTemplateColumns).toBe('minmax(0, 2fr) minmax(0, 1fr)');
+
+      ui.cleanup();
+      ui = null;
+      expect(grid.style.gridTemplateColumns).toBe('');
+    });
+
     describe('gutter', () => {
       class FakeResizeObserver {
         static instances: FakeResizeObserver[] = [];
