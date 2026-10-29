@@ -175,14 +175,32 @@ describe('Lobby Board styles', () => {
     expect(nameLine).toContain('display: flex;');
     expect(nameLine).toContain('align-items: flex-start;');
     const map = ruleBody('.of-board-map');
-    expect(map).toContain('flex: 1;');
-    expect(map).toContain('min-width: 0;');
+    expect(map).toContain('flex: 1 1 auto;');
     const countdown = ruleBody('.of-board-countdown');
     expect(countdown).not.toContain('position: absolute;');
     expect(countdown).toContain('flex: none;');
     expect(countdown).toContain(`background: ${BOARD_COLORS.live};`);
     expect(countdown).toContain(`color: ${BOARD_COLORS.onLive};`);
     expect(colorOf(BOARD_COLORS.onLive)).toBe('rgb(10, 6, 16)');
+  });
+
+  it('breaks the map name and the format only between words, unless one word is longer than the line', () => {
+    expect(getBoardStyles()).not.toContain('overflow-wrap: anywhere');
+    for (const selector of ['.of-board-map', '.of-board-format']) {
+      expect(ruleBody(selector), selector).toContain('overflow-wrap: break-word;');
+      expect(ruleBody(selector), selector).not.toContain('word-break');
+    }
+  });
+
+  it('moves the countdown under the map name when the longest word of the name does not fit beside it', () => {
+    expect(ruleBody('.of-board-nameline')).toContain('flex-wrap: wrap;');
+    const map = ruleBody('.of-board-map');
+    // The longest word sets the size that decides the line break; the name then grows into the free width.
+    expect(map).toContain('width: min-content;');
+    expect(map).toContain('flex: 1 1 auto;');
+    // A word longer than the whole line still breaks inside the line.
+    expect(map).toContain('max-width: 100%;');
+    expect(map).not.toContain('min-width: 0;');
   });
 
   it('keeps the "New" badge in the flow of the name line, so it never covers the countdown or the name', () => {

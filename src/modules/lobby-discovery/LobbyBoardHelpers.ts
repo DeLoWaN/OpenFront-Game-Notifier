@@ -111,6 +111,11 @@ export function buildBoardCardModel(
   };
 }
 
+/** Replaces each hyphen with U+2011, so a line never breaks inside a hyphenated word. For display only. */
+export function toUnbreakableHyphens(text: string): string {
+  return text.replace(/-/g, '\u2011');
+}
+
 /** "1 lobby", "3 lobbies". */
 export function formatLobbyCount(count: number): string {
   return `${count} ${count === 1 ? 'lobby' : 'lobbies'}`;

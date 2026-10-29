@@ -16,6 +16,7 @@ import {
   getBoardPlayersText,
   getRowLabel,
   groupLobbiesByQueue,
+  toUnbreakableHyphens,
   type BoardCardModel,
 } from './LobbyBoardHelpers';
 import {
@@ -540,7 +541,7 @@ export class LobbyBoardView {
     this.updateThumbnail(parts.thumb, model.thumbnailUrl);
     this.updateCountdown(parts.nameLine, model.countdownTargetMs);
 
-    this.setText(parts.name, model.mapName);
+    this.setText(parts.name, toUnbreakableHyphens(model.mapName));
     this.setText(parts.format, model.formatText);
     this.reconcileChildren(
       parts.formatLine,

@@ -152,17 +152,20 @@ export function getBoardStyles(): string {
       padding: 10px 10px 11px;
       background: var(--of-hud-bg-1);
     }
-    /* The name takes the free width, so it wraps before the "New" badge and the countdown. */
+    /* The name takes the free width, so it wraps before the "New" badge and the countdown.
+       The countdown moves to the next line when the longest word of the name does not fit beside it. */
     .of-board-nameline {
       display: flex;
+      flex-wrap: wrap;
       align-items: flex-start;
       gap: 6px;
       min-width: 0;
     }
     .of-board-map {
-      flex: 1;
-      min-width: 0;
-      overflow-wrap: anywhere;
+      flex: 1 1 auto;
+      width: min-content;
+      max-width: 100%;
+      overflow-wrap: break-word;
       font-size: 14px;
       font-weight: 800;
       line-height: 1.25;
@@ -176,6 +179,7 @@ export function getBoardStyles(): string {
     }
     .of-board-format {
       min-width: 0;
+      overflow-wrap: break-word;
       font-size: 12px;
       line-height: 1.25;
       color: var(--of-hud-text-1);

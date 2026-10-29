@@ -4,6 +4,7 @@ import {
   getBoardFormatText,
   getBoardModifiers,
   getBoardPlayersText,
+  toUnbreakableHyphens,
 } from '@/modules/lobby-discovery/LobbyBoardHelpers';
 import { LobbyDiscoveryFilters } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
 import type { DiscoveryCriteria } from '@/modules/lobby-discovery/LobbyDiscoveryTypes';
@@ -215,5 +216,16 @@ describe('getBoardPlayersText', () => {
   it('writes the players alone when the capacity is unknown', () => {
     expect(getBoardPlayersText(5, null)).toBe('5 players');
     expect(getBoardPlayersText(1, null)).toBe('1 player');
+  });
+});
+
+describe('toUnbreakableHyphens', () => {
+  it('turns every hyphen into a non-breaking hyphen, so a line never breaks inside a hyphenated word', () => {
+    expect(toUnbreakableHyphens('Bab el-Mandeb Strait')).toBe('Bab el\u2011Mandeb Strait');
+    expect(toUnbreakableHyphens('A-B-C')).toBe('A\u2011B\u2011C');
+  });
+
+  it('keeps a name without a hyphen as it is', () => {
+    expect(toUnbreakableHyphens('Strait of Gibraltar')).toBe('Strait of Gibraltar');
   });
 });

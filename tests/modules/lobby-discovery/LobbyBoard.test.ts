@@ -695,6 +695,15 @@ describe('Lobby Board', () => {
       expect(nameLine.querySelector('.of-board-countdown')?.textContent).toBe('0:30');
     });
 
+    it('shows the hyphen of a map name as a non-breaking hyphen, and keeps the plain name in the card label', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', {}, { gameMap: 'Bab el-Mandeb Strait' })] as any, NOW);
+
+      const card = cardIn('ffa', 0)!;
+      expect(text(card, '.of-board-map')).toBe('Bab el\u2011Mandeb Strait');
+      expect(card.getAttribute('aria-label')).toContain('Bab el-Mandeb Strait');
+    });
+
     it('shows no Queue Position, mode or Hosted label on a card', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(
