@@ -196,9 +196,22 @@ export class LobbyDiscoveryUI {
 
   private handleFilterChange(change: FilterChange): void {
     this.saveSettings();
+    this.dropAlertsOfNonMatches();
     this.updateLobbyBoard(this.lastLobbies);
     if (change !== 'lobbies') this.syncSearchTimer({ resetStart: true });
     if (change !== 'criteria') this.processLobbies(this.lastLobbies);
+  }
+
+  /** A card that no longer matches loses its "New" badge and its pulse at once, without a feed update. */
+  private dropAlertsOfNonMatches(): void {
+    const matchedKeys = new Set<string>();
+    for (const lobby of this.lastLobbies) {
+      const excluded = !this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby);
+      if (!excluded && this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter)) {
+        matchedKeys.add(this.getNotificationKey(lobby));
+      }
+    }
+    this.boardAlerts.retain(matchedKeys);
   }
 
   private saveSettings(): void {

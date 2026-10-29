@@ -355,6 +355,39 @@ describe('Lobby Board alerts', () => {
     });
   });
 
+  describe('filter change', () => {
+    const card = (gameID: string): HTMLElement | null =>
+      document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
+
+    it('drops the badge and the pulse of a card that no longer matches', () => {
+      bigFfaSettings();
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      expect(card('ffa-4')?.querySelector('.of-board-new')).toBeTruthy();
+      expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(true);
+
+      // One click makes Compact a required Modifier. The lobby is not compact.
+      (document.getElementById('modifier-isCompact') as HTMLButtonElement).click();
+
+      expect(card('ffa-4')?.querySelector('.of-board-new')).toBeNull();
+      expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(false);
+    });
+
+    it('keeps the badge and the pulse of a card that still matches', () => {
+      bigFfaSettings();
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      // The option changes nothing for an FFA lobby that OpenFront lists itself.
+      const hostedToggle = document.getElementById('discovery-hosted-toggle') as HTMLInputElement;
+      hostedToggle.checked = false;
+      hostedToggle.dispatchEvent(new Event('change'));
+
+      expect(card('ffa-4')?.querySelector('.of-board-new')).toBeTruthy();
+      expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(true);
+    });
+  });
+
   describe('desktop notification click', () => {
     const card = (gameID: string): HTMLElement | null =>
       document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
