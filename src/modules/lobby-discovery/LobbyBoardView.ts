@@ -7,6 +7,7 @@
 
 import type { Lobby } from '@/types/game';
 import type { QueueSource } from './LobbyDiscoveryTypes';
+import type { CardAlertState } from './LobbyBoardAlerts';
 import {
   BOARD_QUEUES,
   buildBoardCardModel,
@@ -26,6 +27,8 @@ export interface LobbyBoardAssets {
 export interface LobbyBoardOptions {
   /** Called from a card's click handler only. */
   onJoin: (gameID: string) => void;
+  /** Called when the pointer passes over a card. */
+  onCardSeen: (gameID: string) => void;
   getAssets: () => LobbyBoardAssets;
 }
 
@@ -38,6 +41,8 @@ export interface LobbyBoardState {
   matchedIds: Set<string> | null;
   /** Offset to add to the local clock to get the feed's clock. */
   clockOffsetMs: number;
+  /** The alert state of every card that has one, by `gameID`. */
+  alerts: Map<string, CardAlertState>;
 }
 
 const BOARD_ID = 'of-lobby-board';
@@ -104,6 +109,7 @@ export class LobbyBoardView {
         const model = buildBoardCardModel(lobby, queue, row, manifest, cdnBase);
         const card = this.cards.get(lobby.gameID) ?? this.createCard(lobby.gameID);
         this.updateCard(card, model);
+        this.applyAlertState(card, state.alerts.get(lobby.gameID));
         card.classList.toggle('of-board-card-match', matchedIds?.has(lobby.gameID) === true);
         card.classList.toggle('of-board-card-dim', matchedIds !== null && !matchedIds.has(lobby.gameID));
         if (card.parentElement !== cell) cell.replaceChildren(card);
@@ -304,8 +310,24 @@ export class LobbyBoardView {
     card.dataset.gameId = gameID;
     // Navigation happens only from this real click, never from a feed update or a timer.
     card.addEventListener('click', () => this.options.onJoin(gameID));
+    card.addEventListener('pointerenter', () => this.options.onCardSeen(gameID));
     this.cards.set(gameID, card);
     return card;
+  }
+
+  /** Shows the "New" badge and the pulse of a card. Runs after updateCard, which rebuilds the card children. */
+  private applyAlertState(card: HTMLButtonElement, alert: CardAlertState | undefined): void {
+    card.classList.toggle('of-board-card-pulse', alert?.isPulsing === true);
+    const badge = Array.from(card.children).find((child) => child.classList.contains('of-board-new'));
+    if (alert?.isNew) {
+      if (badge) return;
+      const newBadge = document.createElement('span');
+      newBadge.className = 'of-board-new';
+      newBadge.textContent = 'New';
+      card.append(newBadge);
+    } else {
+      badge?.remove();
+    }
   }
 
   private updateCard(card: HTMLButtonElement, model: BoardCardModel): void {

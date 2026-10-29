@@ -156,6 +156,95 @@ describe('Lobby Board alerts', () => {
     });
   });
 
+  describe('"New" badge and pulse', () => {
+    const card = (gameID: string): HTMLElement | null =>
+      document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
+    const newBadge = (gameID: string): Element | null | undefined =>
+      card(gameID)?.querySelector('.of-board-new');
+    const pulsing = (gameID: string): boolean | undefined =>
+      card(gameID)?.classList.contains('of-board-card-pulse');
+
+    it('gives the card that alerted a "New" badge and a pulse, and no other card', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      expect(newBadge('ffa-4')?.textContent).toBe('New');
+      expect(pulsing('ffa-4')).toBe(true);
+      expect(newBadge('ffa-3')).toBeNull();
+      expect(pulsing('ffa-3')).toBe(false);
+    });
+
+    it('keeps the badge and the pulse across feed updates, without a second alert', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      vi.advanceTimersByTime(3_000);
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW + 3_000);
+
+      expect(newBadge('ffa-4')).toBeTruthy();
+      expect(pulsing('ffa-4')).toBe(true);
+      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
+    });
+
+    it('removes the badge when the pointer passes over the card', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      card('ffa-3')!.dispatchEvent(new Event('pointerenter'));
+      expect(newBadge('ffa-4')).toBeTruthy();
+
+      card('ffa-4')!.dispatchEvent(new Event('pointerenter'));
+      expect(newBadge('ffa-4')).toBeNull();
+
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      expect(newBadge('ffa-4')).toBeNull();
+    });
+
+    it('stops the pulse after 10 seconds without a feed update, and keeps the badge until the pointer passes', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      vi.advanceTimersByTime(9_999);
+      expect(pulsing('ffa-4')).toBe(true);
+
+      vi.advanceTimersByTime(1);
+      expect(pulsing('ffa-4')).toBe(false);
+      expect(newBadge('ffa-4')).toBeTruthy();
+    });
+
+    it('badges and pulses the card again when the lobby stops matching and matches again', () => {
+      bigFfaSettings();
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      card('ffa-4')!.dispatchEvent(new Event('pointerenter'));
+      vi.advanceTimersByTime(10_000);
+      expect(newBadge('ffa-4')).toBeNull();
+
+      ui.receiveLobbyUpdate(ffaQueue(false) as any, NOW);
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      expect(newBadge('ffa-4')).toBeTruthy();
+      expect(pulsing('ffa-4')).toBe(true);
+    });
+
+    it('shows no badge and no pulse when the lobby matches but discovery is paused', () => {
+      bigFfaSettings({ discoveryEnabled: false });
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+      expect(newBadge('ffa-4')).toBeNull();
+      expect(pulsing('ffa-4')).toBe(false);
+    });
+  });
+
   describe('Up Next removal', () => {
     it('renders no Up Next element and saves no "notify upcoming" value', () => {
       bigFfaSettings({ notifyUpcomingEnabled: false });

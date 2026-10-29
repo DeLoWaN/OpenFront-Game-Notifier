@@ -168,5 +168,22 @@ export function getBoardStyles(): string {
     .of-board-card-dim:hover {
       opacity: 0.8;
     }
+    .of-board-new {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      z-index: 2;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: ${COLORS.accent};
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: #0a0610;
+    }
+    .of-board-card-pulse {
+      animation: discoveryCardActiveBeacon 1.45s ease-in-out infinite;
+    }
   `;
 }

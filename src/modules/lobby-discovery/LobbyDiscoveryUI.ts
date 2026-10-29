@@ -25,6 +25,7 @@ import {
 } from './LobbyDiscoveryHelpers';
 import { LobbyDiscoveryFilters, type FilterChange } from './LobbyDiscoveryFilters';
 import { LobbyBoardView } from './LobbyBoardView';
+import { LobbyBoardAlerts, PULSE_DURATION_MS } from './LobbyBoardAlerts';
 
 function isDebugEnabled(): boolean {
   try {
@@ -106,6 +107,9 @@ export class LobbyDiscoveryUI {
   private filters!: LobbyDiscoveryFilters;
   private engine: LobbyDiscoveryEngine;
   private lobbyBoard: LobbyBoardView;
+  private boardAlerts = new LobbyBoardAlerts();
+  // One timer per alert: it redraws the board when the pulse ends.
+  private pulseEndTimers = new Set<ReturnType<typeof setTimeout>>();
   // Offset to add to the local clock to get the feed's clock.
   private clockOffsetMs = 0;
 
@@ -113,6 +117,7 @@ export class LobbyDiscoveryUI {
     this.engine = new LobbyDiscoveryEngine();
     this.lobbyBoard = new LobbyBoardView({
       onJoin: (gameID) => this.navigateToGame(`/game/${gameID}`),
+      onCardSeen: (gameID) => this.handleCardSeen(gameID),
       getAssets: () => this.getAssetContext(),
     });
     this.loadSettings();
@@ -246,7 +251,6 @@ export class LobbyDiscoveryUI {
 
   private processLobbies(lobbies: Lobby[]): void {
     try {
-      this.updateLobbyBoard(lobbies);
       this.updateCurrentGameInfo();
       this.syncSearchTimer();
 
@@ -260,6 +264,7 @@ export class LobbyDiscoveryUI {
       ) {
         this.seenLobbies.clear();
         this.desktopNotifiedLobbies.clear();
+        this.boardAlerts.clear();
         this.updateQueueCardPulses(new Set());
         this.updateSeeAllSignals(false, new Set());
         this.updateStatusText();
@@ -272,7 +277,7 @@ export class LobbyDiscoveryUI {
       let hasSeeAllOnlyMatch = false;
       const matchedKeys = new Set<string>();
       const newMatches: DiscoveryMatch[] = [];
-      let hasNewMatch = false;
+      const newAlerts: Array<{ key: string; gameID: string }> = [];
 
       const debugEnabled = isDebugEnabled();
       const evaluate = (lobby: Lobby, queue: QueueSource, index: number): void => {
@@ -306,7 +311,9 @@ export class LobbyDiscoveryUI {
 
         const notificationKey = this.getNotificationKey(lobby);
         matchedKeys.add(notificationKey);
-        if (!this.seenLobbies.has(notificationKey)) hasNewMatch = true;
+        if (!this.seenLobbies.has(notificationKey)) {
+          newAlerts.push({ key: notificationKey, gameID: lobby.gameID });
+        }
         if (!this.desktopNotifiedLobbies.has(notificationKey)) {
           newMatches.push({ lobby, queue, seeAllOnly });
         }
@@ -318,7 +325,9 @@ export class LobbyDiscoveryUI {
 
       this.updateQueueCardPulses(liveMatchSources);
       this.updateSeeAllSignals(hasSeeAllOnlyMatch, seeAllMatchIds);
-      if (hasNewMatch) {
+      this.boardAlerts.retain(matchedKeys);
+      for (const { key, gameID } of newAlerts) this.startBoardAlert(key, gameID);
+      if (newAlerts.length > 0) {
         this.lastMatchTime = Date.now();
         if (this.soundEnabled) SoundUtils.playGameFoundSound();
       }
@@ -349,7 +358,24 @@ export class LobbyDiscoveryUI {
       this.updateStatusText();
     } catch (error) {
       console.error('[LobbyDiscovery] Error processing lobbies:', error);
+    } finally {
+      // The board needs the alert state, so it draws after the matching.
+      this.updateLobbyBoard(lobbies);
     }
+  }
+
+  private startBoardAlert(key: string, gameID: string): void {
+    this.boardAlerts.alert(key, gameID, Date.now());
+    const timer = setTimeout(() => {
+      this.pulseEndTimers.delete(timer);
+      this.updateLobbyBoard(this.lastLobbies);
+    }, PULSE_DURATION_MS);
+    this.pulseEndTimers.add(timer);
+  }
+
+  private handleCardSeen(gameID: string): void {
+    this.boardAlerts.markSeen(gameID);
+    this.updateLobbyBoard(this.lastLobbies);
   }
 
   private updateLobbyBoard(lobbies: Lobby[]): void {
@@ -371,6 +397,7 @@ export class LobbyDiscoveryUI {
       lobbies,
       matchedIds: isActive ? matchedIds : null,
       clockOffsetMs: this.clockOffsetMs,
+      alerts: this.boardAlerts.getStates(Date.now()),
     });
   }
 
@@ -757,6 +784,9 @@ export class LobbyDiscoveryUI {
     this.seeAllObserver?.disconnect();
     this.seeAllObserver = null;
     this.observedSeeAllView = null;
+    for (const timer of this.pulseEndTimers) clearTimeout(timer);
+    this.pulseEndTimers.clear();
+    this.boardAlerts.clear();
     this.lobbyBoard.dispose();
     this.filters.cleanup();
     this.panel.parentNode?.removeChild(this.panel);
