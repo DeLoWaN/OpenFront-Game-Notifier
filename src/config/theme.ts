@@ -65,6 +65,8 @@ export const BOARD_COLORS = {
   gaugeFillHot: 'rgba(232, 96, 12, 0.65)',
   /** Keeps the white gauge text readable over the fill and over the empty track. */
   gaugeTextShadow: 'rgba(0, 0, 0, 0.7)',
+  /** The text column of the card under the pointer: a little lighter than its rest colour. */
+  textColumnHover: '#1d2126',
 } as const;
 
 /** Sizes of the Lobby Board, in px. */

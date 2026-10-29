@@ -148,6 +148,10 @@ export function getBoardStyles(): string {
       gap: 5px;
       padding: 10px 10px 11px;
       background: var(--of-hud-bg-1);
+      transition: background-color ${TIMING.fast};
+    }
+    .of-board-card:hover .of-board-text {
+      background-color: ${BOARD_COLORS.textColumnHover};
     }
     /* The name takes the free width, so it wraps before the "New" badge and the countdown. */
     .of-board-nameline {
@@ -279,12 +283,20 @@ export function getBoardStyles(): string {
       z-index: 3;
       border-radius: inherit;
       pointer-events: none;
+      transition: box-shadow ${TIMING.fast};
+    }
+    /* The frame of the card under the pointer grows to 2 px, inside the card. */
+    .of-board-card:hover::after {
+      box-shadow: inset 0 0 0 2px var(--of-hud-text-3);
     }
     .of-board-card-match {
       border-color: ${BOARD_COLORS.live};
     }
     .of-board-card-match::after {
       box-shadow: inset 0 0 0 1px ${BOARD_COLORS.live};
+    }
+    .of-board-card-match:hover::after {
+      box-shadow: inset 0 0 0 2px ${BOARD_COLORS.live};
     }
     .of-board-card-dim {
       opacity: 0.3;
@@ -319,6 +331,10 @@ export function getBoardStyles(): string {
       animation: ofBoardFlash 0.5s ease-in-out 4;
     }
     @media (prefers-reduced-motion: reduce) {
+      .of-board-card::after,
+      .of-board-text {
+        transition: none;
+      }
       .of-board-card.of-board-card-flash::after {
         animation: none;
         box-shadow: inset 0 0 0 4px ${BOARD_COLORS.live};
