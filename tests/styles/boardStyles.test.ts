@@ -59,27 +59,46 @@ describe('Lobby Board styles', () => {
     expect(frame).toMatch(/box-shadow: inset /);
   });
 
-  it('dims a card that does not match to 0.3 or less and restores it on hover', () => {
-    const css = getBoardStyles();
-    expect(css).toMatch(/\.of-board-card-dim \{[^}]*opacity: 0\.[0-3]\d?;/);
-    expect(css).toMatch(/\.of-board-card-dim:hover \{[^}]*opacity: 0\.[5-9]/);
+  it('dims a card that does not match to 0.3 in grayscale, and lifts it only to 0.5 on hover, still grayscale', () => {
+    const dim = ruleBody('.of-board-card-dim');
+    expect(dim).toContain('opacity: 0.3;');
+    expect(dim).toMatch(/filter: grayscale\(/);
+    const dimHover = ruleBody('.of-board-card-dim:hover');
+    expect(dimHover).toContain('opacity: 0.5;');
+    expect(dimHover).not.toContain('filter');
   });
 
   it('switches the hover state on and off at once, so only one card looks highlighted', () => {
-    for (const selector of ['.of-board-card', '.of-board-card::after', '.of-board-text']) {
+    for (const selector of ['.of-board-card', '.of-board-card::after', '.of-board-text', '.of-board-join']) {
       expect(ruleBody(selector)).not.toContain('transition');
     }
   });
 
-  it('marks the card under the pointer with a 2 px inner frame and a lighter text column', () => {
-    expect(ruleBody('.of-board-card:hover::after')).toContain('box-shadow: inset 0 0 0 2px var(--of-hud-text-3);');
+  it('gives the hovered matching card a 2 px orange frame and an orange-tinted text column', () => {
+    // The match frame at rest is 1 px, so the hover frame is visibly thicker.
+    expect(ruleBody('.of-board-card-match::after')).toContain(`box-shadow: inset 0 0 0 1px ${BOARD_COLORS.live};`);
     expect(ruleBody('.of-board-card-match:hover::after')).toContain(
       `box-shadow: inset 0 0 0 2px ${BOARD_COLORS.live};`
     );
-    // The match frame at rest is 1 px, so the hover frame is visibly thicker.
-    expect(ruleBody('.of-board-card-match::after')).toContain(`box-shadow: inset 0 0 0 1px ${BOARD_COLORS.live};`);
+    expect(ruleBody('.of-board-card-match:hover .of-board-text')).toContain(
+      `background-color: ${BOARD_COLORS.matchTextColumnHover};`
+    );
+    expect(colorOf(BOARD_COLORS.matchTextColumnHover)).toBe('rgb(54, 35, 24)');
+  });
 
-    expect(ruleBody('.of-board-card:hover .of-board-text')).toContain(
+  it('gives a hovered non-matching card a thin 1 px neutral frame and keeps its text column dark', () => {
+    expect(ruleBody('.of-board-card-dim:hover::after')).toContain('box-shadow: inset 0 0 0 1px var(--of-hud-text-3);');
+    expect(getBoardStyles()).not.toContain('.of-board-card-dim:hover .of-board-text');
+    // No hover rule reaches every card: the match state or the matching-off state chooses it.
+    expect(ruleBody('.of-board-card:hover::after')).toBe('');
+    expect(ruleBody('.of-board-card:hover .of-board-text')).toBe('');
+  });
+
+  it('gives every hovered card a 2 px grey frame and a lighter text column while matching is off', () => {
+    expect(ruleBody('.of-board-matching-off .of-board-card:hover::after')).toContain(
+      'box-shadow: inset 0 0 0 2px var(--of-hud-text-3);'
+    );
+    expect(ruleBody('.of-board-matching-off .of-board-card:hover .of-board-text')).toContain(
       `background-color: ${BOARD_COLORS.textColumnHover};`
     );
     expect(colorOf(BOARD_COLORS.textColumnHover)).not.toBe(colorOf(COLORS.bgSecondary));

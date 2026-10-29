@@ -148,9 +148,6 @@ export function getBoardStyles(): string {
       padding: 10px 10px 11px;
       background: var(--of-hud-bg-1);
     }
-    .of-board-card:hover .of-board-text {
-      background-color: ${BOARD_COLORS.textColumnHover};
-    }
     /* The name takes the free width, so it wraps before the "New" badge and the countdown. */
     .of-board-nameline {
       display: flex;
@@ -282,10 +279,7 @@ export function getBoardStyles(): string {
       border-radius: inherit;
       pointer-events: none;
     }
-    /* The frame of the card under the pointer grows to 2 px, inside the card. */
-    .of-board-card:hover::after {
-      box-shadow: inset 0 0 0 2px var(--of-hud-text-3);
-    }
+    /* A hovered matching card stands out more than a hovered card that does not match. */
     .of-board-card-match {
       border-color: ${BOARD_COLORS.live};
     }
@@ -295,13 +289,24 @@ export function getBoardStyles(): string {
     .of-board-card-match:hover::after {
       box-shadow: inset 0 0 0 2px ${BOARD_COLORS.live};
     }
+    .of-board-card-match:hover .of-board-text {
+      background-color: ${BOARD_COLORS.matchTextColumnHover};
+    }
     .of-board-card-dim {
       opacity: 0.3;
       filter: grayscale(0.7);
     }
     .of-board-card-dim:hover {
-      opacity: 0.8;
-      filter: none;
+      opacity: 0.5;
+    }
+    .of-board-card-dim:hover::after {
+      box-shadow: inset 0 0 0 1px var(--of-hud-text-3);
+    }
+    .of-board-matching-off .of-board-card:hover::after {
+      box-shadow: inset 0 0 0 2px var(--of-hud-text-3);
+    }
+    .of-board-matching-off .of-board-card:hover .of-board-text {
+      background-color: ${BOARD_COLORS.textColumnHover};
     }
     .of-board-new {
       flex: none;

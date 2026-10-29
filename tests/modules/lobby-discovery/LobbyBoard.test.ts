@@ -273,6 +273,27 @@ describe('Lobby Board', () => {
       expect(board()?.querySelectorAll('.of-board-card-match')).toHaveLength(0);
       expect(document.querySelector('.of-board-totals')?.textContent).toBe('0 matches · 2 lobbies');
     });
+
+    it('marks the board as "matching off" while discovery is paused or no Criterion is active', () => {
+      const isMatchingOff = () => board()?.classList.contains('of-board-matching-off');
+
+      setCriteria([]);
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), team('team-0')] as any, NOW);
+      expect(isMatchingOff()).toBe(true);
+      ui.cleanup();
+
+      setCriteria([ffaCriterion], { discoveryEnabled: false });
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), team('team-0')] as any, NOW);
+      expect(isMatchingOff()).toBe(true);
+      ui.cleanup();
+
+      setCriteria([ffaCriterion]);
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), team('team-0')] as any, NOW);
+      expect(isMatchingOff()).toBe(false);
+    });
   });
 
   describe('joining', () => {

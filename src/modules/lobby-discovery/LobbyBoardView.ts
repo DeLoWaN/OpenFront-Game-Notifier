@@ -132,6 +132,8 @@ export class LobbyBoardView {
     const { manifest, cdnBase } = this.options.getAssets();
     const liveIds = new Set<string>();
     const { matchedIds } = state;
+    // No card can match, so the hover of a card has no match or dim state to show.
+    root.classList.toggle('of-board-matching-off', matchedIds === null);
     const countMatches = (lobbies: Lobby[]): number =>
       matchedIds ? lobbies.filter((lobby) => matchedIds.has(lobby.gameID)).length : 0;
 

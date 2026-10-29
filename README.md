@@ -23,7 +23,9 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Shows every advertised lobby of every queue (`FFA`, `Team`, `Special`, `Hosted`) at once: one column per queue, one row per queue position
 - Each card shows the map thumbnail on the left, then the map name, the team format and the active modifiers. A gauge along the card bottom shows the players
 - A Live Lobby, and a Hosted Lobby with a start time, show a countdown at the right end of the map name line. A Custom Lobby has a small "Custom" tag
-- A card that matches your filters is in full colour with a thin orange frame; the other cards are dimmed but stay readable when you point at them. The frame of the card under the pointer gets thicker
+- A card that matches your filters is in full colour with a thin orange frame; the other cards are dimmed
+- Under the pointer, a matching card gets a thicker orange frame and an orange-tinted text area. A dimmed card only gets a little brighter, with a thin grey frame
+- While discovery is paused or no filter is active, no card is a match. The card under the pointer then gets a grey frame and a lighter text area
 - Clicking a card navigates to OpenFront's own join modal — manual quick-join only, you still confirm entry there
 
 **Alerts**
