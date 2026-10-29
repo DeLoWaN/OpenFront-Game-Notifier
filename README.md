@@ -39,7 +39,10 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 **Smart UX**
 - Stronger highlight for your own player row (and your team card) inside the native join modal
 - Filter settings persist across reloads
-- Every panel section (Modes, Modifiers, Maps, Lobbies) collapses, and the panel remembers which ones across reloads
+- The filters live in a **sidebar** on the left of the Lobby Board, so nothing floats over the OpenFront page. The sidebar collapses to a thin rail that shows a short summary of your filters (for example `FFA · 2 modifiers · 1 map`), and it remembers whether it is collapsed across reloads
+- The Lobby Board **header** holds the discovery switch with its status, the search timer, the sound toggle and the desktop notification toggle
+- Every filter section (Modes, Modifiers, Maps, Lobbies) collapses, and the sidebar remembers which ones across reloads
+- If the Lobby Board cannot show on the OpenFront page, the filters and the controls fall back to a floating panel
 - Discovery feedback automatically pauses while you're already inside a joined lobby flow
 
 ### Modifier filters
@@ -73,7 +76,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 ### Usage
 
 1. Open the Play page on [openfront.io](https://openfront.io/).
-2. In the `OpenFront Game Notifier` panel, enable `FFA`, `Team`, or both.
+2. In the Lobby Board sidebar, enable `FFA`, `Team`, or both.
 3. For `Team`, optionally toggle `Humans Vs Nations` and pick allowed team counts (`2`–`7`).
 4. Set capacity bounds; click modifier chips to require or exclude them.
 5. When a queue card pulses on the homepage, click it yourself to join.
