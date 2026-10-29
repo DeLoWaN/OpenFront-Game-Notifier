@@ -412,6 +412,25 @@ describe('Lobby Board', () => {
         expect(variable('--of-board-width')).toBe('1468px');
       });
 
+      it('observes the new page grid when the board mounts under another grid', () => {
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+        const [first] = FakeResizeObserver.instances;
+        const oldGrid = pageGrid();
+
+        // OpenFront rebuilds its home page: the old grid and the board leave the document.
+        mountHomepage();
+        const newGrid = pageGrid();
+        newGrid.getBoundingClientRect = () => ({ left: gridLeft }) as DOMRect;
+        expect(newGrid).not.toBe(oldGrid);
+        ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+        const observer = FakeResizeObserver.instances[FakeResizeObserver.instances.length - 1]!;
+        expect(first!.disconnected).toBe(true);
+        expect(observer.disconnected).toBe(false);
+        expect(observer.observed).toEqual([document.documentElement, newGrid]);
+      });
+
       it('stops measuring when the board is hidden or removed', () => {
         ui = new LobbyDiscoveryUI();
         ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);

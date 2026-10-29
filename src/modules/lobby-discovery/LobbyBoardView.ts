@@ -102,6 +102,7 @@ export class LobbyBoardView {
   // False until a render shows a lobby: that render shows every card without motion.
   private hasShownCards = false;
   private resizeObserver: ResizeObserver | null = null;
+  private observedGrid: HTMLElement | null = null;
   private readonly onWindowResize = (): void => this.measureLayout();
 
   constructor(private readonly options: LobbyBoardOptions) {}
@@ -296,18 +297,24 @@ export class LobbyBoardView {
 
   private startMeasuringLayout(): void {
     this.measureLayout();
-    if (this.resizeObserver || !this.pageGrid) return;
+    const pageGrid = this.pageGrid;
+    if (!pageGrid) return;
+    if (this.resizeObserver && this.observedGrid === pageGrid) return;
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
     window.addEventListener('resize', this.onWindowResize);
     if (typeof ResizeObserver === 'undefined') return;
     this.resizeObserver = new ResizeObserver(() => this.measureLayout());
     this.resizeObserver.observe(document.documentElement);
-    this.resizeObserver.observe(this.pageGrid);
+    this.resizeObserver.observe(pageGrid);
+    this.observedGrid = pageGrid;
   }
 
   private stopMeasuringLayout(): void {
     window.removeEventListener('resize', this.onWindowResize);
     this.resizeObserver?.disconnect();
     this.resizeObserver = null;
+    this.observedGrid = null;
   }
 
   private setStyle(element: HTMLElement, property: string, value: string): void {
