@@ -850,6 +850,22 @@ describe('Lobby Board', () => {
       expect(text(after, '.of-board-percent')).toBe('75%');
     });
 
+    it('hides a thumbnail image that fails to load, and shows the image again for a new map', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', {}, { gameMap: 'Unknown Future Map' })] as any, NOW);
+      const img = cardIn('ffa', 0)!.querySelector('.of-board-thumb img') as HTMLImageElement;
+      expect(img.hidden).toBe(false);
+
+      img.dispatchEvent(new Event('error'));
+      expect(img.hidden).toBe(true);
+      expect(getComputedStyle(img).display).toBe('none');
+
+      ui.receiveLobbyUpdate([ffa('ffa-0', {}, { gameMap: 'Asia' })] as any, NOW);
+      const shown = cardIn('ffa', 0)!.querySelector('.of-board-thumb img') as HTMLImageElement;
+      expect(shown.getAttribute('src')).toContain('asia');
+      expect(shown.hidden).toBe(false);
+    });
+
     it('keeps the image node when the map stays the same and replaces it when the map changes', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate([ffa('ffa-0', {}, { gameMap: 'Europe' })] as any, NOW);

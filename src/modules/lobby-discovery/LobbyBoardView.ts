@@ -571,7 +571,10 @@ export class LobbyBoardView {
     countdown.dataset.countdownTo = String(targetMs);
   }
 
-  /** Keeps the image node while its URL stays the same. A card without a thumbnail has no image. */
+  /**
+   * Keeps the image node while its URL stays the same. A card without a thumbnail has no image.
+   * An image that fails to load is hidden, so the thumbnail shows its plain background.
+   */
   private updateThumbnail(thumb: HTMLElement, url: string | null): void {
     const img = thumb.querySelector('img');
     if (!url) {
@@ -579,10 +582,16 @@ export class LobbyBoardView {
       return;
     }
     if (img) {
-      if (img.getAttribute('src') !== url) img.src = url;
+      if (img.getAttribute('src') !== url) {
+        img.hidden = false;
+        img.src = url;
+      }
       return;
     }
     const created = document.createElement('img');
+    created.addEventListener('error', () => {
+      created.hidden = true;
+    });
     created.src = url;
     created.alt = '';
     created.loading = 'lazy';
