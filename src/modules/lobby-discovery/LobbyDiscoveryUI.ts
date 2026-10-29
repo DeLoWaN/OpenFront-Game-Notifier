@@ -432,6 +432,7 @@ export class LobbyDiscoveryUI {
       lobbies,
       matchedIds: isActive ? matchedIds : null,
       clockOffsetMs: this.clockOffsetMs,
+      criteria: isActive ? this.criteriaList : [],
     });
     this.placeSurfaces();
   }

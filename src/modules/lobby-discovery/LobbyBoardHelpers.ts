@@ -4,8 +4,19 @@
  */
 
 import type { Lobby } from '@/types/game';
-import type { QueueSource } from './LobbyDiscoveryTypes';
-import { getLobbyMapThumbnailUrl, getLobbyQueueSource, getMapDisplayName } from './LobbyDiscoveryHelpers';
+import type { DiscoveryCriteria, ModifierFilters, ModifierFilterState, QueueSource } from './LobbyDiscoveryTypes';
+import {
+  formatStartingGold,
+  getLobbyCapacity,
+  getLobbyCurrentPlayers,
+  getLobbyGameMode,
+  getLobbyMapThumbnailUrl,
+  getLobbyModifierValue,
+  getLobbyQueueSource,
+  getLobbyTeamConfig,
+  getMapDisplayName,
+  getPlayersPerTeam,
+} from './LobbyDiscoveryHelpers';
 
 /** The board columns, left to right. */
 export const BOARD_QUEUES: ReadonlyArray<{ queue: QueueSource; label: string }> = [
@@ -28,6 +39,16 @@ export interface BoardCardModel {
   mapName: string;
   thumbnailUrl: string | null;
   badge: BoardBadge;
+  /** The team format in plain words. */
+  formatText: string;
+  /** Null when the feed gives no player count. */
+  players: number | null;
+  /** Null when the feed gives no capacity. */
+  capacity: number | null;
+  /** The share of the capacity that the players fill, from 0 to 100. */
+  fillPercent: number;
+  modifiers: BoardModifier[];
+  tags: Array<'Hosted' | 'Custom'>;
 }
 
 /** Groups the lobbies by Queue and keeps the feed order inside each Queue. */
@@ -55,14 +76,16 @@ export function formatCountdown(remainingMs: number): string {
 
 /**
  * A Live Lobby counts down to `startsAt`. A Hosted Lobby counts down to
- * `autoStartAt` when OpenFront gives it. Any other lobby shows its Queue
- * Position, because it also starts as soon as it is full.
+ * `autoStartAt` when OpenFront gives it, and otherwise waits for its host.
+ * Any other lobby shows its Queue Position, because it also starts as soon as it is full.
  */
 export function getBoardBadge(lobby: Lobby, queue: QueueSource, queuePosition: number): BoardBadge {
   if (queue === 'hosted') {
     if (typeof lobby.autoStartAt === 'number') {
       return { kind: 'countdown', targetMs: lobby.autoStartAt };
     }
+    // The Hosted Queue has no Live Lobby, so its first lobby has no Queue Position to show.
+    if (queuePosition === 0) return { kind: 'text', text: 'Waiting' };
   } else if (queuePosition === 0) {
     if (typeof lobby.startsAt === 'number') {
       return { kind: 'countdown', targetMs: lobby.startsAt };
@@ -77,8 +100,14 @@ export function buildBoardCardModel(
   queue: QueueSource,
   queuePosition: number,
   assetManifest?: Record<string, string> | null,
-  cdnBase?: string | null
+  cdnBase?: string | null,
+  criteria: DiscoveryCriteria[] = []
 ): BoardCardModel {
+  const players = getLobbyCurrentPlayers(lobby);
+  const capacity = getLobbyCapacity(lobby);
+  const tags: BoardCardModel['tags'] = [];
+  if (queue === 'hosted') tags.push('Hosted');
+  if (lobby.custom === true) tags.push('Custom');
   return {
     gameID: lobby.gameID,
     queue,
@@ -86,6 +115,13 @@ export function buildBoardCardModel(
     mapName: getMapDisplayName(lobby.gameConfig?.gameMap?.trim() || 'Unknown map'),
     thumbnailUrl: getLobbyMapThumbnailUrl(lobby, assetManifest, cdnBase),
     badge: getBoardBadge(lobby, queue, queuePosition),
+    formatText: getBoardFormatText(lobby),
+    players,
+    capacity,
+    fillPercent:
+      players !== null && capacity ? Math.min(100, Math.round((players / capacity) * 100)) : 0,
+    modifiers: getBoardModifiers(lobby, criteria),
+    tags,
   };
 }
 
@@ -97,4 +133,102 @@ export function formatLobbyCount(count: number): string {
 /** "1 match", "3 matches". */
 export function formatMatchCount(count: number): string {
   return `${count} ${count === 1 ? 'match' : 'matches'}`;
+}
+
+/**
+ * The team format in plain words: "Free for all · 55 players", "7 teams of 16",
+ * "Quads · 11 teams of 4", "Humans vs Nations · 105 humans". Named team
+ * formats resolve to their derived team count, as the matcher does.
+ */
+export function getBoardFormatText(lobby: Lobby): string {
+  const gameMode = getLobbyGameMode(lobby);
+  const capacity = getLobbyCapacity(lobby);
+
+  if (gameMode === 'FFA') {
+    return capacity !== null ? `Free for all · ${capacity} players` : 'Free for all';
+  }
+  if (gameMode !== 'Team') return 'Unsupported mode';
+
+  const teamConfig = getLobbyTeamConfig(lobby);
+  if (teamConfig === 'Humans Vs Nations') {
+    return capacity !== null ? `Humans vs Nations · ${capacity} humans` : 'Humans vs Nations';
+  }
+
+  const playersPerTeam = getPlayersPerTeam(teamConfig, capacity);
+  const isNamed = teamConfig === 'Duos' || teamConfig === 'Trios' || teamConfig === 'Quads';
+  let teamsText: string | null = null;
+  if (isNamed) {
+    teamsText =
+      playersPerTeam !== null && capacity !== null
+        ? `${Math.floor(capacity / playersPerTeam)} teams of ${playersPerTeam}`
+        : null;
+    return teamsText ? `${teamConfig} · ${teamsText}` : teamConfig;
+  }
+  if (typeof teamConfig === 'number') {
+    return playersPerTeam !== null ? `${teamConfig} teams of ${playersPerTeam}` : `${teamConfig} teams`;
+  }
+  return 'Teams';
+}
+
+/** How the filters treat a Modifier that a lobby has on. */
+export type BoardModifierState = 'neutral' | 'required' | 'blocked';
+
+export interface BoardModifier {
+  /** The full name, the same as the filter chip. */
+  name: string;
+  state: BoardModifierState;
+}
+
+// The boolean Modifiers, in the order of the filter chips.
+const BOOLEAN_MODIFIER_NAMES: ReadonlyArray<[keyof ModifierFilters, string]> = [
+  ['isCompact', 'Compact'],
+  ['isRandomSpawn', 'Random Spawn'],
+  ['isCrowded', 'Crowded'],
+  ['isHardNations', 'Hard Nations'],
+  ['isAlliancesDisabled', 'Alliances Off'],
+  ['isNukesDisabled', 'Nukes Off'],
+  ['isSAMsDisabled', 'SAMs Off'],
+  ['isPeaceTime', 'Peace Time'],
+  ['isWaterNukes', 'Water Nukes'],
+  ['isDoomsdayClock', 'Doomsday Clock'],
+  ['isTrusted', 'Trusted'],
+];
+
+function toBoardState(state: ModifierFilterState | undefined): BoardModifierState {
+  return state === 'required' || state === 'blocked' ? state : 'neutral';
+}
+
+/**
+ * Every Modifier that a lobby has on, by its full chip name, in the order of
+ * the filter chips. The state tells whether the filters of the lobby's game
+ * mode require or block it.
+ */
+export function getBoardModifiers(lobby: Lobby, criteria: DiscoveryCriteria[]): BoardModifier[] {
+  const gameMode = getLobbyGameMode(lobby);
+  const filters = criteria.find((criterion) => criterion.gameMode === gameMode && criterion.modifiers)?.modifiers;
+  const modifiers: BoardModifier[] = [];
+
+  for (const [key, name] of BOOLEAN_MODIFIER_NAMES) {
+    if (getLobbyModifierValue(lobby, key)) {
+      modifiers.push({ name, state: toBoardState(filters?.[key] as ModifierFilterState | undefined) });
+    }
+  }
+
+  const startingGold = getLobbyModifierValue(lobby, 'startingGold');
+  if (typeof startingGold === 'number') {
+    modifiers.push({
+      name: `Start Gold ${formatStartingGold(startingGold)}`,
+      state: toBoardState(filters?.startingGold?.[startingGold]),
+    });
+  }
+
+  const goldMultiplier = getLobbyModifierValue(lobby, 'goldMultiplier');
+  if (typeof goldMultiplier === 'number') {
+    modifiers.push({
+      name: `Gold ×${goldMultiplier}`,
+      state: toBoardState(filters?.goldMultiplier?.[goldMultiplier]),
+    });
+  }
+
+  return modifiers;
 }
