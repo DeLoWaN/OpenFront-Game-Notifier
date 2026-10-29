@@ -50,6 +50,8 @@ export interface Lobby {
   numClients?: number;
   publicGameType?: 'ffa' | 'team' | 'special' | 'hosted' | string;
   startsAt?: number;
+  /** Epoch milliseconds (server clock) at which a Hosted Lobby starts by itself. */
+  autoStartAt?: number;
   /** A host paid to place this private game in the Special Queue. */
   custom?: boolean;
 }

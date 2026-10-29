@@ -2,6 +2,8 @@
  * Type definitions for the lobby discovery module.
  */
 
+/** The Lobby Board, or OpenFront's own lobby area with the floating panel. */
+export type BoardMode = 'board' | 'original';
 export type QueueSource = 'ffa' | 'team' | 'special' | 'hosted';
 export type DiscoveryGameMode = 'FFA' | 'Team';
 export type TeamCount = 'Duos' | 'Trios' | 'Quads' | 'Humans Vs Nations' | '8+' | number;
@@ -45,7 +47,12 @@ export interface LobbyDiscoverySettings {
   desktopNotificationsEnabled: boolean;
   isTeamTwoTimesMinEnabled: boolean;
   isTeamThreeTimesMinEnabled?: boolean;
-  notifyUpcomingEnabled?: boolean;
-  includeHostedAndCustomLobbies?: boolean;
   mapFilter?: MapFilter;
+}
+
+/** The filter values that the player edits in the filter sections. */
+export interface FilterSettings {
+  criteria: DiscoveryCriteria[];
+  isTeamTwoTimesMinEnabled: boolean;
+  mapFilter: MapFilter;
 }

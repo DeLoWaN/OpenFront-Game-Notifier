@@ -1,10 +1,10 @@
 # OpenFront Game Notifier
 
-A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and notifies you when one matches your filters — via in-page highlight, sound, and optional desktop notification. It surfaces each slot's **upcoming** game in an "Up Next" area and enhances OpenFront's native join modal. Never auto-joins.
+A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and notifies you when one matches your filters — via in-page highlight, sound, and optional desktop notification. It shows every advertised lobby on a **Lobby Board** in place of the lobby area of the home page, and enhances OpenFront's native join modal. Never auto-joins.
 
 ## For Players
 
-<img width="300" alt="OpenFront Game Notifier panel" src="docs/images/notifier-panel-v2.12.png" />
+<img alt="Lobby Board with the filter sidebar open and the pointer on a matching card" src="docs/images/lobby-board-v3.0.png" />
 
 ### Features
 
@@ -13,34 +13,40 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Matching evaluates **every advertised lobby**: the live lobby, all upcoming lobbies of each queue (OpenFront's "See all" list), and hosted lobbies
 - Global **map filter**: mark maps as required or excluded, with search and categories
 - `Humans Vs Nations` matches only when its format is selected
-- Hosted and custom lobbies are included by default; one option excludes them
+- Hosted and custom lobbies always take part in matching and alerts, like any other lobby
 - Team panel splits into `Format` (`Humans Vs Nations`) and `Number of teams` (`2`–`7`)
 - Capacity sliders use the right semantics per mode: total lobby size for `FFA`, players-per-team for `Team`
 - Per-team slider uses log-scaled stops with editable steppers; optional `2×` lock pins the max to twice the minimum
 - Tri-state modifier filters cycle `Any` → `Required` → `Excluded`, grouped by `Map` / `Gameplay` / `Economy`
 
-**Up Next**
-- Dedicated "Up Next" area shows each slot's queued-next game (`FFA`, `Special`, `Team`) alongside the native lobby cards — map, mode, team format, capacity, and active modifiers
-- Cards are visually marked not-live and show an "up next" indicator instead of a fabricated countdown (the feed assigns a start time only once a game goes live)
-- Slots with no upcoming game show an explicit fallback rather than a stale card
-- Clicking an upcoming card navigates to OpenFront's own join modal — manual quick-join only, you still confirm entry there
-
-<img width="946" height="352" alt="image" src="https://github.com/user-attachments/assets/e9d14503-90de-4a8a-93ae-ce460f82e4d0" />
-
+**Lobby Board**
+- Shows every advertised lobby of every queue (`FFA`, `Team`, `Special`, `Hosted`) at once: one column per queue, one row per queue position
+- Each card shows the map thumbnail on the left, then the map name, the team format and the active modifiers. A gauge along the card bottom shows the players and the fill percentage
+- A "Join ›" label sits at the right end of the gauge on every card. It turns orange when you point at a matching card. It is part of the card, not a separate button
+- A Live Lobby, and a Hosted Lobby with a start time, show a countdown at the right end of the map name line. A Custom Lobby has a small "Custom" tag
+- A card that matches your filters is in full colour with a thin orange frame; the other cards are dimmed
+- Under the pointer, a matching card gets a thicker orange frame and an orange-tinted text area. A dimmed card only gets a little brighter, with a thin grey frame
+- While discovery is paused or no filter is active, no card is a match. The card under the pointer then gets a grey frame and a lighter text area
+- Clicking a card navigates to OpenFront's own join modal — manual quick-join only, you still confirm entry there
 
 **Alerts**
-- Pulse highlight on the matching homepage queue card the moment a lobby matches
+- A lobby alerts once when it starts to match, at any queue position. It alerts again if it stops matching and then matches again
+- A match that arrives while the OpenFront window has no focus gets a "New" badge on its card. The badge goes when the window loses focus again
 - Optional sound alert on new matches
-- Upcoming matches alert with the same highlight and sound as live matches; a toggle gates upcoming notifications (display them silently, or alert on them)
-- A match further down a queue, or in a hosted lobby, pulses OpenFront's "See all" button and highlights its card in the See all view; clicking its desktop notification opens that view
-- Optional desktop notification when the OpenFront tab is in the background
+- Optional desktop notification when the OpenFront tab is in the background; clicking it brings the tab to the front and flashes the card on the board
 - Sound on game start, triggered by OpenFront's own `?live` URL transition or its `in-game` page state (streamer mode)
 
 **Smart UX**
 - Stronger highlight for your own player row (and your team card) inside the native join modal
 - Filter settings persist across reloads
-- Every panel section (Modes, Modifiers, Maps, Lobbies) collapses, and the panel remembers which ones across reloads
+- The filters live in a **sidebar** on the left of the Lobby Board, so nothing floats over the OpenFront page. The sidebar collapses to a thin rail that shows a short summary of your filters (for example `FFA · 2 modifiers · 1 map`), and it remembers whether it is collapsed across reloads
+- The Lobby Board **header** holds the discovery switch with its status, the search timer, the sound toggle and the desktop notification toggle
+- Every filter section (Modes, Modifiers, Maps) collapses, and the sidebar remembers which ones across reloads
+- If the Lobby Board cannot show on the OpenFront page, the filters and the controls fall back to a floating panel
+- The **Original page** switch, in the Lobby Board header, hides the Lobby Board and brings back OpenFront's own lobby area. The filters and the controls then move to a floating panel, and the same switch in its header brings the Lobby Board back. In this mode the notifier highlights matches on OpenFront's page: the queue cards and the "See all" button pulse, and the matching cards in the See All View get a highlight. A click on a desktop notification opens the See All View when the home page does not show the lobby. The alerts (sound and desktop notification) follow the same rules in both modes. The notifier remembers the mode across reloads, and the Lobby Board is the default
 - Discovery feedback automatically pauses while you're already inside a joined lobby flow
+
+<img alt="Lobby Board with the filter sidebar collapsed to its rail" src="docs/images/lobby-board-collapsed-v3.0.png" />
 
 ### Modifier filters
 
@@ -73,11 +79,10 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 ### Usage
 
 1. Open the Play page on [openfront.io](https://openfront.io/).
-2. In the `OpenFront Game Notifier` panel, enable `FFA`, `Team`, or both.
+2. In the Lobby Board sidebar, enable `FFA`, `Team`, or both.
 3. For `Team`, optionally toggle `Humans Vs Nations` and pick allowed team counts (`2`–`7`).
 4. Set capacity bounds; click modifier chips to require or exclude them.
-5. When a queue card pulses on the homepage, click it yourself to join.
-6. Check the `Up Next` area to see each slot's queued game; click a card to open OpenFront's join modal for it.
+5. When a card on the Lobby Board gets an orange frame, it matches your filters. Click it yourself to open OpenFront's join modal for that lobby.
 
 ### What this doesn't do
 
@@ -98,16 +103,26 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 │   ├── modules/
 │   │   └── lobby-discovery/
 │   │       ├── CurrentPlayerHighlighter.ts     # additive native-modal enhancer
+│   │       ├── LobbyBoardAlerts.ts             # "New" badge and flash state of the cards
+│   │       ├── LobbyBoardHelpers.ts            # pure card model: format text, modifiers, gauge
+│   │       ├── LobbyBoardMotion.ts             # card slide and fade-in
+│   │       ├── LobbyBoardSidebar.ts            # collapsible filter sidebar
+│   │       ├── LobbyBoardSidebarHelpers.ts     # pure filter summary of the collapsed rail
+│   │       ├── LobbyBoardView.ts               # the Lobby Board in place of the lobby area
+│   │       ├── LobbyDiscoveryControls.ts       # discovery, sound, desktop and Original page switches
 │   │       ├── LobbyDiscoveryEngine.ts         # criteria matching
+│   │       ├── LobbyDiscoveryFilters.ts        # filter sections component (sidebar or panel)
 │   │       ├── LobbyDiscoveryHelpers.ts        # pure helpers
 │   │       ├── LobbyDiscoveryTypes.ts
-│   │       ├── LobbyDiscoveryUI.ts             # panel UI
+│   │       ├── LobbyDiscoveryUI.ts             # wires matching, alerts, board and panel
 │   │       ├── RangeSlider.ts                  # per-team log-scaled slider component
 │   │       └── RangeSliderHelpers.ts           # pure stop/position helpers
-│   ├── styles/
+│   ├── styles/                                 # panel, board and board chrome styles
 │   ├── types/
 │   ├── utils/
 │   │   ├── BrowserNotificationUtils.ts
+│   │   ├── HomePageUtils.ts                    # finds OpenFront's home page grid and lobby cells
+│   │   ├── HtmlUtils.ts
 │   │   ├── LobbyUtils.ts
 │   │   ├── SoundUtils.ts
 │   │   └── URLObserver.ts
@@ -140,11 +155,14 @@ npm run type-check   # tsc --noEmit
 
 ### Storage keys
 
-- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, map filter, sound/desktop preferences, upcoming and hosted options, `2×` toggle
+- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, map filter, sound/desktop preferences, `2×` toggle
+- `OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS` — which filter sections are collapsed
+- `OF_LOBBY_BOARD_SIDEBAR_COLLAPSED` — whether the Lobby Board sidebar is collapsed
+- `OF_LOBBY_BOARD_MODE` — Lobby Board or Original page
 
 ### Testing
 
-Vitest with JSDOM. The suite covers the matching engine, helpers, panel UI, the native-modal highlighter, and the `LobbyDataManager` feed parsing.
+Vitest with JSDOM. The suite covers the matching engine, helpers, the Lobby Board and its sidebar, the floating panel, the native-modal highlighter, and the `LobbyDataManager` feed parsing.
 
 ```bash
 npm run test

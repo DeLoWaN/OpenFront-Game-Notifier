@@ -24,8 +24,8 @@ import { CurrentPlayerHighlighter } from '@/modules/lobby-discovery/CurrentPlaye
   const lobbyDiscovery = new LobbyDiscoveryUI();
   const currentPlayerHighlighter = new CurrentPlayerHighlighter();
 
-  LobbyDataManager.subscribe((lobbies) => {
-    lobbyDiscovery.receiveLobbyUpdate(lobbies);
+  LobbyDataManager.subscribe((lobbies, serverTime) => {
+    lobbyDiscovery.receiveLobbyUpdate(lobbies, serverTime);
   });
 
   currentPlayerHighlighter.start();

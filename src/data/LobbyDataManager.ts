@@ -5,13 +5,15 @@
 
 import type { Lobby, PublicGamesResponse } from '@/types/game';
 
-type LobbyCallback = (lobbies: Lobby[]) => void;
+/** `serverTime` is the feed's own clock in milliseconds, or null when the feed has none. */
+type LobbyCallback = (lobbies: Lobby[], serverTime: number | null) => void;
 
 const QUEUE_ORDER = ['ffa', 'team', 'special', 'hosted'] as const;
 
 interface LobbyDataManagerSingleton {
   subscribers: LobbyCallback[];
   lastLobbies: Lobby[];
+  lastServerTime: number | null;
   started: boolean;
   publicLobbiesListener: ((event: Event) => void) | null;
   start(): void;
@@ -20,11 +22,13 @@ interface LobbyDataManagerSingleton {
   notifySubscribers(): void;
   handlePublicLobbiesUpdate(event: Event): void;
   extractLobbies(payload: unknown): Lobby[];
+  extractServerTime(payload: unknown): number | null;
 }
 
 export const LobbyDataManager: LobbyDataManagerSingleton = {
   subscribers: [],
   lastLobbies: [],
+  lastServerTime: null,
   started: false,
   publicLobbiesListener: null,
 
@@ -53,18 +57,24 @@ export const LobbyDataManager: LobbyDataManagerSingleton = {
   subscribe(callback: LobbyCallback) {
     this.subscribers.push(callback);
     if (this.lastLobbies.length > 0) {
-      callback(this.lastLobbies);
+      callback(this.lastLobbies, this.lastServerTime);
     }
   },
 
   notifySubscribers() {
-    this.subscribers.forEach((cb) => cb(this.lastLobbies));
+    this.subscribers.forEach((cb) => cb(this.lastLobbies, this.lastServerTime));
   },
 
   handlePublicLobbiesUpdate(event: Event) {
     const payload = (event as CustomEvent<{ payload?: unknown }>).detail?.payload;
     this.lastLobbies = this.extractLobbies(payload);
+    this.lastServerTime = this.extractServerTime(payload);
     this.notifySubscribers();
+  },
+
+  extractServerTime(payload: unknown): number | null {
+    const serverTime = (payload as { serverTime?: unknown } | null | undefined)?.serverTime;
+    return typeof serverTime === 'number' && Number.isFinite(serverTime) ? serverTime : null;
   },
 
   extractLobbies(payload: unknown): Lobby[] {

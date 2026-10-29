@@ -16,6 +16,10 @@ _Avoid_: Current lobby, featured lobby
 Any advertised lobby that is not a Live Lobby: the later lobbies of each Queue and every Hosted Lobby.
 _Avoid_: Next game, queued lobby
 
+**Queue Position**:
+The rank of a lobby inside its Queue, as OpenFront shows it ("Queue: 2"). The Live Lobby comes first. A position does not predict a start time: a lobby also starts as soon as it is full.
+_Avoid_: Slot, index, ETA
+
 **Hosted Lobby**:
 A private game that a subscriber lists in the Hosted Queue, with a configuration they chose.
 _Avoid_: Listed lobby, subscriber lobby
@@ -27,6 +31,10 @@ _Avoid_: Paid lobby
 **See All View**:
 The OpenFront page that lists every lobby of every Queue, opened from the "See all" button on the home page.
 _Avoid_: Detailed view, lobby browser
+
+**Lobby Board**:
+The notifier's own view of every advertised lobby, shown in place of the lobby area of the OpenFront home page. The player can switch back to the original home page at any time.
+_Avoid_: Dashboard, lobby grid, See All replacement
 
 ## Matching
 

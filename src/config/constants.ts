@@ -13,6 +13,8 @@ export const CONFIG = {
 export const STORAGE_KEYS = {
   lobbyDiscoverySettings: "OF_LOBBY_DISCOVERY_SETTINGS",
   lobbyDiscoveryCollapsedSections: "OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS",
+  lobbyBoardSidebarCollapsed: "OF_LOBBY_BOARD_SIDEBAR_COLLAPSED",
+  lobbyBoardMode: "OF_LOBBY_BOARD_MODE",
 } as const;
 
 /**

@@ -3,7 +3,7 @@
 
 ## Project Overview
 
-This userscript (**OpenFront Game Notifier**) is a **notify-first** lobby discovery tool for OpenFront.io. It surfaces public lobbies that match user-defined criteria (game mode, player counts, team configuration, modifiers, map) — across every lobby OpenFront advertises, including the "See all" list — and alerts the user via in-page UI, sound, and optional desktop notifications. It **never auto-joins**: it never programmatically clicks join controls and never navigates from background logic, matching, watchers, or timers. The only join affordance is a **manual quick-join** — clicking an Up Next card navigates to OpenFront's own join modal in direct response to that user click, where the user still confirms entry through OpenFront's controls.
+This userscript (**OpenFront Game Notifier**) is a **notify-first** lobby discovery tool for OpenFront.io. It surfaces public lobbies that match user-defined criteria (game mode, player counts, team configuration, modifiers, map) — across every lobby OpenFront advertises, including the "See all" list — and alerts the user via in-page UI, sound, and optional desktop notifications. It **never auto-joins**: it never programmatically clicks join controls and never navigates from background logic, matching, watchers, or timers. The only join affordance is a **manual quick-join** — clicking a Lobby Board card navigates to OpenFront's own join modal in direct response to that user click, where the user still confirms entry through OpenFront's controls.
 
 It also enhances OpenFront's native join-lobby modal by highlighting the current player and their team.
 
@@ -34,11 +34,14 @@ The userscript is built from modular TypeScript source in `src/` and compiled to
 │   │   ├── game.d.ts
 │   │   └── greasemonkey.d.ts
 │   ├── styles/
-│   │   └── styles.ts
+│   │   ├── styles.ts
+│   │   ├── boardStyles.ts             # Lobby Board cards and grid
+│   │   └── boardChromeStyles.ts       # Lobby Board sidebar and header
 │   ├── utils/
 │   │   ├── BrowserNotificationUtils.ts
+│   │   ├── HomePageUtils.ts           # grid, FFA cell and section of OpenFront's home page
+│   │   ├── HtmlUtils.ts               # escapeHtml
 │   │   ├── LobbyUtils.ts
-│   │   ├── ResizeHandler.ts
 │   │   ├── SoundUtils.ts
 │   │   └── URLObserver.ts
 │   ├── data/
@@ -48,7 +51,17 @@ The userscript is built from modular TypeScript source in `src/` and compiled to
 │   │       ├── LobbyDiscoveryTypes.ts
 │   │       ├── LobbyDiscoveryHelpers.ts
 │   │       ├── LobbyDiscoveryEngine.ts
+│   │       ├── LobbyDiscoveryFilters.ts   # filter sections (Modes, Modifiers, Maps)
+│   │       ├── LobbyDiscoveryControls.ts  # discovery switch, timer, sound and desktop toggles
 │   │       ├── LobbyDiscoveryUI.ts
+│   │       ├── LobbyBoardView.ts          # Lobby Board DOM
+│   │       ├── LobbyBoardHelpers.ts
+│   │       ├── LobbyBoardAlerts.ts
+│   │       ├── LobbyBoardMotion.ts
+│   │       ├── LobbyBoardSidebar.ts
+│   │       ├── LobbyBoardSidebarHelpers.ts
+│   │       ├── RangeSlider.ts
+│   │       ├── RangeSliderHelpers.ts
 │   │       └── CurrentPlayerHighlighter.ts
 │   └── main.ts
 ├── tests/
@@ -92,11 +105,26 @@ npm run type-check  # tsc --noEmit
 ### Module Overview
 
 **Lobby Discovery** ([src/modules/lobby-discovery/](src/modules/lobby-discovery/)):
-- `LobbyDiscoveryTypes.ts` — settings, criteria, modifier filter types
+- `LobbyDiscoveryTypes.ts` — settings, filter settings, criteria, modifier filter types
 - `LobbyDiscoveryHelpers.ts` — pure functions: criteria sanitization, settings normalization, lobby parsing, notification text formatting
 - `LobbyDiscoveryEngine.ts` — matching logic over lobby snapshots
-- `LobbyDiscoveryUI.ts` — panel UI, sound and desktop notification dispatch
+- `LobbyDiscoveryFilters.ts` — the filter sections. Any container can mount them.
+- `LobbyDiscoveryControls.ts` — the discovery switch, the search timer, the sound and desktop toggles and the Original page switch. Any container can mount them.
+- `LobbyBoardView.ts` — builds the Lobby Board in OpenFront's `game-mode-selector` grid and updates its cards in place
+- `LobbyBoardHelpers.ts` — pure functions: board columns, card model, countdown, format text, players text
+- `LobbyBoardAlerts.ts` — in-memory "New" badges of the Lobby Board cards
+- `LobbyBoardMotion.ts` — the slide of a card that changes row and the fade-in of a new card (`Element.animate`, off with `prefers-reduced-motion`)
+- `LobbyBoardSidebar.ts` — the collapsible sidebar that holds the filters
+- `LobbyBoardSidebarHelpers.ts` — pure function: the one-line filter summary of the collapsed sidebar
+- `RangeSlider.ts` and `RangeSliderHelpers.ts` — the dual-thumb player range slider and its pure value mapping
+- `LobbyDiscoveryUI.ts` — wires the matching, the Lobby Board, the floating panel, the sound and the desktop notifications
+
 - `CurrentPlayerHighlighter.ts` — additive enhancer for OpenFront's native join-lobby modal
+
+**Utils and styles for the Lobby Board**:
+- `src/utils/HomePageUtils.ts` — finds the grid, the FFA cell and the section of OpenFront's home page
+- `src/utils/HtmlUtils.ts` — `escapeHtml`
+- `src/styles/boardStyles.ts` and `src/styles/boardChromeStyles.ts` — CSS of the Lobby Board. They take their colours from the `BOARD_COLORS` tokens of `theme.ts`.
 
 **Data Layer** ([src/data/](src/data/)):
 - `LobbyDataManager.ts` — reads every Queue (FFA, Team, Special, Hosted) from OpenFront's `public-lobbies-update` event, subscriber pattern
@@ -109,8 +137,8 @@ npm run type-check  # tsc --noEmit
 
 - **Criteria-based matching**: filter by game mode (FFA / Team), player count range, team format (Duos / Trios / Quads / Humans Vs Nations / 2–7 teams), and lobby modifiers (compact, random spawn, crowded, hard nations, alliances/nukes/SAMs disabled, peace time, water nukes, Doomsday Clock, Trusted, starting gold, gold multiplier).
 - **Map Filter**: one global tri-state list of maps that applies to every Criterion (see `docs/adr/0001-global-map-filter.md`).
-- **Every advertised lobby**: all lobbies of every Queue are evaluated, Hosted and Custom Lobbies included (a global option excludes them). See `GLOSSARY.md` for Live Lobby and Upcoming Lobby.
-- **Three notification channels**: in-page highlight (the queue card for a Live Lobby, the Up Next card for the next lobby, the "See all" button and the See All View card for any other lobby), sound alert, and (optional) browser desktop notification. Clicking the desktop notification of a lobby that only the See All View shows opens that view.
+- **Every advertised lobby**: all lobbies of every Queue are evaluated, Hosted and Custom Lobbies included. See `GLOSSARY.md` for Live Lobby and Upcoming Lobby.
+- **Three notification channels**: in-page highlight, sound alert, and (optional) browser desktop notification. On the Lobby Board, a matching card has a thin orange frame. A match that arrives while the window has no focus also gets a "New" badge. The badge goes when the window loses focus again. A lobby alerts once when it starts to match, at any Queue Position. Clicking the desktop notification flashes the card on the Lobby Board. Without the board, it opens the See All View for a lobby that the home page does not show. Outside the board, the queue card of a Live Lobby, the "See all" button and the See All View card keep their highlight.
 - **Search timer**: shows how long the current search has been running.
 - **Sleep when in-game**: panel hides while a game is live (`body.in-game`, or the URL has `?live`).
 
@@ -128,14 +156,19 @@ npm run type-check  # tsc --noEmit
 
 ## Settings Persistence
 
-Stored under `OF_LOBBY_DISCOVERY_SETTINGS` via `GM_setValue`. The collapsed state of each panel section (Modes, Modifiers, Maps, Lobbies) is stored under `OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS`. Settings include:
+Stored under `OF_LOBBY_DISCOVERY_SETTINGS` via `GM_setValue`. The collapsed state of each panel section (Modes, Modifiers, Maps) is stored under `OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS`. Settings include:
 
 - Discovery criteria list
 - Discovery enabled/disabled
 - Sound enabled/disabled
 - Desktop notifications enabled/disabled
 - `isTeamTwoTimesMinEnabled` constraint flag
-- `notifyUpcomingEnabled`, `includeHostedAndCustomLobbies` and the global `mapFilter`
+- the global `mapFilter`
+
+Two more values have their own storage keys:
+
+- `STORAGE_KEYS.lobbyBoardMode` — `board` (default) or `original`. It is the Original page switch.
+- `STORAGE_KEYS.lobbyBoardSidebarCollapsed` — whether the Lobby Board sidebar is collapsed.
 
 `normalizeSettings` in `LobbyDiscoveryHelpers.ts` validates and applies defaults on load.
 
@@ -200,8 +233,8 @@ page.evaluate(() => {
   return Object.entries(data.games).flatMap(([queue, lobbies]) =>
     lobbies.map((lobby, index) => {
       const matched = matchesCriteria(lobby, criteria);
-      // Live Lobby → home card pulse; index 1 → Up Next card; the rest and Hosted → "See all" pulse.
-      const signal = queue !== 'hosted' && index === 0 ? 'card' : queue !== 'hosted' && index === 1 ? 'up-next' : 'see-all';
+      // Live Lobby → home card pulse; every other lobby and Hosted → "See all" pulse.
+      const signal = queue !== 'hosted' && index === 0 ? 'card' : 'see-all';
       return { queue, index, map: lobby.gameConfig?.gameMap, matched, signal };
     })
   );
@@ -212,10 +245,10 @@ page.evaluate(() => {
 
 | Symptom | Likely cause |
 |---|---|
-| Home cards never pulse though `matched: true, signal: 'card'` | OpenFront changed the `game-mode-selector` grid; update `getQueueCardElements` (FFA cell `sm:col-start-1 sm:row-start-2`, then a `<section>` with the Team card, the Special card and the "See all" heading) |
+| Home cards never pulse though `matched: true, signal: 'card'`, or the Lobby Board does not appear | OpenFront changed the `game-mode-selector` grid; update `getQueueCardElements` (FFA cell `sm:col-start-1 sm:row-start-2`, then a `<section>` with the Team card, the Special card and the "See all" heading). The Lobby Board reads the same grid through `findHomeGrid` and `isLobbyCell` (the page-grid selectors in `HomePageUtils.ts`). When they fail, the board does not mount and the floating panel shows instead |
 | `matched: false` for HvN lobby | `getPlayersPerTeam('Humans Vs Nations', cap)` returns `cap`; players/team filter compares against full capacity |
 | `matched: false` for a Duos/Trios/Quads lobby | A numeric NUMBER OF TEAMS criterion is being compared against the raw named `playerTeams` instead of the derived team count — resolve `"Quads"`+cap to `floor(cap/4)` first (see `resolveLobbyTeamCount`) |
-| Up Next cards show black/empty map art | The asset globals weren't found, so `getLobbyMapThumbnailUrl` fell back to a non-existent relative path. OpenFront moved them: read `window.BOOTSTRAP_CONFIG.assetManifest` / `.cdnBase` (fallbacks `globalThis.__ASSET_MANIFEST__` / `__CDN_BASE__`) — mirror OpenFront's `getAssetManifest`/`getCdnBase` in `packages/shared/src/AssetUrls.ts`. The legacy `ASSET_MANIFEST`/`CDN_BASE` globals were removed in v0.32 |
+| Lobby Board cards show black/empty map art | The asset globals weren't found, so `getLobbyMapThumbnailUrl` fell back to a non-existent relative path. OpenFront moved them: read `window.BOOTSTRAP_CONFIG.assetManifest` / `.cdnBase` (fallbacks `globalThis.__ASSET_MANIFEST__` / `__CDN_BASE__`) — mirror OpenFront's `getAssetManifest`/`getCdnBase` in `packages/shared/src/AssetUrls.ts`. The legacy `ASSET_MANIFEST`/`CDN_BASE` globals were removed in v0.32 |
 | No lobbies at all | Navigated to `/play` instead of `/`; the data feed doesn't start there |
 
 # Version Management

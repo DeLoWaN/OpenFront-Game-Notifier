@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         OpenFront Game Notifier
 // @namespace    https://openfront.io/
-// @version      2.12.0
+// @version      3.0.0
 // @description  Notifies you when a public OpenFront lobby matches your filters (mode, team format, capacity, modifiers) via in-page highlight, sound, and optional desktop notifications. Never auto-joins.
 // @homepageURL  https://github.com/DeLoWaN/openfront-game-notifier
 // @downloadURL  https://raw.githubusercontent.com/DeLoWaN/openfront-game-notifier/main/dist/bundle.user.js
@@ -16,25 +16,559 @@
 // @license      UNLICENSED
 // ==/UserScript==
 
-"use strict";(()=>{var f={bgPrimary:"#0d0f10",bgSecondary:"#14171a",bgElevated:"#1a1e22",bgRaised:"#20252a",bgHover:"rgba(255,255,255,0.04)",textPrimary:"#f2f1ee",textSecondary:"#c8c6c0",textMuted:"#8e8c85",textFaint:"#5a5853",border:"rgba(255,255,255,0.06)",borderSubtle:"rgba(255,255,255,0.10)",borderStrong:"rgba(255,255,255,0.16)",accent:"#7aa7d4",accentSoft:"rgba(122,167,212,0.14)",accentLine:"rgba(122,167,212,0.32)",accentShadow:"122,167,212",warning:"#d4a056",warningSoft:"rgba(212,160,86,0.14)",danger:"#d27a6b",dangerSoft:"rgba(210,122,107,0.14)",dangerLine:"rgba(210,122,107,0.30)",accentMuted:"rgba(122,167,212,0.14)",accentHover:"#9bbfe0",accentAlt:"#9bbfe0",borderAccent:"rgba(122,167,212,0.32)",highlight:"rgba(122,167,212,0.20)",success:"#74c69d",successSolid:"#74c69d",error:"#d27a6b"},b={body:"'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",display:"'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",mono:"'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"};var C={sm:"6px",md:"7px",lg:"10px",xl:"14px"},O={sm:"0 1px 3px rgba(0,0,0,0.4)",md:"0 2px 8px rgba(0,0,0,0.3)",lg:"0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)"},m={fast:"0.12s",normal:"0.2s",slow:"0.3s"};var T={lobbyDiscoverySettings:"OF_LOBBY_DISCOVERY_SETTINGS",lobbyDiscoveryCollapsedSections:"OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS"},se={panel:9998,panelOverlay:9999,modal:1e4,notification:2e4},re=[2,3,4,5,6,8,10,15,20,30,62],E=2,J=62;function le(){return`
+"use strict";(()=>{var g={bgPrimary:"#0d0f10",bgSecondary:"#14171a",bgElevated:"#1a1e22",bgRaised:"#20252a",bgHover:"rgba(255,255,255,0.04)",textPrimary:"#f2f1ee",textSecondary:"#c8c6c0",textMuted:"#8e8c85",textFaint:"#5a5853",border:"rgba(255,255,255,0.06)",borderSubtle:"rgba(255,255,255,0.10)",borderStrong:"rgba(255,255,255,0.16)",accent:"#7aa7d4",accentSoft:"rgba(122,167,212,0.14)",accentLine:"rgba(122,167,212,0.32)",accentShadow:"122,167,212",warning:"#d4a056",warningSoft:"rgba(212,160,86,0.14)",danger:"#d27a6b",dangerSoft:"rgba(210,122,107,0.14)",dangerLine:"rgba(210,122,107,0.30)",accentMuted:"rgba(122,167,212,0.14)",accentHover:"#9bbfe0",accentAlt:"#9bbfe0",borderAccent:"rgba(122,167,212,0.32)",highlight:"rgba(122,167,212,0.20)",success:"#74c69d",successSolid:"#74c69d",error:"#d27a6b"},u={surface:"rgba(16, 10, 24, 0.92)",live:"#e8600c",onLive:"#0a0610",liveGlow:"rgba(232, 96, 12, 0.45)",text:"#fff",onAccent:"#0d0a14",onNew:"#0a0610",chip:"rgba(255, 255, 255, 0.08)",blockedBg:"rgba(200, 70, 50, 0.25)",blockedText:"#f2c4bb",gaugeTrack:"rgba(255, 255, 255, 0.04)",gaugeFill:"rgba(159, 184, 166, 0.62)",gaugeFillHot:"rgba(232, 96, 12, 0.65)",gaugeTextShadow:"rgba(0, 0, 0, 0.7)",textColumnHover:"#1d2126",matchTextColumnHover:"#362318",joinRest:"#3f4349",joinRestText:"#d6d4ce",joinHover:"#4c5057",joinHoverText:"#e4e2dc",joinNeutralHover:"#565a61"},x={thumbWidthPx:112,thumbWidthNarrowPx:64,thumbWidthNarrowestPx:48,narrowCardBelowPx:300,narrowestCardBelowPx:200,playersWordHiddenBelowPx:260,lobbiesWordHiddenBelowPx:240,tightHeaderBelowPx:180,matchesWordHiddenBelowPx:165,gaugeHeightPx:18,joinWidthPx:58,cardMinHeightPx:120,gridGapPx:12},b={body:"'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",display:"'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",mono:"'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace"};var k={sm:"6px",md:"7px",lg:"10px",xl:"14px"},z={sm:"0 1px 3px rgba(0,0,0,0.4)",md:"0 2px 8px rgba(0,0,0,0.3)",lg:"0 1px 0 rgba(255,255,255,0.04) inset, 0 24px 48px rgba(0,0,0,0.45), 0 2px 8px rgba(0,0,0,0.3)"},m={fast:"0.12s",normal:"0.2s",slow:"0.3s"};var S={lobbyDiscoverySettings:"OF_LOBBY_DISCOVERY_SETTINGS",lobbyDiscoveryCollapsedSections:"OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS",lobbyBoardSidebarCollapsed:"OF_LOBBY_BOARD_SIDEBAR_COLLAPSED",lobbyBoardMode:"OF_LOBBY_BOARD_MODE"},xe={panel:9998,panelOverlay:9999,modal:1e4,notification:2e4},Me=[2,3,4,5,6,8,10,15,20,30,62],P=2,ie=62;function Se(){return`
+    /* ===================== Lobby Board ===================== */
+    /* The board is a child of OpenFront's page grid. It spans every column, and
+       it breaks out of the page column to the width of the viewport minus a gutter.
+       The view measures both variables in px. */
+    .of-board {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      box-sizing: border-box;
+      width: var(--of-board-width);
+      margin-left: var(--of-board-left);
+      border: 1px solid var(--of-hud-line-2);
+      border-radius: ${k.xl};
+      background: ${u.surface};
+      color: var(--of-hud-text-1);
+      font-family: ${b.body};
+      overflow: hidden;
+    }
+    .of-board-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--of-hud-line-1);
+    }
+    .of-board-title {
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    .of-board-totals {
+      font-size: 12px;
+      color: var(--of-hud-text-2);
+    }
+    .of-board-grid {
+      display: grid;
+      grid-template-columns: 54px repeat(4, minmax(0, 1fr));
+      gap: ${x.gridGapPx}px;
+      align-items: stretch;
+      padding: 14px 16px 16px;
+    }
+    /* The header is its own size container and stays on one line: its words drop as it narrows. */
+    .of-board-colhead {
+      container-type: inline-size;
+      white-space: nowrap;
+      overflow: hidden;
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 2px 4px 4px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--of-hud-text-3);
+    }
+    .of-board-colhead b {
+      font-size: 13px;
+      letter-spacing: 0.6px;
+      color: var(--of-hud-text-1);
+    }
+    .of-board-colhead em {
+      font-style: normal;
+      color: var(--of-hud-accent);
+    }
+    @container (width < ${x.lobbiesWordHiddenBelowPx}px) {
+      .of-board-colhead > span .of-board-word {
+        display: none;
+      }
+    }
+    @container (width < ${x.tightHeaderBelowPx}px) {
+      .of-board-colhead > span,
+      .of-board-colhead > em {
+        letter-spacing: 0.3px;
+      }
+    }
+    @container (width < ${x.matchesWordHiddenBelowPx}px) {
+      .of-board-colhead > em .of-board-word {
+        display: none;
+      }
+    }
+    .of-board-rowlabel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--of-hud-line-1);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--of-hud-text-4);
+    }
+    .of-board-rowlabel-live {
+      color: ${u.live};
+      text-transform: uppercase;
+    }
+    /* The cell is the size container, so the card width drives the thumbnail and text rules below. */
+    .of-board-cell {
+      container-type: inline-size;
+      min-width: 0;
+      display: flex;
+    }
+    .of-board-empty {
+      flex: 1;
+      min-height: ${x.cardMinHeightPx}px;
+      border: 1px dashed var(--of-hud-line-1);
+      border-radius: ${k.lg};
+    }
+
+    .of-board-card {
+      /* The gauge height is also the bottom padding that keeps the content above the gauge. */
+      --of-board-thumb-width: ${x.thumbWidthPx}px;
+      --of-board-gauge-height: ${x.gaugeHeightPx}px;
+      --of-board-join-width: ${x.joinWidthPx}px;
+      position: relative;
+      box-sizing: border-box;
+      flex: 1;
+      min-width: 0;
+      min-height: ${x.cardMinHeightPx}px;
+      display: flex;
+      align-items: stretch;
+      padding: 0 0 var(--of-board-gauge-height);
+      overflow: hidden;
+      border: 1px solid var(--of-hud-line-2);
+      border-radius: ${k.lg};
+      background: var(--of-hud-bg-1);
+      color: ${u.text};
+      font-family: ${b.body};
+      font-size: 14px;
+      line-height: 1.3;
+      text-align: left;
+      cursor: pointer;
+    }
+    .of-board-thumb {
+      position: relative;
+      z-index: 0;
+      flex: none;
+      width: var(--of-board-thumb-width);
+      overflow: hidden;
+      background: var(--of-hud-bg-2);
+      pointer-events: none;
+    }
+    .of-board-thumb img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+    }
+    .of-board-countdown {
+      flex: none;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: ${u.live};
+      color: ${u.onLive};
+      font: 800 11px/1.4 ${b.mono};
+      white-space: nowrap;
+    }
+    .of-board-text {
+      flex: 1;
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      gap: 5px;
+      padding: 10px 10px 11px;
+      background: var(--of-hud-bg-1);
+    }
+    /* The name takes the free width, so it wraps before the "New" badge and the countdown.
+       The countdown moves to the next line when the longest word of the name does not fit beside it. */
+    .of-board-nameline {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: flex-start;
+      gap: 6px;
+      min-width: 0;
+    }
+    .of-board-map {
+      flex: 1 1 auto;
+      width: min-content;
+      max-width: 100%;
+      overflow-wrap: break-word;
+      font-size: 14px;
+      font-weight: 800;
+      line-height: 1.25;
+      letter-spacing: 0.2px;
+    }
+    .of-board-formatline {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      min-width: 0;
+    }
+    .of-board-format {
+      min-width: 0;
+      overflow-wrap: break-word;
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--of-hud-text-1);
+    }
+    /* The Custom tag leads the chips row, so it takes the line box of a chip. */
+    .of-board-tag {
+      padding: 1px 5px;
+      border-radius: 4px;
+      background: var(--of-hud-accent);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 15.75px;
+      white-space: nowrap;
+      color: ${u.onAccent};
+    }
+    /* The gauge ends where the Join slot starts, so the fill percentage applies to the shorter track. */
+    .of-board-gauge {
+      position: absolute;
+      left: 0;
+      right: var(--of-board-join-width);
+      bottom: 0;
+      z-index: 1;
+      box-sizing: border-box;
+      height: var(--of-board-gauge-height);
+      display: flex;
+      align-items: center;
+      overflow: hidden;
+      border-top: 1px solid var(--of-hud-line-3);
+      background: ${u.gaugeTrack};
+    }
+    .of-board-fill {
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      background: ${u.gaugeFill};
+    }
+    .of-board-gauge-hot .of-board-fill {
+      background: ${u.gaugeFillHot};
+    }
+    .of-board-players {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding-left: 8px;
+      font: 700 10.5px/1 ${b.mono};
+      white-space: nowrap;
+      color: ${u.text};
+      text-shadow: 0 1px 2px ${u.gaugeTextShadow};
+    }
+    .of-board-players svg {
+      width: 11px;
+      height: 11px;
+      fill: currentColor;
+      opacity: 0.9;
+    }
+    .of-board-percent {
+      position: relative;
+      margin-left: 5px;
+      font: 700 10px/1 ${b.mono};
+      font-style: normal;
+      color: var(--of-hud-text-2);
+      text-shadow: 0 1px 2px ${u.gaugeTextShadow};
+    }
+    /* A label inside the card, not a control: the click on the card is the only one that navigates. */
+    .of-board-join {
+      position: absolute;
+      right: 0;
+      bottom: 0;
+      z-index: 2;
+      box-sizing: border-box;
+      width: var(--of-board-join-width);
+      height: var(--of-board-gauge-height);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-top: 1px solid var(--of-hud-line-3);
+      background: ${u.joinRest};
+      color: ${u.joinRestText};
+      font: 800 10px/1 ${b.mono};
+      letter-spacing: 0.6px;
+      text-transform: uppercase;
+      white-space: nowrap;
+      pointer-events: none;
+    }
+    /* A narrower card gets a thinner thumbnail, so the text column stays readable. */
+    @container (width < ${x.narrowCardBelowPx}px) {
+      .of-board-card {
+        --of-board-thumb-width: ${x.thumbWidthNarrowPx}px;
+      }
+    }
+    @container (width < ${x.narrowestCardBelowPx}px) {
+      .of-board-card {
+        --of-board-thumb-width: ${x.thumbWidthNarrowestPx}px;
+      }
+    }
+    /* A narrow card shows "54 / 60 \xB7 90%" on its gauge. */
+    @container (width < ${x.playersWordHiddenBelowPx}px) {
+      .of-board-players .of-board-word {
+        display: none;
+      }
+    }
+    .of-board-mods {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 3px 4px;
+    }
+    .of-board-mod {
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: ${u.chip};
+      font-size: 10.5px;
+      line-height: 1.5;
+      white-space: nowrap;
+      color: var(--of-hud-text-2);
+    }
+    .of-board-mod-required {
+      background: var(--of-hud-accent-soft);
+      box-shadow: inset 0 0 0 1px var(--of-hud-accent);
+      font-weight: 700;
+      color: ${u.text};
+    }
+    .of-board-mod-blocked {
+      background: ${u.blockedBg};
+      text-decoration: line-through;
+      color: ${u.blockedText};
+    }
+    .of-board-nomods {
+      font-size: 10.5px;
+      line-height: 1.5;
+      font-style: italic;
+      color: var(--of-hud-text-3);
+    }
+    /* The overlay paints the frame and the flash above every part of the card.
+       It stays inside the card, so it never touches a neighbour. */
+    .of-board-card::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      z-index: 3;
+      border-radius: inherit;
+      pointer-events: none;
+    }
+    /* A hovered matching card stands out more than a hovered card that does not match. */
+    .of-board-card-match {
+      border-color: ${u.live};
+    }
+    .of-board-card-match::after {
+      box-shadow: inset 0 0 0 1px ${u.live};
+    }
+    .of-board-card-match:hover::after {
+      box-shadow: inset 0 0 0 2px ${u.live};
+    }
+    .of-board-card-match:hover .of-board-text {
+      background-color: ${u.matchTextColumnHover};
+    }
+    .of-board-card-match:hover .of-board-join {
+      border-top-color: ${u.live};
+      background: ${u.live};
+      color: ${u.onLive};
+    }
+    .of-board-card-dim {
+      opacity: 0.3;
+      filter: grayscale(0.7);
+    }
+    .of-board-card-dim:hover {
+      opacity: 0.5;
+    }
+    .of-board-card-dim:hover::after {
+      box-shadow: inset 0 0 0 1px var(--of-hud-text-3);
+    }
+    .of-board-card-dim:hover .of-board-join {
+      background: ${u.joinHover};
+      color: ${u.joinHoverText};
+    }
+    .of-board-matching-off .of-board-card:hover::after {
+      box-shadow: inset 0 0 0 2px var(--of-hud-text-3);
+    }
+    .of-board-matching-off .of-board-card:hover .of-board-text {
+      background-color: ${u.textColumnHover};
+    }
+    .of-board-matching-off .of-board-card:hover .of-board-join {
+      background: ${u.joinNeutralHover};
+      color: var(--of-hud-text-1);
+    }
+    .of-board-new {
+      flex: none;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: ${g.accent};
+      font-size: 10px;
+      font-weight: 800;
+      line-height: 1.6;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      color: ${u.onNew};
+    }
+    /* The flash follows a click on a notification. Its glow is inset, so it stays in the card. */
+    @keyframes ofBoardFlash {
+      0%, 100% {
+        box-shadow: inset 0 0 0 1px ${u.live};
+      }
+      50% {
+        box-shadow: inset 0 0 0 4px ${u.live}, inset 0 0 28px ${u.liveGlow};
+      }
+    }
+    .of-board-card.of-board-card-flash::after {
+      animation: ofBoardFlash 0.5s ease-in-out 4;
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .of-board-card.of-board-card-flash::after {
+        animation: none;
+        box-shadow: inset 0 0 0 4px ${u.live};
+      }
+    }
+  `}function we(){return`
+    /* ===================== Lobby Board sidebar and header ===================== */
+    .of-board-controls {
+      margin-left: auto;
+      display: flex;
+      align-items: center;
+    }
+    .of-board-controls .ld-status {
+      padding: 0;
+      border-bottom: 0;
+      background: none;
+      gap: 12px;
+    }
+    .of-board-controls .ld-status-text {
+      flex: none;
+    }
+
+    .of-board-main {
+      display: flex;
+      align-items: flex-start;
+    }
+    .of-board-main > .of-board-grid {
+      flex: 1;
+      min-width: 0;
+    }
+
+    .of-board-sidebar {
+      flex: 0 0 340px;
+      width: 340px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      /* The filter sections scroll inside the sidebar on a short screen. */
+      max-height: calc(100vh - 120px);
+      margin: 14px 0 16px 16px;
+      border: 1px solid var(--of-hud-line-1);
+      border-radius: ${k.lg};
+      background: var(--of-hud-bg-1);
+      font-family: inherit;
+      user-select: none;
+    }
+    .of-board-sidebar-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 8px 10px 8px 14px;
+      border-bottom: 1px solid var(--of-hud-line-1);
+    }
+    .of-board-sidebar-title {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--of-hud-text-3);
+    }
+    .of-board-sidebar-toggle {
+      appearance: none;
+      width: 26px;
+      height: 26px;
+      border: 0;
+      border-radius: 7px;
+      background: transparent;
+      color: var(--of-hud-text-3);
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      transition: background ${m.fast}, color ${m.fast};
+    }
+    .of-board-sidebar-toggle:hover {
+      background: var(--of-hud-bg-3);
+      color: var(--of-hud-text-1);
+    }
+    .of-board-sidebar-body {
+      display: flex;
+      flex-direction: column;
+      flex: 1;
+      min-height: 0;
+    }
+    .of-board-sidebar-body[hidden],
+    .of-board-sidebar-summary[hidden] {
+      display: none;
+    }
+    .of-board-sidebar-summary {
+      margin: 0 auto;
+      padding: 14px 0;
+      writing-mode: vertical-rl;
+      transform: rotate(180deg);
+      font-size: 11px;
+      color: var(--of-hud-text-2);
+      white-space: nowrap;
+    }
+    .of-board-sidebar.is-collapsed {
+      flex-basis: 46px;
+      width: 46px;
+    }
+    .of-board-sidebar.is-collapsed .of-board-sidebar-head {
+      justify-content: center;
+      padding: 8px 0;
+      border-bottom: 0;
+    }
+    .of-board-sidebar.is-collapsed .of-board-sidebar-title {
+      display: none;
+    }
+
+    /* The sidebar is too narrow for the label and both steppers on one line. */
+    .of-board-sidebar .ld-slider-label {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .of-board-sidebar .ld-slider-label .val {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      white-space: nowrap;
+    }
+
+    /* The floating panel's slots take no box of their own. */
+    .ld-panel-slot {
+      display: contents;
+    }
+  `}function Le(){return`
     :root {
-      --of-hud-accent: ${f.accent};
-      --of-hud-accent-soft: ${f.accentSoft};
-      --of-hud-accent-line: ${f.accentLine};
-      --of-hud-bg-0: ${f.bgPrimary};
-      --of-hud-bg-1: ${f.bgSecondary};
-      --of-hud-bg-2: ${f.bgElevated};
-      --of-hud-bg-3: ${f.bgRaised};
-      --of-hud-text-1: ${f.textPrimary};
-      --of-hud-text-2: ${f.textSecondary};
-      --of-hud-text-3: ${f.textMuted};
-      --of-hud-text-4: ${f.textFaint};
-      --of-hud-line-1: ${f.border};
-      --of-hud-line-2: ${f.borderSubtle};
-      --of-hud-line-3: ${f.borderStrong};
-      --of-hud-danger: ${f.danger};
-      --of-hud-danger-soft: ${f.dangerSoft};
-      --of-hud-danger-line: ${f.dangerLine};
+      --of-hud-accent: ${g.accent};
+      --of-hud-accent-soft: ${g.accentSoft};
+      --of-hud-accent-line: ${g.accentLine};
+      --of-hud-bg-0: ${g.bgPrimary};
+      --of-hud-bg-1: ${g.bgSecondary};
+      --of-hud-bg-2: ${g.bgElevated};
+      --of-hud-bg-3: ${g.bgRaised};
+      --of-hud-text-1: ${g.textPrimary};
+      --of-hud-text-2: ${g.textSecondary};
+      --of-hud-text-3: ${g.textMuted};
+      --of-hud-text-4: ${g.textFaint};
+      --of-hud-line-1: ${g.border};
+      --of-hud-line-2: ${g.borderSubtle};
+      --of-hud-line-3: ${g.borderStrong};
+      --of-hud-danger: ${g.danger};
+      --of-hud-danger-soft: ${g.dangerSoft};
+      --of-hud-danger-line: ${g.dangerLine};
     }
 
     @keyframes ofPanelEnter {
@@ -43,21 +577,21 @@
     }
 
     @keyframes livePulse {
-      0%   { box-shadow: 0 0 0 0 rgba(${f.accentShadow}, 0.5); }
-      70%  { box-shadow: 0 0 0 8px rgba(${f.accentShadow}, 0); }
-      100% { box-shadow: 0 0 0 0 rgba(${f.accentShadow}, 0); }
+      0%   { box-shadow: 0 0 0 0 rgba(${g.accentShadow}, 0.5); }
+      70%  { box-shadow: 0 0 0 8px rgba(${g.accentShadow}, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(${g.accentShadow}, 0); }
     }
 
     .of-panel {
       position: fixed;
       background: linear-gradient(180deg, var(--of-hud-bg-2) 0%, var(--of-hud-bg-1) 100%);
       border: 1px solid var(--of-hud-line-2);
-      border-radius: ${C.xl};
-      box-shadow: ${O.lg};
+      border-radius: ${k.xl};
+      box-shadow: ${z.lg};
       font-family: ${b.body};
       color: var(--of-hud-text-1);
       user-select: none;
-      z-index: ${se.panel};
+      z-index: ${xe.panel};
       display: flex;
       flex-direction: column;
       overflow: hidden;
@@ -163,6 +697,39 @@
       stroke-linejoin: round;
     }
     .ld-icon-btn input { display: none; }
+    .ld-original-switch {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--of-hud-text-3);
+      cursor: pointer;
+      user-select: none;
+    }
+    .ld-original-switch:hover { color: var(--of-hud-text-1); }
+    .ld-original-switch input { display: none; }
+    .ld-original-track {
+      position: relative;
+      width: 24px;
+      height: 14px;
+      border-radius: 7px;
+      background: var(--of-hud-bg-3);
+      transition: background ${m.fast};
+    }
+    .ld-original-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--of-hud-text-2);
+      transition: transform ${m.fast};
+    }
+    .ld-original-switch input:checked + .ld-original-track { background: var(--of-hud-accent); }
+    .ld-original-switch input:checked + .ld-original-track::after { transform: translateX(10px); }
     .ld-mode-btn input { display: none; }
     .ld-chip input { display: none; }
 
@@ -438,7 +1005,7 @@
       border-radius: 50%;
       background: var(--of-hud-text-1);
       border: 1px solid rgba(0,0,0,0.4);
-      box-shadow: ${O.sm};
+      box-shadow: ${z.sm};
       pointer-events: auto;
       cursor: grab;
     }
@@ -448,7 +1015,7 @@
       border-radius: 50%;
       background: var(--of-hud-text-1);
       border: 1px solid rgba(0,0,0,0.4);
-      box-shadow: ${O.sm};
+      box-shadow: ${z.sm};
       pointer-events: auto;
       cursor: grab;
     }
@@ -584,7 +1151,7 @@
       padding: 6px 10px;
       background: var(--of-hud-accent-soft);
       border: 1px solid var(--of-hud-accent-line);
-      border-radius: ${C.sm};
+      border-radius: ${k.sm};
       font-size: 11px;
       color: var(--of-hud-text-2);
       text-align: center;
@@ -818,7 +1385,7 @@
     /* Native join-modal player highlights \u2014 re-themed to blue accent */
     .of-current-player-boost {
       box-shadow: 0 0 0 1px var(--of-hud-accent), 0 0 16px var(--of-hud-accent-soft);
-      background: linear-gradient(90deg, var(--of-hud-accent-soft), rgba(${f.accentShadow}, 0.06));
+      background: linear-gradient(90deg, var(--of-hud-accent-soft), rgba(${g.accentShadow}, 0.06));
     }
     .of-current-player-team-boost {
       box-shadow: inset 0 0 0 1px var(--of-hud-accent-line), 0 0 20px var(--of-hud-accent-soft);
@@ -861,315 +1428,12 @@
       animation: discoveryCardActiveBeacon 1.45s ease-in-out infinite;
     }
 
-    /* ===================== Up Next strip ===================== */
-    .of-upcoming {
-      margin: 18px 0 0;
-      font-family: ${b.body};
-      color: var(--of-hud-text-1);
-    }
-
-    .of-upcoming-head {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin: 0 0 12px;
-    }
-    .of-upcoming-lbl {
-      font-size: 10.5px;
-      font-weight: 800;
-      letter-spacing: 1.8px;
-      text-transform: uppercase;
-      color: var(--of-hud-text-3);
-    }
-    .of-upcoming-rule {
-      flex: 1;
-      height: 1px;
-      background: var(--of-hud-line-1);
-    }
-    .of-upcoming-toggle {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      font-weight: 600;
-      color: var(--of-hud-text-2);
-      cursor: pointer;
-      user-select: none;
-    }
-    .of-upcoming-toggle input {
-      position: absolute;
-      opacity: 0;
-      width: 0;
-      height: 0;
-    }
-    .of-upcoming-sw {
-      position: relative;
-      width: 30px;
-      height: 17px;
-      border-radius: 999px;
-      background: var(--of-hud-bg-3);
-      box-shadow: inset 0 0 0 1px var(--of-hud-line-2);
-      transition: background ${m.fast};
-      flex: none;
-    }
-    .of-upcoming-sw::after {
-      content: '';
-      position: absolute;
-      top: 2px;
-      left: 2px;
-      width: 13px;
-      height: 13px;
-      border-radius: 50%;
-      background: var(--of-hud-text-2);
-      transition: transform ${m.fast}, background ${m.fast};
-    }
-    .of-upcoming-toggle input:checked + .of-upcoming-sw {
-      background: var(--of-hud-accent);
-      box-shadow: inset 0 0 0 1px var(--of-hud-accent-line);
-    }
-    .of-upcoming-toggle input:checked + .of-upcoming-sw::after {
-      transform: translateX(13px);
-      background: var(--of-hud-bg-0);
-    }
-
-    .of-upcoming-grid {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
-    }
-    .of-upcoming-col {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      min-height: 0;
-    }
-    .of-upcoming-slot {
-      min-height: 124px;
-      display: flex;
-    }
-
-    .of-upcoming-empty {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      width: 100%;
-      border-radius: ${C.xl};
-      border: 1.5px dashed rgba(255, 255, 255, 0.3);
-      background: var(--of-hud-bg-1);
-      color: var(--of-hud-text-3);
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: 0.4px;
-    }
-
-    .of-upcoming-card {
-      position: relative;
-      width: 100%;
-      min-height: 124px;
-      /* Flex column + space-between: tags flow at the top, the name bar is
-         pinned to the bottom, and the card GROWS to fit its tags instead of
-         letting them overlap the name. */
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      border: 1.5px dashed rgba(255, 255, 255, 0.3);
-      border-radius: ${C.xl};
-      background: var(--of-hud-bg-1);
-      color: #fff;
-      text-transform: uppercase;
-      text-align: left;
-      overflow: hidden;
-      cursor: pointer;
-      padding: 0;
-      transition: transform ${m.normal}, border-color ${m.fast};
-    }
-    .of-upcoming-card:hover {
-      transform: scale(1.02);
-      border-color: rgba(255, 255, 255, 0.5);
-    }
-    .of-upcoming-art {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      border-radius: ${C.xl};
-      overflow: hidden;
-      pointer-events: none;
-    }
-    .of-upcoming-art img {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      object-position: center;
-      opacity: 0.45;
-      filter: grayscale(0.55) brightness(0.82);
-    }
-    .of-upcoming-art::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(180deg, rgba(10, 12, 13, 0.25), rgba(10, 12, 13, 0.6));
-    }
-    .of-upcoming-toprow {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 8px;
-      padding: 8px 8px 0;
-    }
-    .of-upcoming-tags {
-      display: flex;
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 4px;
-      max-width: 62%;
-      min-width: 0;
-    }
-    .of-upcoming-tag {
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.6px;
-      padding: 3px 7px;
-      border-radius: 4px;
-      background: rgba(10, 12, 13, 0.7);
-      border: 1px solid var(--of-hud-line-3);
-      color: var(--of-hud-text-3);
-    }
-    .of-upcoming-tag-more {
-      color: var(--of-hud-text-2);
-    }
-    .of-upcoming-chip {
-      display: flex;
-      align-items: center;
-      gap: 5px;
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 1.2px;
-      padding: 4px 8px;
-      border-radius: 4px;
-      background: rgba(10, 12, 13, 0.78);
-      color: var(--of-hud-text-2);
-      border: 1px solid var(--of-hud-line-3);
-      white-space: nowrap;
-    }
-    .of-upcoming-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: var(--of-hud-text-3);
-    }
-    .of-upcoming-bot {
-      position: relative;
-      z-index: 1;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      padding: 8px 12px;
-      background: rgba(0, 0, 0, 0.55);
-      backdrop-filter: blur(8px);
-    }
-    .of-upcoming-metarow {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 8px;
-      min-width: 0;
-    }
-    .of-upcoming-count {
-      flex: none;
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-      color: var(--of-hud-text-3);
-    }
-    .of-upcoming-count svg {
-      height: 14px;
-      width: 14px;
-    }
-    .of-upcoming-name {
-      font-size: 15px;
-      font-weight: 700;
-      letter-spacing: 0.8px;
-      line-height: 1.1;
-      color: var(--of-hud-text-2);
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-    .of-upcoming-mode {
-      flex: 1;
-      min-width: 0;
-      font-size: 11px;
-      font-weight: 400;
-      letter-spacing: 0.6px;
-      color: rgba(255, 255, 255, 0.7);
-      text-transform: none;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
-    }
-
-    /* Matched upcoming card: of-discovery-card-active supplies the beacon ring
-       for parity with a live match; these refine the chip + name emphasis. */
-    .of-upcoming-card-match {
-      border-style: solid;
-    }
-    .of-upcoming-card-match .of-upcoming-chip {
-      color: var(--of-hud-accent);
-      border-color: var(--of-hud-accent-line);
-      background: var(--of-hud-accent-soft);
-    }
-    .of-upcoming-card-match .of-upcoming-dot {
-      background: var(--of-hud-accent);
-    }
-    .of-upcoming-card-match .of-upcoming-name {
-      color: #fff;
-    }
-  `}var P={gameFoundAudio:null,gameStartAudio:null,audioUnlocked:!1,preloadSounds(){try{this.gameFoundAudio=new Audio("https://github.com/DeLoWaN/openfront-game-notifier/raw/refs/heads/main/notification_sounds/new-notification-014-363678.mp3"),this.gameFoundAudio.volume=.5,this.gameFoundAudio.preload="auto",this.gameStartAudio=new Audio("https://github.com/DeLoWaN/openfront-game-notifier/raw/refs/heads/main/notification_sounds/opening-bell-421471.mp3"),this.gameStartAudio.volume=.5,this.gameStartAudio.preload="auto",this.setupAudioUnlock()}catch(a){console.warn("[SoundUtils] Could not preload audio:",a)}},setupAudioUnlock(){let a=()=>{if(this.audioUnlocked)return;let e=[];this.gameFoundAudio&&(this.gameFoundAudio.volume=.01,e.push(this.gameFoundAudio.play().then(()=>{this.gameFoundAudio&&(this.gameFoundAudio.pause(),this.gameFoundAudio.currentTime=0,this.gameFoundAudio.volume=.5)}).catch(()=>{}))),this.gameStartAudio&&(this.gameStartAudio.volume=.01,e.push(this.gameStartAudio.play().then(()=>{this.gameStartAudio&&(this.gameStartAudio.pause(),this.gameStartAudio.currentTime=0,this.gameStartAudio.volume=.5)}).catch(()=>{}))),Promise.all(e).then(()=>{this.audioUnlocked=!0,console.log("[SoundUtils] Audio unlocked successfully"),document.removeEventListener("click",a),document.removeEventListener("keydown",a),document.removeEventListener("touchstart",a)})};document.addEventListener("click",a,{once:!0}),document.addEventListener("keydown",a,{once:!0}),document.addEventListener("touchstart",a,{once:!0})},playGameFoundSound(){this.gameFoundAudio?(console.log("[SoundUtils] Attempting to play game found sound"),this.gameFoundAudio.currentTime=0,this.gameFoundAudio.play().catch(a=>{console.warn("[SoundUtils] Failed to play game found sound:",a)})):console.warn("[SoundUtils] Game found audio not initialized")},playGameStartSound(){this.gameStartAudio?(console.log("[SoundUtils] Attempting to play game start sound"),this.gameStartAudio.currentTime=0,this.gameStartAudio.play().catch(a=>{console.warn("[SoundUtils] Failed to play game start sound:",a)})):console.warn("[SoundUtils] Game start audio not initialized")}};var $={callbacks:[],lastUrl:location.href,initialized:!1,init(){if(this.initialized)return;this.initialized=!0;let a=()=>{location.href!==this.lastUrl&&(this.lastUrl=location.href,this.notify())};window.addEventListener("popstate",a),window.addEventListener("hashchange",a);let e=history.pushState,t=history.replaceState;history.pushState=function(...i){e.apply(history,i),setTimeout(a,0)},history.replaceState=function(...i){t.apply(history,i),setTimeout(a,0)},setInterval(a,200)},subscribe(a){this.callbacks.push(a),this.init()},notify(){this.callbacks.forEach(a=>a(location.href))}};var Le=["ffa","team","special","hosted"],X={subscribers:[],lastLobbies:[],started:!1,publicLobbiesListener:null,start(){this.started||(this.started=!0,this.publicLobbiesListener=a=>this.handlePublicLobbiesUpdate(a),document.addEventListener("public-lobbies-update",this.publicLobbiesListener))},stop(){this.started&&(this.started=!1,this.publicLobbiesListener&&(document.removeEventListener("public-lobbies-update",this.publicLobbiesListener),this.publicLobbiesListener=null))},subscribe(a){this.subscribers.push(a),this.lastLobbies.length>0&&a(this.lastLobbies)},notifySubscribers(){this.subscribers.forEach(a=>a(this.lastLobbies))},handlePublicLobbiesUpdate(a){let e=a.detail?.payload;this.lastLobbies=this.extractLobbies(e),this.notifySubscribers()},extractLobbies(a){if(!a||typeof a!="object")return[];if(Array.isArray(a.lobbies))return a.lobbies;let e=a.games;return e?Le.flatMap(t=>(e[t]??[]).map(i=>({...i,publicGameType:i.publicGameType??t}))):[]}};var U={lastActionTime:0,debounceDelay:800,getLobbyButton(){return document.querySelector("public-lobby")?.querySelector("button.group.relative.isolate")},canJoinLobby(){let a=document.querySelector("public-lobby");if(!a)return!1;let e=this.getLobbyButton();return!!(e&&!a.isLobbyHighlighted&&a.lobbies&&a.lobbies.length>0&&!e.disabled&&e.offsetParent!==null)},verifyState(a){let e=document.querySelector("public-lobby");if(!e)return!1;let t=this.getLobbyButton();return!t||t.disabled||t.offsetParent===null?!1:a==="in"?e.isLobbyHighlighted===!0:a==="out"?!!(!e.isLobbyHighlighted&&e.lobbies&&e.lobbies.length>0):!1},tryJoinLobby(){let a=Date.now();if(a-this.lastActionTime<this.debounceDelay)return!1;let e=this.getLobbyButton(),t=document.querySelector("public-lobby");return e&&t&&!t.isLobbyHighlighted&&t.lobbies&&t.lobbies.length>0&&!e.disabled&&e.offsetParent!==null?(this.lastActionTime=a,e.click(),setTimeout(()=>{this.verifyState("in")||console.warn("[LobbyUtils] Join may have failed, state not updated")},100),!0):!1},isOnLobbyPage(){if(document.body.classList.contains("in-game"))return!1;let a=document.getElementById("page-game");if(a&&!a.classList.contains("hidden"))return!1;let e=document.querySelector("canvas");if(e&&e.offsetParent!==null){let o=e.getBoundingClientRect();if(o.width>100&&o.height>100)return!1}let t=document.querySelector("public-lobby");if(t&&t.offsetParent!==null)return!0;if(t&&t.offsetParent===null)return!1;let i=document.getElementById("page-play");if(i&&!i.classList.contains("hidden")&&t)return!0;let n=window.location.pathname.replace(/\/+$/,"")||"/";return n==="/"||n==="/public-lobby"}};var Z={isSupported(){return typeof Notification<"u"},isBackgrounded(){let a=document.visibilityState==="hidden"||document.hidden,e=typeof document.hasFocus=="function"?document.hasFocus():!0;return a||!e},async ensurePermission(){if(typeof Notification>"u")return!1;if(Notification.permission==="granted")return!0;if(Notification.permission==="denied")return!1;try{return await Notification.requestPermission()==="granted"}catch(a){return console.warn("[BrowserNotificationUtils] Permission request failed:",a),!1}},show(a){if(!this.isSupported()||!this.isBackgrounded())return!1;if(Notification.permission==="granted"){let e=new Notification(a.title,{body:a.body});return e.onclick=()=>{this.focusWindow(),a.onClick?.(),e.close()},!0}return!1},focusWindow(){window.focus()}};var de={world:"World",continental:"Continental",europe:"Europe",asia:"Asia",north_america:"North America",africa:"Africa",south_america:"South America",oceania:"Oceania",antarctica:"Antarctica",countries:"Countries",cosmic:"Cosmic",fictional:"Fictional",arcade:"Arcade",tournament:"Tournament",other:"Other"},ce=["world","continental","europe","asia","north_america","africa","south_america","oceania","antarctica","countries","cosmic","fictional","arcade","tournament","other"],F=[{gameMap:"Achiran",name:"Achiran",categories:["europe","fictional"]},{gameMap:"Aegean",name:"Aegean",categories:["europe","asia"]},{gameMap:"Africa",name:"Africa",categories:["continental","africa"]},{gameMap:"Alps",name:"Alps",categories:["europe"]},{gameMap:"Amazon River",name:"Amazon River",categories:["south_america"]},{gameMap:"Antarctica",name:"Antarctica",categories:["continental","antarctica"]},{gameMap:"ArchipelagoSea",name:"Archipelago Sea",categories:["europe"]},{gameMap:"Arctic",name:"Arctic",categories:["europe","asia","north_america"]},{gameMap:"Asia",name:"Asia",categories:["continental","asia"]},{gameMap:"Australia",name:"Australia",categories:["oceania"]},{gameMap:"Bab el-Mandeb Strait",name:"Bab el-Mandeb Strait",categories:["asia","africa"]},{gameMap:"Baikal",name:"Baikal",categories:["asia"]},{gameMap:"Baikal Nuke Wars",name:"Baikal (Nuke Wars)",categories:["fictional"]},{gameMap:"Baja California",name:"Baja California",categories:["north_america"]},{gameMap:"Balkans",name:"Balkans",categories:["europe"]},{gameMap:"Balkhash",name:"Balkhash",categories:["asia"]},{gameMap:"Baltics",name:"Baltics",categories:["europe"]},{gameMap:"Benelux",name:"Benelux",categories:["europe","countries"]},{gameMap:"Bering Sea",name:"Bering Sea",categories:["asia","north_america"]},{gameMap:"Bering Strait",name:"Bering Strait",categories:["asia","north_america"]},{gameMap:"Between Two Seas",name:"Between Two Seas",categories:["europe","asia"]},{gameMap:"Black Sea",name:"Black Sea",categories:["europe","asia"]},{gameMap:"Bosphorus Straits",name:"Bosphorus Straits",categories:["europe","asia"]},{gameMap:"Brain Rot",name:"Brain Rot",categories:["arcade"]},{gameMap:"Branching Paths",name:"Branching Paths",categories:["arcade"]},{gameMap:"Britannia",name:"Britannia",categories:["europe"]},{gameMap:"Britannia Classic",name:"Britannia (Classic)",categories:["europe"]},{gameMap:"Canary Islands",name:"Canary Islands",categories:["africa"]},{gameMap:"Cape Cod",name:"Cape Cod",categories:["north_america"]},{gameMap:"Cape Of Good Hope",name:"Cape Of Good Hope",categories:["africa"]},{gameMap:"Caribbean",name:"Caribbean",categories:["north_america"]},{gameMap:"Caspian Sea",name:"Caspian Sea",categories:["asia"]},{gameMap:"Caucasus",name:"Caucasus",categories:["europe","asia"]},{gameMap:"Central America",name:"Central America",categories:["north_america"]},{gameMap:"Channel Islands",name:"Channel Islands",categories:["north_america"]},{gameMap:"China",name:"China",categories:["asia","countries"]},{gameMap:"Chopping Block",name:"Chopping Block",categories:["arcade"]},{gameMap:"Clearwater Lakes",name:"Clearwater Lakes",categories:["north_america"]},{gameMap:"Conakry",name:"Conakry",categories:["africa"]},{gameMap:"Crimea",name:"Crimea",categories:["europe"]},{gameMap:"Danish Straits",name:"Danish Straits",categories:["europe"]},{gameMap:"Deglaciated Antarctica",name:"Deglaciated Antarctica",categories:["antarctica","fictional"]},{gameMap:"Didier",name:"Didier",categories:["arcade"]},{gameMap:"Didier France",name:"Didier (France)",categories:["arcade"]},{gameMap:"Dyslexdria",name:"Dyslexdria",categories:["world","fictional"]},{gameMap:"East Asia",name:"East Asia",categories:["asia"]},{gameMap:"Europe",name:"Europe",categories:["continental","europe"]},{gameMap:"Europe Classic",name:"Europe (Classic)",categories:["continental","europe"]},{gameMap:"Falkland Islands",name:"Falkland Islands",categories:["south_america"]},{gameMap:"Faroe Islands",name:"Faroe Islands",categories:["europe"]},{gameMap:"Finger Lakes",name:"Finger Lakes",categories:["north_america"]},{gameMap:"Four Islands",name:"Four Islands",categories:["fictional"]},{gameMap:"France",name:"France",categories:["europe","countries"]},{gameMap:"Gateway to the Atlantic",name:"Gateway to the Atlantic",categories:["europe"]},{gameMap:"Germany",name:"Germany",categories:["europe","countries"]},{gameMap:"Giant World Map",name:"Giant World Map",categories:["world"]},{gameMap:"Great Lakes",name:"Great Lakes",categories:["north_america"]},{gameMap:"Gulf Of Guinea",name:"Gulf Of Guinea",categories:["africa"]},{gameMap:"Gulf Of Mexico",name:"Gulf Of Mexico",categories:["north_america"]},{gameMap:"Gulf of St. Lawrence",name:"Gulf of St. Lawrence",categories:["north_america"]},{gameMap:"Halkidiki",name:"Halkidiki",categories:["europe"]},{gameMap:"Hawaii",name:"Hawaii",categories:["oceania"]},{gameMap:"Hecate Strait",name:"Hecate Strait",categories:["north_america"]},{gameMap:"Hong Kong",name:"Hong Kong",categories:["asia"]},{gameMap:"Horn Of Africa",name:"Horn Of Africa",categories:["africa"]},{gameMap:"Iceland",name:"Iceland",categories:["europe"]},{gameMap:"Indian Subcontinent",name:"Indian Subcontinent",categories:["asia"]},{gameMap:"Irish Sea",name:"Irish Sea",categories:["europe"]},{gameMap:"Italia",name:"Italia",categories:["europe"]},{gameMap:"Japan",name:"Japan",categories:["asia","countries"]},{gameMap:"Juan De Fuca Strait",name:"Juan De Fuca Strait",categories:["north_america"]},{gameMap:"Korea",name:"Korea",categories:["asia","countries"]},{gameMap:"Labyrinth",name:"Labyrinth",categories:["arcade"]},{gameMap:"Las Vegas Strip",name:"Las Vegas Strip",categories:["north_america"]},{gameMap:"Lemnos",name:"Lemnos",categories:["europe"]},{gameMap:"Levant",name:"Levant",categories:["asia"]},{gameMap:"Lisbon",name:"Lisbon",categories:["europe"]},{gameMap:"Los Angeles",name:"Los Angeles",categories:["north_america"]},{gameMap:"Luna",name:"Luna",categories:["cosmic"]},{gameMap:"Madagascar",name:"Madagascar",categories:["africa"]},{gameMap:"Manicouagan",name:"Manicouagan",categories:["north_america"]},{gameMap:"Mare Nostrum",name:"Mare Nostrum",categories:["europe","asia","africa"]},{gameMap:"Mars",name:"Mars",categories:["cosmic"]},{gameMap:"Mena",name:"MENA",categories:["asia","africa"]},{gameMap:"Middle East",name:"Middle East",categories:["asia"]},{gameMap:"MilkyWay",name:"Milky Way",categories:["cosmic"]},{gameMap:"Mississippi River",name:"Mississippi River",categories:["north_america"]},{gameMap:"Montreal",name:"Montreal",categories:["north_america"]},{gameMap:"More Than Luck",name:"More Than Luck",categories:["arcade"]},{gameMap:"New York City",name:"New York City",categories:["north_america"]},{gameMap:"New Zealand",name:"New Zealand",categories:["oceania"]},{gameMap:"Nile Delta",name:"Nile Delta",categories:["africa"]},{gameMap:"North America",name:"North America",categories:["continental","north_america"]},{gameMap:"Northwest Passage",name:"Northwest Passage",categories:["north_america"]},{gameMap:"Oceania",name:"Oceania",categories:["continental","oceania"]},{gameMap:"Ommatrypta",name:"Ommatrypta",categories:["arcade"]},{gameMap:"Onion",name:"Onion",categories:["arcade"]},{gameMap:"Pangaea",name:"Pangaea",categories:["fictional"]},{gameMap:"Passage",name:"Passage",categories:["fictional"]},{gameMap:"Pluto",name:"Pluto",categories:["cosmic"]},{gameMap:"Pulicat Lake",name:"Pulicat Lake",categories:["asia"]},{gameMap:"Qing China",name:"Qing China",categories:["asia","countries"]},{gameMap:"Rio de Janeiro",name:"Rio de Janeiro",categories:["south_america"]},{gameMap:"Russia",name:"Russia",categories:["europe","asia","countries"]},{gameMap:"San Francisco",name:"San Francisco",categories:["north_america"]},{gameMap:"Scandinavia",name:"Scandinavia",categories:["europe"]},{gameMap:"Sierpinski",name:"Sierpinski",categories:["arcade"]},{gameMap:"Sol",name:"Sol",categories:["cosmic"]},{gameMap:"South America",name:"South America",categories:["continental","south_america"]},{gameMap:"SoutheastAsia",name:"Southeast Asia",categories:["asia"]},{gameMap:"Strait of Gibraltar",name:"Strait of Gibraltar",categories:["europe","africa"]},{gameMap:"Strait of Hormuz",name:"Strait of Hormuz",categories:["asia"]},{gameMap:"Strait Of Malacca",name:"Strait Of Malacca",categories:["asia"]},{gameMap:"Surrounded",name:"Surrounded",categories:["fictional"]},{gameMap:"Svalmel",name:"Svalmel",categories:["europe","north_america","fictional"]},{gameMap:"Taiwan Strait",name:"Taiwan Strait",categories:["asia"]},{gameMap:"The Box",name:"The Box",categories:["arcade"]},{gameMap:"Tierra Del Fuego",name:"Tierra Del Fuego",categories:["south_america"]},{gameMap:"Titan",name:"Titan",categories:["cosmic"]},{gameMap:"Tourney 2 Teams",name:"Tourney 2 Teams",categories:["tournament"]},{gameMap:"Tourney 3 Teams",name:"Tourney 3 Teams",categories:["tournament"]},{gameMap:"Tourney 4 Teams",name:"Tourney 4 Teams",categories:["tournament"]},{gameMap:"Tourney 8 Teams",name:"Tourney 8 Teams",categories:["tournament"]},{gameMap:"Traders Dream",name:"Traders Dream",categories:["fictional"]},{gameMap:"Two Lakes",name:"Two Lakes",categories:["europe"]},{gameMap:"United States",name:"United States",categories:["north_america","countries"]},{gameMap:"Vancouver Island",name:"Vancouver Island",categories:["north_america"]},{gameMap:"Venice",name:"Venice",categories:["europe"]},{gameMap:"Vietnam",name:"Vietnam",categories:["asia","countries"]},{gameMap:"Warship Warship",name:"Warship Warship",categories:["arcade"]},{gameMap:"World",name:"World",categories:["world"]},{gameMap:"World Inverted",name:"World Inverted",categories:["world","fictional"]},{gameMap:"Yangtze River",name:"Yangtze River",categories:["asia"]},{gameMap:"Yellow Sea",name:"Yellow Sea",categories:["asia"]},{gameMap:"Yenisei",name:"Yenisei",categories:["asia"]}];var Ce="any";function pe(a){if(!a)return null;let e=a.toLowerCase().trim();return e==="free for all"||e==="ffa"||e==="free-for-all"?"FFA":e==="team"||e==="teams"?"Team":null}var Te=new Map(F.map(a=>[a.gameMap,a.name]));function ge(a){return Te.get(a)??a}function S(a){return pe(a.gameConfig?.gameMode)}function G(a){let e=a.publicGameType?.toLowerCase().trim();return e==="ffa"||e==="team"||e==="special"||e==="hosted"?e:null}function ee(a){if(a==="Duos"||a==="Trios"||a==="Quads"||a==="Humans Vs Nations"||a==="8+"||typeof a=="number"&&Number.isFinite(a)&&a>0)return a;if(typeof a=="string"){let e=parseInt(a,10);if(!Number.isNaN(e)&&e>0)return e}return null}function k(a){let e=a.gameConfig;if(!e||S(a)!=="Team")return null;let t=ee(e.playerTeams??null);return t!==null?t:ee(e.teamCount??e.teams??null)}function w(a){let e=a.gameConfig;return e?e.maxPlayers??e.maxClients??e.maxPlayersPerGame??a.maxClients??null:null}function V(a,e){return!a||!e?null:a==="Duos"?2:a==="Trios"?3:a==="Quads"?4:a==="Humans Vs Nations"?e:typeof a=="number"&&a>0?Math.floor(e/a):null}function te(a){return G(a)==="hosted"||a.custom===!0}var Ee=["Atom Bomb","Hydrogen Bomb","MIRV"];function ke(a,e){let t=a.gameConfig,i=t?.disabledUnits??[];switch(e){case"isCompact":return t?.gameMapSize==="Compact";case"isRandomSpawn":return t?.randomSpawn===!0;case"isAlliancesDisabled":return t?.disableAlliances===!0;case"isNukesDisabled":return Ee.every(n=>i.includes(n));case"isSAMsDisabled":return i.includes("SAM Launcher");case"isWaterNukes":return t?.waterNukes===!0;case"isDoomsdayClock":return t?.doomsdayClock!==void 0&&t.doomsdayClock.enabled!==!1;case"isTrusted":return t?.trusted;case"startingGold":return t?.startingGold??void 0;case"goldMultiplier":return t?.goldMultiplier??void 0;default:return}}function M(a,e){if(te(a))return ke(a,e);let t=a.gameConfig?.publicGameModifiers;switch(e){case"isCompact":return t?.isCompact;case"isRandomSpawn":return t?.isRandomSpawn;case"isCrowded":return t?.isCrowded;case"isHardNations":return t?.isHardNations;case"isAlliancesDisabled":return t?.isAlliancesDisabled;case"isNukesDisabled":return t?.isNukesDisabled;case"isSAMsDisabled":return t?.isSAMsDisabled;case"isPeaceTime":return t?.isPeaceTime;case"isWaterNukes":return t?.isWaterNukes;case"isDoomsdayClock":return t?.isDoomsdayClock;case"isTrusted":return a.gameConfig?.trusted;case"startingGold":return t?.startingGold??a.gameConfig?.startingGold??void 0;case"goldMultiplier":return t?.goldMultiplier??a.gameConfig?.goldMultiplier??void 0;default:return}}function fe(a){let e=S(a),t=k(a),i=w(a);if(e==="FFA")return i!==null?`FFA \u2022 ${i} slots`:"FFA";if(e!=="Team")return"Unsupported mode";if(t==="Humans Vs Nations")return i!==null?`Humans Vs Nations (${i})`:"Humans Vs Nations";if(t==="Duos")return"Duos";if(t==="Trios")return"Trios";if(t==="Quads")return"Quads";if(typeof t=="number"&&i!==null){let n=V(t,i);return n!==null?`${t} teams (${n} per team)`:`${t} teams`}return"Team"}function we(a){let e=S(a),t=k(a);return e==="FFA"?"FFA":e!=="Team"?"Unsupported mode":t==="Humans Vs Nations"?"Humans Vs Nations":t==="Duos"||t==="Trios"||t==="Quads"?t:typeof t=="number"?`${t} teams`:"Team"}function Ae(a){return a>=1e6&&a%1e6===0?`${a/1e6}M`:a>=1e3&&a%1e3===0?`${a/1e3}K`:String(a)}function he(a){let e=o=>!!M(a,o),t=[];e("isCompact")&&t.push("Compact"),e("isRandomSpawn")&&t.push("Random"),e("isCrowded")&&t.push("Crowded"),e("isHardNations")&&t.push("Hard");let i=M(a,"startingGold");typeof i=="number"&&t.push(Ae(i));let n=M(a,"goldMultiplier");return typeof n=="number"&&t.push(`x${n}`),e("isAlliancesDisabled")&&t.push("No Alliances"),e("isNukesDisabled")&&t.push("No Nukes"),e("isSAMsDisabled")&&t.push("No SAMs"),e("isPeaceTime")&&t.push("Peace"),e("isWaterNukes")&&t.push("Water Nukes"),e("isDoomsdayClock")&&t.push("Doomsday"),e("isTrusted")&&t.push("Trusted"),t}function be(a){let e=[],t=a.gameConfig?.gameMap?.trim(),i=w(a),n=k(a),o=we(a);if(t&&e.push(ge(t)),S(a)==="Team"&&n!=="Humans Vs Nations"){e.push(o);let l=V(n,i);l!==null&&e.push(`${l}/team`)}else e.push(o);let s=G(a);s==="hosted"?e.push("Hosted"):a.custom===!0?e.push("Custom"):s==="special"&&e.push("Special");let r=[];i!==null&&r.push(`${i} slots`);let d=he(a);return d.length>0&&r.push(d.join(", ")),{title:e.join(" \u2022 "),body:r.join(" \u2022 ")}}function ue(a){return typeof a=="number"&&Number.isFinite(a)?a:null}function y(a){return a==="blocked"||a==="rejected"?"blocked":a==="required"?"required":a==="any"||a==="allowed"||a==="indifferent"?"any":Ce}function me(a){if(!a||typeof a!="object")return;let e={};for(let[t,i]of Object.entries(a)){let n=Number(t);Number.isFinite(n)&&(e[n]=y(i))}return Object.keys(e).length>0?e:void 0}function Ie(a){if(!a||typeof a!="object")return;let e=a;return{isCompact:y(e.isCompact),isRandomSpawn:y(e.isRandomSpawn),isCrowded:y(e.isCrowded),isHardNations:y(e.isHardNations),isAlliancesDisabled:y(e.isAlliancesDisabled),isNukesDisabled:y(e.isNukesDisabled),isSAMsDisabled:y(e.isSAMsDisabled),isPeaceTime:y(e.isPeaceTime),isWaterNukes:y(e.isWaterNukes),isDoomsdayClock:y(e.isDoomsdayClock),isTrusted:y(e.isTrusted),startingGold:me(e.startingGold),goldMultiplier:me(e.goldMultiplier)}}function Ne(a){let e=ee(a);return e==="Duos"||e==="Trios"||e==="Quads"?null:e}function He(a){if(!Array.isArray(a))return[];let e=[];for(let t of a){let i=t,n=pe(i.gameMode??null);if(!n)continue;let o=ue(i.minPlayers),s=ue(i.maxPlayers);n==="Team"&&(typeof o=="number"&&o<E&&(o=E),typeof o=="number"&&typeof s=="number"&&s<o&&(s=o)),e.push({gameMode:n,teamCount:n==="Team"?Ne(i.teamCount??null):null,minPlayers:o,maxPlayers:s,modifiers:Ie(i.modifiers)})}return e}function ie(a,e=Date.now()){let t=Math.max(0,Math.floor((e-a)/1e3));return`${Math.floor(t/60)}m ${t%60}s`}function De(a){let e=S(a);if(e==="FFA")return"Free For All";if(e!=="Team")return"Unsupported mode";let t=k(a),i=w(a);if(t==="Humans Vs Nations")return i!==null?`${i} Humans vs ${i} Nations`:"Humans vs Nations";let n=null;t==="Duos"?n=2:t==="Trios"?n=3:t==="Quads"&&(n=4);let o=null;return n!==null?o=i!==null?Math.floor(i/n):null:typeof t=="number"&&(o=t,n=i!==null&&t>0?Math.floor(i/t):null),o===null?"Teams":n!==null?`${o} teams of ${n}`:`${o} teams`}function Pe(a,e,t){let i=a.gameConfig?.gameMap?.trim();if(!i)return null;let n=i.toLowerCase().replace(/[\s.()]+/g,"");if(!n)return null;let o=`maps/${encodeURIComponent(n)}/thumbnail.webp`,s=e?.[`maps/${n}/thumbnail.webp`];if(s){let r=(t??"").replace(/\/+$/,"");return r?`${r}${s}`:s}return`/${o}`}function ye(a,e,t){let i=w(a);return{gameID:a.gameID,mapName:ge(a.gameConfig?.gameMap?.trim()||"Unknown map"),modeText:De(a),capacityLabel:i!==null?`${i} slots`:"",modifierLabels:he(a),thumbnailUrl:Pe(a,e,t)}}function $e(a){if(!a||typeof a!="object"||Array.isArray(a))return{};let e={};for(let[t,i]of Object.entries(a))t&&(i==="required"||i==="blocked")&&(e[t]=i);return e}function ve(a){return{criteria:He(a?.criteria),discoveryEnabled:typeof a?.discoveryEnabled=="boolean"?a.discoveryEnabled:!0,soundEnabled:typeof a?.soundEnabled=="boolean"?a.soundEnabled:!0,desktopNotificationsEnabled:typeof a?.desktopNotificationsEnabled=="boolean"?a.desktopNotificationsEnabled:!1,isTeamTwoTimesMinEnabled:typeof a?.isTeamTwoTimesMinEnabled=="boolean"?a.isTeamTwoTimesMinEnabled:!!a?.isTeamThreeTimesMinEnabled,notifyUpcomingEnabled:typeof a?.notifyUpcomingEnabled=="boolean"?a.notifyUpcomingEnabled:!0,includeHostedAndCustomLobbies:typeof a?.includeHostedAndCustomLobbies=="boolean"?a.includeHostedAndCustomLobbies:!0,mapFilter:$e(a?.mapFilter)}}var Fe=["isCompact","isRandomSpawn","isCrowded","isHardNations","isAlliancesDisabled","isNukesDisabled","isSAMsDisabled","isPeaceTime","isWaterNukes","isDoomsdayClock","isTrusted"],q=class{matchesCriteria(e,t,i={}){if(!e||!e.gameConfig||!t||t.length===0||!this.matchesMapFilter(e.gameConfig.gameMap,i))return!1;let n=S(e),o=w(e);if(!n||o===null)return!1;let s=k(e),r=n==="Team"?V(s,o):null,d=this.resolveLobbyTeamCount(s,r,o);for(let l of t){if(l.gameMode!==n)continue;if(n==="Team"){let h=l.teamCount!==null&&l.teamCount!==void 0;if(!h&&s==="Humans Vs Nations")continue;if(h){if(l.teamCount==="8+"){if(d===null||d<8)continue}else if(l.teamCount==="Humans Vs Nations"||l.teamCount==="Duos"||l.teamCount==="Trios"||l.teamCount==="Quads"){if(l.teamCount!==s)continue}else if(d===null||l.teamCount!==d)continue}if(r===null)continue}let c=n==="Team"?r:o;if(c!==null&&!(s!=="Humans Vs Nations"&&(l.minPlayers!==null&&c<l.minPlayers||l.maxPlayers!==null&&c>l.maxPlayers))&&this.matchesModifiers(e,l.modifiers))return!0}return!1}resolveLobbyTeamCount(e,t,i){return typeof e=="number"?e:e==="Humans Vs Nations"?null:t!==null&&t>0&&i!==null?Math.floor(i/t):null}matchesMapFilter(e,t){return e!==void 0&&t[e]==="blocked"?!1:Object.values(t).some(n=>n==="required")?e!==void 0&&t[e]==="required":!0}matchesModifiers(e,t){if(!t)return!0;for(let i of Fe){let n=t[i];if(!n||n==="any")continue;let o=!!M(e,i);if(n==="blocked"&&o||n==="required"&&!o)return!1}return!(!this.matchesNumericModifier(M(e,"startingGold"),t.startingGold)||!this.matchesNumericModifier(M(e,"goldMultiplier"),t.goldMultiplier))}matchesNumericModifier(e,t){if(!t)return!0;let i=typeof e=="number"&&Number.isFinite(e)?e:null,n=Object.entries(t);if(n.length===0)return!0;let o=n.filter(([,r])=>r==="blocked").map(([r])=>Number(r));if(i!==null&&o.includes(i))return!1;let s=n.filter(([,r])=>r==="required").map(([r])=>Number(r));return!(s.length>0&&(i===null||!s.includes(i)))}};function x(a,e){if(e.length===0)return a;let t=e[0],i=e[e.length-1];return a<t?t:a>i?i:a}function A(a,e){if(e.length<2)return 0;let t=x(a,e),i=e.length-1;if(t>=e[i])return 1;if(t<=e[0])return 0;for(let n=0;n<i;n++){let o=e[n],s=e[n+1];if(t>=o&&t<=s){let r=(t-o)/(s-o);return(n+r)/i}}return 1}function ae(a,e){if(e.length<2)return e[0]??0;let t=e.length-1;if(a<=0)return e[0];if(a>=1)return e[t];let i=a*t,n=Math.floor(i),o=i-n,s=e[n]+o*(e[n+1]-e[n]);return Math.round(s)}var I=1e3,_=class{constructor(e){this.onMinSliderInput=()=>{let e=parseInt(this.minSlider.value,10)/I,t=ae(e,this.stops);this.applyValues(t,this.lastMax,{fireOnChange:!0,changed:"min"})};this.onMaxSliderInput=()=>{let e=parseInt(this.maxSlider.value,10)/I,t=ae(e,this.stops);this.applyValues(this.lastMin,t,{fireOnChange:!0,changed:"max"})};this.onMinInputChange=()=>{let e=parseInt(this.minInput.value,10);if(!Number.isFinite(e)){this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"both"});return}let t=x(e,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(t,this.lastMax,{fireOnChange:!0,changed:"min"})};this.onMaxInputChange=()=>{let e=parseInt(this.maxInput.value,10);if(!Number.isFinite(e)){this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"both"});return}let t=x(e,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(this.lastMin,t,{fireOnChange:!0,changed:"max"})};if(this.cfg=e,this.stops=e.stops??[e.bounds.min,e.bounds.max],this.minSlider=document.getElementById(e.minSliderId),this.maxSlider=document.getElementById(e.maxSliderId),this.minInput=document.getElementById(e.minInputId),this.maxInput=document.getElementById(e.maxInputId),this.rangeRoot=document.getElementById(e.rangeRootId),this.container=document.getElementById(e.containerId),!this.minSlider||!this.maxSlider||!this.minInput||!this.maxInput)throw new Error(`RangeSlider: missing required element in ${e.rangeRootId}`);this.minSlider.min="0",this.minSlider.max=String(I),this.maxSlider.min="0",this.maxSlider.max=String(I),this.lastMin=this.readInputClamped(this.minInput,e.bounds.min),this.lastMax=this.readInputClamped(this.maxInput,e.bounds.max),this.lastMax<this.lastMin&&(this.lastMax=this.lastMin),this.minSlider.addEventListener("input",this.onMinSliderInput),this.maxSlider.addEventListener("input",this.onMaxSliderInput),this.minInput.addEventListener("change",this.onMinInputChange),this.maxInput.addEventListener("change",this.onMaxInputChange),this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"both"}),this.renderTicks(),this.wireSteppers(),this.applyLockState()}applyLockState(){let e=!!this.cfg.lockMaxToTwiceMin?.();this.maxSlider.disabled=e,this.maxSlider.classList.toggle("is-max-locked",e),this.maxInput.disabled=e,this.container&&this.container.querySelectorAll('.ld-step-btn[data-target="max"]').forEach(t=>{t.disabled=e}),e&&this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"min"})}setMin(e){this.applyValues(e,this.lastMax,{fireOnChange:!0,changed:"min"})}setRange(e,t){this.applyValues(e,t,{fireOnChange:!1,changed:"both"})}readInputClamped(e,t){let i=parseInt(e.value,10);return Number.isFinite(i)?x(i,[this.cfg.bounds.min,this.cfg.bounds.max]):t}applyValues(e,t,i){let n=e,o=t;if(this.cfg.lockMaxToTwiceMin?.()&&(o=x(n*2,[this.cfg.bounds.min,this.cfg.bounds.max])),n>o){let s=i.changed??"both";s==="min"?o=n:s==="max"?n=o:(n=Math.min(e,t),o=Math.max(e,t))}if(this.lastMin=n,this.lastMax=o,this.minInput.value=String(n),this.maxInput.value=String(o),this.minSlider.value=String(Math.round(A(n,this.stops)*I)),this.maxSlider.value=String(Math.round(A(o,this.stops)*I)),this.rangeRoot){let s=A(n,this.stops)*100,r=A(o,this.stops)*100;this.rangeRoot.style.setProperty("--lo",`${s}%`),this.rangeRoot.style.setProperty("--hi",`${r}%`)}i.fireOnChange&&this.cfg.onChange(n,o)}renderTicks(){if(!this.cfg.ticksContainerId||!this.cfg.stops)return;let e=document.getElementById(this.cfg.ticksContainerId);if(e){e.innerHTML="";for(let t of this.cfg.stops){let i=A(t,this.cfg.stops)*100,n=document.createElement("div");n.className="ld-tick",n.style.left=`${i}%`;let o=document.createElement("span");o.className="ld-tick-label",o.style.left=`${i}%`,o.textContent=String(t),e.appendChild(n),e.appendChild(o)}}}wireSteppers(){if(!this.container)return;this.container.querySelectorAll(".ld-step-btn").forEach(t=>{let i=t.dataset.target,n=t.dataset.action;!i||!n||t.addEventListener("click",()=>{let o=n==="inc"?1:-1;if(i==="min"){let s=x(this.lastMin+o,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(s,this.lastMax,{fireOnChange:!0,changed:"min"})}else{let s=x(this.lastMax+o,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(this.lastMin,s,{fireOnChange:!0,changed:"max"})}})})}};var z=[1e6,5e6,25e6],W=[2],ne=["modifier-isCompact","modifier-isRandomSpawn","modifier-isCrowded","modifier-isHardNations","modifier-isAlliancesDisabled","modifier-isNukesDisabled","modifier-isSAMsDisabled","modifier-isPeaceTime","modifier-isWaterNukes","modifier-isDoomsdayClock","modifier-isTrusted"],_e=[["discovery-team-hvn","Humans Vs Nations",null]],Be=[["discovery-team-2","2"],["discovery-team-3","3"],["discovery-team-4","4"],["discovery-team-5","5"],["discovery-team-6","6"],["discovery-team-7","7"],["discovery-team-8plus","8+"]],Q=[..._e.map(([a])=>a),...Be.map(([a])=>a)];function Re(){try{if(typeof unsafeWindow<"u"&&unsafeWindow.__OF_DEBUG_DISCOVERY===!0)return!0}catch{}if(globalThis.__OF_DEBUG_DISCOVERY===!0)return!0;try{if(typeof localStorage<"u"&&localStorage.getItem("__OF_DEBUG_DISCOVERY")==="true")return!0}catch{}return!1}var oe=["modes","modifiers","maps","lobbies"],Oe={modes:!1,modifiers:!1,maps:!0,lobbies:!1};function Ue(){let a=GM_getValue(T.lobbyDiscoveryCollapsedSections,null),e={...Oe};for(let t of oe){let i=a?.[t];typeof i=="boolean"&&(e[t]=i)}return e}var B="page-detailed-view",Ge="of-discovery-see-all-match";function xe(){try{if(typeof unsafeWindow<"u")return unsafeWindow}catch{}return window}function Me(a){return a==="any"?"required":a==="required"?"blocked":"any"}function L(a){return a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}var Se=["ffa","special","team"],Ve='<svg viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>',j='<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>',qe='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>',ze='<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M19 5a9 9 0 010 14"/></svg>',We='<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg>',Y=class{constructor(){this.discoveryEnabled=!0;this.criteriaList=[];this.searchStartTime=null;this.lastMatchTime=null;this.soundEnabled=!0;this.desktopNotificationsEnabled=!1;this.notifyUpcomingEnabled=!0;this.includeHostedAndCustomLobbies=!0;this.mapFilter={};this.knownMaps=new Set(F.map(e=>e.gameMap));this.collapsedSections=Ue();this.desktopNotificationRequestId=0;this.activeMatchSources=new Set;this.seeAllPulseActive=!1;this.seeAllMatchIds=new Set;this.seeAllObserver=null;this.observedSeeAllView=null;this.seenLobbies=new Set;this.desktopNotifiedLobbies=new Set;this.isTeamTwoTimesMinEnabled=!1;this.ffaSlider=null;this.teamSlider=null;this.sleeping=!1;this.isDisposed=!1;this.lastLobbies=[];this.upcomingStrip=null;this.lastUpcomingSlots=new Map;this.lastUpcomingMatchSources=new Set;this.upcomingSlotSignatures=new Map;this.timerInterval=null;this.gameInfoInterval=null;this.pulseSyncTimeout=null;this.engine=new q,this.loadSettings(),this.createUI(),this.updateSleepState(),$.subscribe(()=>this.updateSleepState())}receiveLobbyUpdate(e){this.lastLobbies=e,this.processLobbies(e)}isSoundEnabled(){return this.soundEnabled}loadSettings(){let e=GM_getValue(T.lobbyDiscoverySettings,null),t=ve(e);GM_setValue(T.lobbyDiscoverySettings,t),this.criteriaList=t.criteria,this.soundEnabled=t.soundEnabled,this.desktopNotificationsEnabled=t.desktopNotificationsEnabled,this.discoveryEnabled=t.discoveryEnabled,this.isTeamTwoTimesMinEnabled=t.isTeamTwoTimesMinEnabled,this.notifyUpcomingEnabled=t.notifyUpcomingEnabled??!0,this.includeHostedAndCustomLobbies=t.includeHostedAndCustomLobbies??!0,this.mapFilter=t.mapFilter??{}}saveSettings(){GM_setValue(T.lobbyDiscoverySettings,{criteria:this.criteriaList,discoveryEnabled:this.discoveryEnabled,soundEnabled:this.soundEnabled,desktopNotificationsEnabled:this.desktopNotificationsEnabled,isTeamTwoTimesMinEnabled:this.isTeamTwoTimesMinEnabled,notifyUpcomingEnabled:this.notifyUpcomingEnabled,includeHostedAndCustomLobbies:this.includeHostedAndCustomLobbies,mapFilter:this.mapFilter})}updateStatusText(){let e=document.getElementById("discovery-search-timer");if(e){if(!this.discoveryEnabled||this.criteriaList.length===0||!this.isDiscoveryFeedbackAllowed()){e.textContent="",e.style.display="none";return}e.style.display="inline",this.lastMatchTime!==null?e.textContent=`last match ${ie(this.lastMatchTime)}`:this.searchStartTime!==null?e.textContent=`searching \xB7 ${ie(this.searchStartTime)}`:e.textContent="awaiting filters"}}updateCurrentGameInfo(){let e=document.getElementById("discovery-current-game-info");if(!e||!U.isOnLobbyPage()){e&&(e.style.display="none");return}let t=document.querySelector("public-lobby");if(!t||!Array.isArray(t.lobbies)||t.lobbies.length===0){e.style.display="none";return}let i=t.lobbies[0];if(!i||!i.gameConfig){e.style.display="none";return}e.style.display="block",e.textContent=`Current game: ${fe(i)}`}parseQueues(e){let t=new Map;for(let i of e){let n=G(i);if(!n)continue;let o=t.get(n)??[];o.push(i),t.set(n,o)}return t}toUpNextSlots(e){let t=new Map;for(let i of Se){let n=e.get(i);n?.length&&t.set(i,{live:n[0],upcoming:n[1]})}return t}processLobbies(e){try{this.updateCurrentGameInfo(),this.syncSearchTimer();let t=this.parseQueues(e),i=this.toUpNextSlots(t);if(this.addFeedOnlyMaps(e),!this.discoveryEnabled||this.criteriaList.length===0||!this.isDiscoveryFeedbackAllowed()){this.seenLobbies.clear(),this.desktopNotifiedLobbies.clear(),this.updateQueueCardPulses(new Set),this.updateSeeAllSignals(!1,new Set),this.renderUpcomingStrip(i,new Set),this.updateStatusText();return}let n=new Set,o=new Set,s=new Set,r=!1,d=new Set,l=[],c=!1,h=Re(),g=(p,u,v)=>{if(!this.includeHostedAndCustomLobbies&&te(p))return;let N=u!=="hosted"&&v===0,H=u==="hosted"||v>1,D=this.engine.matchesCriteria(p,this.criteriaList,this.mapFilter);if(h&&console.log("[OF Discovery]",{lobbyId:p.gameID,queue:u,index:v,mode:p.gameConfig?.gameMode,map:p.gameConfig?.gameMap,playerTeams:p.gameConfig?.playerTeams,modifiers:p.gameConfig?.publicGameModifiers,hostGold:{startingGold:p.gameConfig?.startingGold,goldMultiplier:p.gameConfig?.goldMultiplier},criteriaCount:this.criteriaList.length,matched:D}),!D)return;if(N)n.add(u);else{if(!this.notifyUpcomingEnabled)return;H?r=!0:o.add(u)}s.add(p.gameID);let R=this.getNotificationKey(p);d.add(R),this.seenLobbies.has(R)||(c=!0),this.desktopNotifiedLobbies.has(R)||l.push({lobby:p,queue:u,seeAllOnly:H})};for(let[p,u]of t)u.forEach((v,N)=>g(v,p,N));if(this.updateQueueCardPulses(n),this.updateSeeAllSignals(r,s),this.renderUpcomingStrip(i,o),c&&(this.lastMatchTime=Date.now(),this.soundEnabled&&P.playGameFoundSound()),this.desktopNotificationsEnabled){let p=new Set;for(let{lobby:u,queue:v,seeAllOnly:N}of l){let H=be(u),D=this.getNotificationKey(u);Z.show({title:H.title,body:H.body,tag:D,onClick:N?()=>this.openSeeAllView(v):void 0})&&p.add(D)}this.desktopNotifiedLobbies=new Set([...[...this.desktopNotifiedLobbies].filter(u=>d.has(u)),...p])}else this.desktopNotifiedLobbies.clear();this.seenLobbies=d,d.size===0&&(this.lastMatchTime=null),this.updateStatusText()}catch(t){console.error("[LobbyDiscovery] Error processing lobbies:",t)}}getNotificationKey(e){return JSON.stringify({gameID:e.gameID,map:e.gameConfig?.gameMap??null,mode:e.gameConfig?.gameMode??null,playerTeams:e.gameConfig?.playerTeams??e.gameConfig?.teamCount??null,capacity:e.gameConfig?.maxPlayers??e.maxClients??null,modifiers:e.gameConfig?.publicGameModifiers??{}})}isDiscoveryFeedbackAllowed(){return!(!U.isOnLobbyPage()||document.getElementById("page-play")?.classList.contains("hidden")&&!this.isSeeAllViewVisible()||document.querySelector("public-lobby")?.isLobbyHighlighted===!0||document.querySelector("join-lobby-modal")?.currentLobbyId||document.querySelector("host-lobby-modal")?.lobbyId)}getQueueCardElements(){let e=document.querySelector("game-mode-selector");if(!e)return{};let t=Array.from(e.querySelectorAll("div")).find(g=>g.className.includes("sm:grid-cols-[2fr_1fr]"));if(!(t instanceof HTMLElement))return{};let i=Array.from(t.children),n=i.find(g=>g.className.includes("sm:col-start-1")&&g.className.includes("sm:row-start-2")),o=i.find(g=>g.tagName==="SECTION"),s=o?Array.from(o.children).filter(g=>g.tagName==="DIV"):[],r=e.lobbies?.games,d=Array.isArray(r?.team)&&r.team.length>0,l=Array.isArray(r?.special)&&r.special.length>0,c=d?s[0]:void 0,h=l?s[d?1:0]:void 0;return{ffa:n?.querySelector("button"),team:c?.querySelector("button"),special:h?.querySelector("button")}}updateQueueCardPulses(e){this.activeMatchSources=new Set(e),this.applyQueueCardPulses(),this.scheduleQueueCardPulseSync()}isSeeAllViewVisible(){let e=document.getElementById(B);return!!e&&!e.classList.contains("hidden")}getSeeAllButton(){return document.querySelector('game-mode-selector button[class~="group/upcoming"]')}updateSeeAllSignals(e,t){this.seeAllPulseActive=e,this.seeAllMatchIds=t,this.applySeeAllSignals()}applySeeAllSignals(){this.getSeeAllButton()?.classList.toggle("of-discovery-card-active",this.seeAllPulseActive),this.observeSeeAllView(),this.applySeeAllHighlights()}observeSeeAllView(){let e=document.getElementById(B);!e||e===this.observedSeeAllView||(this.seeAllObserver?.disconnect(),this.seeAllObserver=new MutationObserver(()=>this.applySeeAllHighlights()),this.seeAllObserver.observe(e,{childList:!0,subtree:!0}),this.observedSeeAllView=e)}applySeeAllHighlights(){let e=document.getElementById(B);if(e)for(let t of Array.from(e.querySelectorAll("[data-lobby-slot]")))t.classList.toggle(Ge,this.seeAllMatchIds.has(t.dataset.lobbySlot??""))}openSeeAllView(e){if(xe().showPage?.(B),e==="hosted")return;document.getElementById(B)?.open?.({tab:e})}applyQueueCardPulses(){let e=this.getQueueCardElements();for(let t of["ffa","special","team"]){let i=e[t];i&&i.classList.toggle("of-discovery-card-active",this.activeMatchSources.has(t))}}scheduleQueueCardPulseSync(){this.pulseSyncTimeout&&clearTimeout(this.pulseSyncTimeout),this.pulseSyncTimeout=setTimeout(()=>{this.pulseSyncTimeout=null,this.applyQueueCardPulses(),this.applySeeAllSignals(),this.renderUpcomingStrip(this.lastUpcomingSlots,this.lastUpcomingMatchSources)},16)}getAssetContext(){let e=xe();return{manifest:e.BOOTSTRAP_CONFIG?.assetManifest??e.__ASSET_MANIFEST__??null,cdnBase:e.BOOTSTRAP_CONFIG?.cdnBase??e.__CDN_BASE__??null}}ensureUpcomingStrip(){let e=document.getElementById("of-upcoming-strip");if(e)return this.upcomingStrip=e,e;let t=document.querySelector("game-mode-selector");if(!t||!t.parentNode)return null;let i=document.createElement("div");i.id="of-upcoming-strip",i.className="of-upcoming",i.innerHTML=`
-      <div class="of-upcoming-head">
-        <span class="of-upcoming-lbl">Up Next</span>
-        <span class="of-upcoming-rule"></span>
-        <label class="of-upcoming-toggle">
-          <input type="checkbox" id="of-upcoming-toggle">
-          <span class="of-upcoming-sw" aria-hidden="true"></span>
-          <span>Notify on upcoming games</span>
-        </label>
-      </div>
-      <div class="of-upcoming-grid">
-        <div class="of-upcoming-slot" data-source="ffa"></div>
-        <div class="of-upcoming-col">
-          <div class="of-upcoming-slot" data-source="special"></div>
-          <div class="of-upcoming-slot" data-source="team"></div>
-        </div>
-      </div>
-    `,t.parentNode.insertBefore(i,t.nextSibling),this.upcomingStrip=i,this.upcomingSlotSignatures.clear();let n=i.querySelector("#of-upcoming-toggle");return n&&(n.checked=this.notifyUpcomingEnabled,n.addEventListener("change",()=>{this.notifyUpcomingEnabled=n.checked,this.saveSettings(),this.processLobbies(this.lastLobbies)})),i}renderUpcomingStrip(e,t){this.lastUpcomingSlots=e,this.lastUpcomingMatchSources=t;let i=this.ensureUpcomingStrip();if(!i)return;let n=!this.sleeping&&this.isDiscoveryFeedbackAllowed();if(i.style.display=n?"":"none",!n)return;let o=i.querySelector("#of-upcoming-toggle");o&&o.checked!==this.notifyUpcomingEnabled&&(o.checked=this.notifyUpcomingEnabled);let{manifest:s,cdnBase:r}=this.getAssetContext();for(let d of Se){let l=i.querySelector(`.of-upcoming-slot[data-source="${d}"]`);if(!l)continue;let c=e.get(d),h=t.has(d),g=c?.live&&c.upcoming?ye(c.upcoming,s,r):null,p=c?.live?g?JSON.stringify([g.gameID,h,g.mapName,g.modeText,g.capacityLabel,g.modifierLabels,g.thumbnailUrl]):"empty":"hidden";if(this.upcomingSlotSignatures.get(d)!==p)if(this.upcomingSlotSignatures.set(d,p),p==="hidden")l.style.display="none",l.replaceChildren();else if(p==="empty"){l.style.display="";let u=document.createElement("div");u.className="of-upcoming-empty",u.textContent="No upcoming game",l.replaceChildren(u)}else l.style.display="",l.replaceChildren(this.buildUpcomingCardElement(g,h))}}buildUpcomingCardElement(e,t){let i=document.createElement("button");i.type="button",i.className=`of-upcoming-card${t?" of-upcoming-card-match of-discovery-card-active":""}`;let o=e.modifierLabels.slice(0,3),s=e.modifierLabels.length-o.length,r=o.map(c=>`<span class="of-upcoming-tag">${L(c)}</span>`).join("");s>0&&(r+=`<span class="of-upcoming-tag of-upcoming-tag-more">+${s}</span>`);let d=e.thumbnailUrl?`<img src="${L(e.thumbnailUrl)}" alt="" loading="lazy">`:"",l=t?"Match \xB7 up next":"Up next";return i.setAttribute("aria-label",`Open ${e.mapName} in OpenFront's join modal`),i.innerHTML=`
-      <span class="of-upcoming-art">${d}</span>
-      <span class="of-upcoming-toprow">
-        <span class="of-upcoming-tags">${r}</span>
-        <span class="of-upcoming-chip"><span class="of-upcoming-dot"></span>${l}</span>
-      </span>
-      <span class="of-upcoming-bot">
-        <span class="of-upcoming-name">${L(e.mapName)}</span>
-        <span class="of-upcoming-metarow">
-          <span class="of-upcoming-mode">${L(e.modeText)}</span>
-          ${e.capacityLabel?`<span class="of-upcoming-count">${Ve}${L(e.capacityLabel)}</span>`:""}
-        </span>
-      </span>
-    `,i.addEventListener("click",()=>this.navigateToGame(`/game/${e.gameID}`)),i}navigateToGame(e){window.location.assign(e)}hideUpcomingStrip(){this.upcomingStrip&&(this.upcomingStrip.style.display="none")}stopTimer(){this.timerInterval&&(clearInterval(this.timerInterval),this.timerInterval=null)}startGameInfoUpdates(){this.stopGameInfoUpdates(),this.updateCurrentGameInfo(),this.gameInfoInterval=setInterval(()=>this.updateCurrentGameInfo(),1e3)}stopGameInfoUpdates(){this.gameInfoInterval&&(clearInterval(this.gameInfoInterval),this.gameInfoInterval=null)}syncSearchTimer(e={}){let{resetStart:t=!1}=e;this.stopTimer(),t&&(this.searchStartTime=null,this.lastMatchTime=null,this.seenLobbies.clear(),this.desktopNotifiedLobbies.clear()),this.discoveryEnabled&&this.criteriaList.length>0&&this.isDiscoveryFeedbackAllowed()?(this.searchStartTime===null&&(this.searchStartTime=Date.now()),this.timerInterval=setInterval(()=>this.updateStatusText(),1e3)):(this.searchStartTime=null,this.lastMatchTime=null),this.updateStatusText(),this.updatePulseIndicator()}updatePulseIndicator(){let e=document.querySelector(".ld-pulse");if(!e)return;let t=this.discoveryEnabled&&this.criteriaList.length>0;e.classList.toggle("is-paused",!t)}setDiscoveryEnabled(e,t={}){this.discoveryEnabled=e,this.saveSettings(),this.updateStatusLabel(),this.syncSearchTimer({resetStart:t.resetTimer??!1})}updateStatusLabel(){let e=document.querySelector(".ld-status-text strong");e&&(e.textContent=this.discoveryEnabled?"Discovery active":"Discovery paused")}getNumberValue(e){let t=document.getElementById(e);if(!t)return null;let i=parseInt(t.value,10);return Number.isNaN(i)?null:i}getModifierState(e){let i=document.getElementById(e)?.dataset.state;return i==="required"||i==="blocked"?i:"any"}setModifierState(e,t){let i=document.getElementById(e);i&&this.applyTriState(i,t)}applyTriState(e,t){e.dataset.state=t,e.setAttribute("aria-pressed",String(t!=="any"));let i=e.dataset.modName??e.getAttribute("aria-label")??"",n=t==="blocked"?"excluded":t;i&&e.setAttribute("aria-label",t==="any"?i:`${i} \xB7 ${n}`);let o=e.querySelector(".ld-mod-ind");o&&(t==="required"?o.innerHTML=j:t==="blocked"?o.innerHTML=qe:o.innerHTML="")}cycleModifierState(e){this.setModifierState(e,Me(this.getModifierState(e)))}getMapChips(){return Array.from(document.querySelectorAll("#discovery-maps-body [data-game-map]"))}cycleMapState(e){let t=e.dataset.gameMap??"",i=Me(this.mapFilter[t]??"any"),n={...this.mapFilter};i==="any"?delete n[t]:n[t]=i,this.setMapFilter(n)}setMapFilter(e){this.mapFilter=e,this.syncMapChips(),this.saveSettings(),this.syncSearchTimer({resetStart:!0}),this.processLobbies(this.lastLobbies)}syncMapChips(){for(let s of this.getMapChips())this.applyTriState(s,this.mapFilter[s.dataset.gameMap??""]??"any");let e=Object.values(this.mapFilter),t=e.filter(s=>s==="required").length,i=e.filter(s=>s==="blocked").length,n=[...t>0?[`${t} required`]:[],...i>0?[`${i} excluded`]:[]],o=document.getElementById("discovery-maps-summary");o&&(o.textContent=n.length>0?n.join(" \xB7 "):"Any map")}filterMapChips(e){let t=e.trim().toLowerCase();for(let i of this.getMapChips())i.hidden=t!==""&&!(i.dataset.modName??"").toLowerCase().includes(t);for(let i of Array.from(document.querySelectorAll("#discovery-maps-body [data-category]")))i.hidden=!i.querySelector("[data-game-map]:not([hidden])")}addFeedOnlyMaps(e){for(let t of e){let i=t.gameConfig?.gameMap?.trim();if(!i||this.knownMaps.has(i))continue;this.knownMaps.add(i);let n=this.ensureMapGroup("other");if(!n)continue;n.insertAdjacentHTML("beforeend",this.renderMapChip(i,i));let o=n.lastElementChild;o.addEventListener("click",()=>this.cycleMapState(o)),this.applyTriState(o,this.mapFilter[i]??"any");let s=document.getElementById("discovery-maps-search");this.filterMapChips(s?.value??"")}}ensureMapGroup(e){let t=document.getElementById("discovery-maps-groups");if(!t)return null;let i=t.querySelector(`[data-category="${e}"] .ld-mods`);return i||(t.insertAdjacentHTML("beforeend",this.renderMapGroup(e,"")),t.querySelector(`[data-category="${e}"] .ld-mods`))}getNumericModifierState(e){let t={};for(let[i,n]of Object.entries(e))t[Number(i)]=this.getModifierState(n);return t}getModifierFiltersFromUI(){return{isCompact:this.getModifierState("modifier-isCompact"),isRandomSpawn:this.getModifierState("modifier-isRandomSpawn"),isCrowded:this.getModifierState("modifier-isCrowded"),isHardNations:this.getModifierState("modifier-isHardNations"),isAlliancesDisabled:this.getModifierState("modifier-isAlliancesDisabled"),isNukesDisabled:this.getModifierState("modifier-isNukesDisabled"),isSAMsDisabled:this.getModifierState("modifier-isSAMsDisabled"),isPeaceTime:this.getModifierState("modifier-isPeaceTime"),isWaterNukes:this.getModifierState("modifier-isWaterNukes"),isDoomsdayClock:this.getModifierState("modifier-isDoomsdayClock"),isTrusted:this.getModifierState("modifier-isTrusted"),startingGold:this.getNumericModifierState({1e6:"modifier-startingGold-1000000",5e6:"modifier-startingGold-5000000",25e6:"modifier-startingGold-25000000"}),goldMultiplier:this.getNumericModifierState({2:"modifier-goldMultiplier-2"})}}getAllTeamCountValues(){let e=[];for(let t of Q){let i=document.getElementById(t);if(!i?.checked)continue;let n=i.value;if(n==="Humans Vs Nations"||n==="8+")e.push(n);else{let o=parseInt(n,10);Number.isNaN(o)||e.push(o)}}return e}setAllTeamCounts(e){for(let t of Q){let i=document.getElementById(t);i&&(i.checked=e,this.syncChipState(t))}}syncChipState(e){let t=document.getElementById(e);if(!t)return;let i=t.closest(".ld-chip, .ld-mode-btn, .ld-2x");i&&(i.classList.toggle("is-on",t.checked),i.setAttribute("aria-pressed",String(t.checked)))}buildCriteriaFromUI(){let e=this.getModifierFiltersFromUI(),t=[];if(document.getElementById("discovery-ffa")?.checked&&t.push({gameMode:"FFA",teamCount:null,minPlayers:this.getNumberValue("discovery-ffa-min"),maxPlayers:this.getNumberValue("discovery-ffa-max"),modifiers:e}),!document.getElementById("discovery-team")?.checked)return t;let o=this.getAllTeamCountValues();if(o.length===0)return t.push({gameMode:"Team",teamCount:null,minPlayers:this.getNumberValue("discovery-team-min"),maxPlayers:this.getNumberValue("discovery-team-max"),modifiers:e}),t;for(let s of o)t.push({gameMode:"Team",teamCount:s,minPlayers:this.getNumberValue("discovery-team-min"),maxPlayers:this.getNumberValue("discovery-team-max"),modifiers:e});return t}updateFilterCount(){let e=document.getElementById("discovery-filter-count"),t=document.getElementById("discovery-filter-word");if(!e||!t)return;let i=document.getElementById("discovery-ffa")?.checked,n=document.getElementById("discovery-team")?.checked,o=Q.filter(d=>document.getElementById(d)?.checked).length,s=[...ne,...z.map(d=>`modifier-startingGold-${d}`),...W.map(d=>`modifier-goldMultiplier-${d}`)].filter(d=>this.getModifierState(d)!=="any").length,r=(i?1:0)+(n?1:0)+o+s;e.textContent=String(r),t.textContent=r===1?"filter":"filters"}setModePanelActive(e,t){let i=document.getElementById(e);i&&i.classList.toggle("is-off",!t)}setIconButtonState(e,t){let i=document.getElementById(e)?.closest(".ld-icon-btn");i&&i.classList.toggle("is-on",t)}loadUIFromSettings(){let e=this.criteriaList.find(c=>c.gameMode==="FFA"),t=this.criteriaList.filter(c=>c.gameMode==="Team"),i=document.getElementById("discovery-ffa"),n=document.getElementById("discovery-team");if(i&&(i.checked=!!e,this.syncChipState("discovery-ffa"),this.setModePanelActive("discovery-ffa-config",!!e)),n&&(n.checked=t.length>0,this.syncChipState("discovery-team"),this.setModePanelActive("discovery-team-config",t.length>0)),e){let c=document.getElementById("discovery-ffa-min"),h=document.getElementById("discovery-ffa-max");c&&e.minPlayers!==null&&(c.value=String(e.minPlayers)),h&&e.maxPlayers!==null&&(h.value=String(e.maxPlayers))}if(t[0]){let c=document.getElementById("discovery-team-min"),h=document.getElementById("discovery-team-max");c&&t[0].minPlayers!==null&&(c.value=String(t[0].minPlayers)),h&&t[0].maxPlayers!==null&&(h.value=String(t[0].maxPlayers)),this.setTeamCountSelections(t.map(g=>g.teamCount))}let o=(e??t[0])?.modifiers;if(o){this.setModifierState("modifier-isCompact",o.isCompact??"any"),this.setModifierState("modifier-isRandomSpawn",o.isRandomSpawn??"any"),this.setModifierState("modifier-isCrowded",o.isCrowded??"any"),this.setModifierState("modifier-isHardNations",o.isHardNations??"any"),this.setModifierState("modifier-isAlliancesDisabled",o.isAlliancesDisabled??"any"),this.setModifierState("modifier-isNukesDisabled",o.isNukesDisabled??"any"),this.setModifierState("modifier-isSAMsDisabled",o.isSAMsDisabled??"any"),this.setModifierState("modifier-isPeaceTime",o.isPeaceTime??"any"),this.setModifierState("modifier-isWaterNukes",o.isWaterNukes??"any"),this.setModifierState("modifier-isDoomsdayClock",o.isDoomsdayClock??"any"),this.setModifierState("modifier-isTrusted",o.isTrusted??"any");for(let c of z)this.setModifierState(`modifier-startingGold-${c}`,o.startingGold?.[c]??"any");for(let c of W)this.setModifierState(`modifier-goldMultiplier-${c}`,o.goldMultiplier?.[c]??"any")}let s=document.getElementById("discovery-sound-toggle");s&&(s.checked=this.soundEnabled,this.setIconButtonState("discovery-sound-toggle",this.soundEnabled));let r=document.getElementById("discovery-desktop-toggle");r&&(r.checked=this.desktopNotificationsEnabled,this.setIconButtonState("discovery-desktop-toggle",this.desktopNotificationsEnabled));let d=document.getElementById("discovery-team-two-times");d&&(d.checked=this.isTeamTwoTimesMinEnabled,this.syncChipState("discovery-team-two-times")),this.syncMapChips();let l=document.getElementById("discovery-hosted-toggle");l&&(l.checked=this.includeHostedAndCustomLobbies,this.syncChipState("discovery-hosted-toggle")),this.updateFilterCount(),this.updateStatusLabel()}setTeamCountSelections(e){for(let t of e){let i=null;t==="Humans Vs Nations"?i=document.getElementById("discovery-team-hvn"):t==="8+"?i=document.getElementById("discovery-team-8plus"):typeof t=="number"&&(i=document.getElementById(`discovery-team-${t}`)),i&&(i.checked=!0,this.syncChipState(i.id))}}refreshCriteria(){this.criteriaList=this.buildCriteriaFromUI(),this.saveSettings(),this.updateFilterCount(),this.syncSearchTimer({resetStart:!0})}resetAll(){let e=document.getElementById("discovery-ffa"),t=document.getElementById("discovery-team");e&&(e.checked=!1,this.syncChipState("discovery-ffa"),this.setModePanelActive("discovery-ffa-config",!1)),t&&(t.checked=!1,this.syncChipState("discovery-team"),this.setModePanelActive("discovery-team-config",!1)),this.setAllTeamCounts(!1);let i=document.getElementById("discovery-team-two-times");i&&(i.checked=!1,this.syncChipState("discovery-team-two-times"),this.isTeamTwoTimesMinEnabled=!1);for(let n of ne)this.setModifierState(n,"any");for(let n of z)this.setModifierState(`modifier-startingGold-${n}`,"any");for(let n of W)this.setModifierState(`modifier-goldMultiplier-${n}`,"any");this.mapFilter={},this.syncMapChips(),this.ffaSlider?.setRange(1,125),this.teamSlider?.setRange(E,J),this.teamSlider?.applyLockState(),this.refreshCriteria()}async handleDesktopNotificationToggleChange(e){let t=++this.desktopNotificationRequestId;if(!e.checked){this.desktopNotificationsEnabled=!1,this.setIconButtonState("discovery-desktop-toggle",!1),this.saveSettings();return}let i=await Z.ensurePermission();t!==this.desktopNotificationRequestId||this.isDisposed||!e.isConnected||!e.checked||(this.desktopNotificationsEnabled=i,e.checked=i,e.toggleAttribute("checked",i),this.setIconButtonState("discovery-desktop-toggle",i),this.saveSettings())}setupEventListeners(){document.getElementById("discovery-status")?.addEventListener("click",()=>{this.setDiscoveryEnabled(!this.discoveryEnabled,{resetTimer:!0})});for(let[o,s]of[["discovery-ffa","discovery-ffa-config"],["discovery-team","discovery-team-config"]]){let r=document.getElementById(o);r?.addEventListener("change",()=>{this.syncChipState(o),this.setModePanelActive(s,r.checked),this.refreshCriteria()})}let e=document.getElementById("discovery-team-two-times");e?.addEventListener("change",()=>{this.isTeamTwoTimesMinEnabled=e.checked,this.syncChipState("discovery-team-two-times"),this.teamSlider?.applyLockState(),this.refreshCriteria()});for(let o of oe)document.getElementById(`discovery-${o}-toggle`)?.addEventListener("click",()=>{this.collapsedSections[o]=!this.collapsedSections[o],GM_setValue(T.lobbyDiscoveryCollapsedSections,this.collapsedSections),this.applySectionCollapse(o)});let t=document.getElementById("discovery-maps-search");t?.addEventListener("input",()=>this.filterMapChips(t.value)),document.getElementById("discovery-maps-clear")?.addEventListener("click",()=>{this.setMapFilter({})});for(let o of this.getMapChips())o.addEventListener("click",()=>this.cycleMapState(o));let i=document.getElementById("discovery-hosted-toggle");i?.addEventListener("change",()=>{this.includeHostedAndCustomLobbies=i.checked,this.syncChipState("discovery-hosted-toggle"),this.saveSettings(),this.processLobbies(this.lastLobbies)}),document.getElementById("discovery-reset")?.addEventListener("click",()=>{this.resetAll()});for(let o of[...Q,"discovery-sound-toggle","discovery-desktop-toggle"]){let s=document.getElementById(o);s&&s.addEventListener("change",()=>{if(o==="discovery-sound-toggle"){this.soundEnabled=s.checked,this.setIconButtonState("discovery-sound-toggle",s.checked),this.saveSettings();return}if(o==="discovery-desktop-toggle"){this.handleDesktopNotificationToggleChange(s);return}this.syncChipState(o),this.refreshCriteria()})}let n=[...ne,...z.map(o=>`modifier-startingGold-${o}`),...W.map(o=>`modifier-goldMultiplier-${o}`)];for(let o of n)document.getElementById(o)?.addEventListener("click",()=>{this.cycleModifierState(o),this.refreshCriteria()})}renderModeButton(e,t){return`
+    ${Se()}
+    ${we()}
+  `}var B={gameFoundAudio:null,gameStartAudio:null,audioUnlocked:!1,preloadSounds(){try{this.gameFoundAudio=new Audio("https://github.com/DeLoWaN/openfront-game-notifier/raw/refs/heads/main/notification_sounds/new-notification-014-363678.mp3"),this.gameFoundAudio.volume=.5,this.gameFoundAudio.preload="auto",this.gameStartAudio=new Audio("https://github.com/DeLoWaN/openfront-game-notifier/raw/refs/heads/main/notification_sounds/opening-bell-421471.mp3"),this.gameStartAudio.volume=.5,this.gameStartAudio.preload="auto",this.setupAudioUnlock()}catch(a){console.warn("[SoundUtils] Could not preload audio:",a)}},setupAudioUnlock(){let a=()=>{if(this.audioUnlocked)return;let e=[];this.gameFoundAudio&&(this.gameFoundAudio.volume=.01,e.push(this.gameFoundAudio.play().then(()=>{this.gameFoundAudio&&(this.gameFoundAudio.pause(),this.gameFoundAudio.currentTime=0,this.gameFoundAudio.volume=.5)}).catch(()=>{}))),this.gameStartAudio&&(this.gameStartAudio.volume=.01,e.push(this.gameStartAudio.play().then(()=>{this.gameStartAudio&&(this.gameStartAudio.pause(),this.gameStartAudio.currentTime=0,this.gameStartAudio.volume=.5)}).catch(()=>{}))),Promise.all(e).then(()=>{this.audioUnlocked=!0,console.log("[SoundUtils] Audio unlocked successfully"),document.removeEventListener("click",a),document.removeEventListener("keydown",a),document.removeEventListener("touchstart",a)})};document.addEventListener("click",a,{once:!0}),document.addEventListener("keydown",a,{once:!0}),document.addEventListener("touchstart",a,{once:!0})},playGameFoundSound(){this.gameFoundAudio?(console.log("[SoundUtils] Attempting to play game found sound"),this.gameFoundAudio.currentTime=0,this.gameFoundAudio.play().catch(a=>{console.warn("[SoundUtils] Failed to play game found sound:",a)})):console.warn("[SoundUtils] Game found audio not initialized")},playGameStartSound(){this.gameStartAudio?(console.log("[SoundUtils] Attempting to play game start sound"),this.gameStartAudio.currentTime=0,this.gameStartAudio.play().catch(a=>{console.warn("[SoundUtils] Failed to play game start sound:",a)})):console.warn("[SoundUtils] Game start audio not initialized")}};var _={callbacks:[],lastUrl:location.href,initialized:!1,init(){if(this.initialized)return;this.initialized=!0;let a=()=>{location.href!==this.lastUrl&&(this.lastUrl=location.href,this.notify())};window.addEventListener("popstate",a),window.addEventListener("hashchange",a);let e=history.pushState,t=history.replaceState;history.pushState=function(...i){e.apply(history,i),setTimeout(a,0)},history.replaceState=function(...i){t.apply(history,i),setTimeout(a,0)},setInterval(a,200)},subscribe(a){this.callbacks.push(a),this.init()},notify(){this.callbacks.forEach(a=>a(location.href))}};var rt=["ffa","team","special","hosted"],ae={subscribers:[],lastLobbies:[],lastServerTime:null,started:!1,publicLobbiesListener:null,start(){this.started||(this.started=!0,this.publicLobbiesListener=a=>this.handlePublicLobbiesUpdate(a),document.addEventListener("public-lobbies-update",this.publicLobbiesListener))},stop(){this.started&&(this.started=!1,this.publicLobbiesListener&&(document.removeEventListener("public-lobbies-update",this.publicLobbiesListener),this.publicLobbiesListener=null))},subscribe(a){this.subscribers.push(a),this.lastLobbies.length>0&&a(this.lastLobbies,this.lastServerTime)},notifySubscribers(){this.subscribers.forEach(a=>a(this.lastLobbies,this.lastServerTime))},handlePublicLobbiesUpdate(a){let e=a.detail?.payload;this.lastLobbies=this.extractLobbies(e),this.lastServerTime=this.extractServerTime(e),this.notifySubscribers()},extractServerTime(a){let e=a?.serverTime;return typeof e=="number"&&Number.isFinite(e)?e:null},extractLobbies(a){if(!a||typeof a!="object")return[];if(Array.isArray(a.lobbies))return a.lobbies;let e=a.games;return e?rt.flatMap(t=>(e[t]??[]).map(i=>({...i,publicGameType:i.publicGameType??t}))):[]}};var R={lastActionTime:0,debounceDelay:800,getLobbyButton(){return document.querySelector("public-lobby")?.querySelector("button.group.relative.isolate")},canJoinLobby(){let a=document.querySelector("public-lobby");if(!a)return!1;let e=this.getLobbyButton();return!!(e&&!a.isLobbyHighlighted&&a.lobbies&&a.lobbies.length>0&&!e.disabled&&e.offsetParent!==null)},verifyState(a){let e=document.querySelector("public-lobby");if(!e)return!1;let t=this.getLobbyButton();return!t||t.disabled||t.offsetParent===null?!1:a==="in"?e.isLobbyHighlighted===!0:a==="out"?!!(!e.isLobbyHighlighted&&e.lobbies&&e.lobbies.length>0):!1},tryJoinLobby(){let a=Date.now();if(a-this.lastActionTime<this.debounceDelay)return!1;let e=this.getLobbyButton(),t=document.querySelector("public-lobby");return e&&t&&!t.isLobbyHighlighted&&t.lobbies&&t.lobbies.length>0&&!e.disabled&&e.offsetParent!==null?(this.lastActionTime=a,e.click(),setTimeout(()=>{this.verifyState("in")||console.warn("[LobbyUtils] Join may have failed, state not updated")},100),!0):!1},isOnLobbyPage(){if(document.body.classList.contains("in-game"))return!1;let a=document.getElementById("page-game");if(a&&!a.classList.contains("hidden"))return!1;let e=document.querySelector("canvas");if(e&&e.offsetParent!==null){let r=e.getBoundingClientRect();if(r.width>100&&r.height>100)return!1}let t=document.querySelector("public-lobby");if(t&&t.offsetParent!==null)return!0;if(t&&t.offsetParent===null)return!1;let i=document.getElementById("page-play");if(i&&!i.classList.contains("hidden")&&t)return!0;let o=window.location.pathname.replace(/\/+$/,"")||"/";return o==="/"||o==="/public-lobby"}};var V={isSupported(){return typeof Notification<"u"},isBackgrounded(){let a=document.visibilityState==="hidden"||document.hidden,e=typeof document.hasFocus=="function"?document.hasFocus():!0;return a||!e},async ensurePermission(){if(typeof Notification>"u")return!1;if(Notification.permission==="granted")return!0;if(Notification.permission==="denied")return!1;try{return await Notification.requestPermission()==="granted"}catch(a){return console.warn("[BrowserNotificationUtils] Permission request failed:",a),!1}},show(a){if(!this.isSupported()||!this.isBackgrounded())return!1;if(Notification.permission==="granted"){let e=new Notification(a.title,{body:a.body});return e.onclick=()=>{this.focusWindow(),a.onClick?.(),e.close()},!0}return!1},focusWindow(){window.focus()}};var nt="sm:grid-cols-[2fr_1fr]";function G(a=document.querySelector("game-mode-selector")){return(a?Array.from(a.querySelectorAll("div")).find(t=>t.className.includes(nt)):void 0)??null}function Te(a){return a.className.includes("sm:col-start-1")&&a.className.includes("sm:row-start-2")}function Ce(a){return a.tagName==="SECTION"}function Ee(a){return Ce(a)||Te(a)}function ke(a){let e=Array.from(a.children),t=e.find(Ce);return{ffaCell:e.find(Te),cardCells:t?Array.from(t.children).filter(i=>i.tagName==="DIV"):[]}}var Ae={world:"World",continental:"Continental",europe:"Europe",asia:"Asia",north_america:"North America",africa:"Africa",south_america:"South America",oceania:"Oceania",antarctica:"Antarctica",countries:"Countries",cosmic:"Cosmic",fictional:"Fictional",arcade:"Arcade",tournament:"Tournament",other:"Other"},Ie=["world","continental","europe","asia","north_america","africa","south_america","oceania","antarctica","countries","cosmic","fictional","arcade","tournament","other"],H=[{gameMap:"Achiran",name:"Achiran",categories:["europe","fictional"]},{gameMap:"Aegean",name:"Aegean",categories:["europe","asia"]},{gameMap:"Africa",name:"Africa",categories:["continental","africa"]},{gameMap:"Alps",name:"Alps",categories:["europe"]},{gameMap:"Amazon River",name:"Amazon River",categories:["south_america"]},{gameMap:"Antarctica",name:"Antarctica",categories:["continental","antarctica"]},{gameMap:"ArchipelagoSea",name:"Archipelago Sea",categories:["europe"]},{gameMap:"Arctic",name:"Arctic",categories:["europe","asia","north_america"]},{gameMap:"Asia",name:"Asia",categories:["continental","asia"]},{gameMap:"Australia",name:"Australia",categories:["oceania"]},{gameMap:"Bab el-Mandeb Strait",name:"Bab el-Mandeb Strait",categories:["asia","africa"],assetKey:"babelmandebstrait"},{gameMap:"Baikal",name:"Baikal",categories:["asia"]},{gameMap:"Baikal Nuke Wars",name:"Baikal (Nuke Wars)",categories:["fictional"]},{gameMap:"Baja California",name:"Baja California",categories:["north_america"]},{gameMap:"Balkans",name:"Balkans",categories:["europe"]},{gameMap:"Balkhash",name:"Balkhash",categories:["asia"]},{gameMap:"Baltics",name:"Baltics",categories:["europe"]},{gameMap:"Benelux",name:"Benelux",categories:["europe","countries"]},{gameMap:"Bering Sea",name:"Bering Sea",categories:["asia","north_america"]},{gameMap:"Bering Strait",name:"Bering Strait",categories:["asia","north_america"]},{gameMap:"Between Two Seas",name:"Between Two Seas",categories:["europe","asia"]},{gameMap:"Black Sea",name:"Black Sea",categories:["europe","asia"]},{gameMap:"Bosphorus Straits",name:"Bosphorus Straits",categories:["europe","asia"]},{gameMap:"Brain Rot",name:"Brain Rot",categories:["arcade"]},{gameMap:"Branching Paths",name:"Branching Paths",categories:["arcade"]},{gameMap:"Britannia",name:"Britannia",categories:["europe"]},{gameMap:"Britannia Classic",name:"Britannia (Classic)",categories:["europe"]},{gameMap:"Canary Islands",name:"Canary Islands",categories:["africa"]},{gameMap:"Cape Cod",name:"Cape Cod",categories:["north_america"]},{gameMap:"Cape Of Good Hope",name:"Cape Of Good Hope",categories:["africa"]},{gameMap:"Caribbean",name:"Caribbean",categories:["north_america"]},{gameMap:"Caspian Sea",name:"Caspian Sea",categories:["asia"]},{gameMap:"Caucasus",name:"Caucasus",categories:["europe","asia"]},{gameMap:"Central America",name:"Central America",categories:["north_america"]},{gameMap:"Channel Islands",name:"Channel Islands",categories:["north_america"]},{gameMap:"China",name:"China",categories:["asia","countries"]},{gameMap:"Chopping Block",name:"Chopping Block",categories:["arcade"]},{gameMap:"Clearwater Lakes",name:"Clearwater Lakes",categories:["north_america"]},{gameMap:"Conakry",name:"Conakry",categories:["africa"]},{gameMap:"Crimea",name:"Crimea",categories:["europe"]},{gameMap:"Danish Straits",name:"Danish Straits",categories:["europe"]},{gameMap:"Deglaciated Antarctica",name:"Deglaciated Antarctica",categories:["antarctica","fictional"]},{gameMap:"Didier",name:"Didier",categories:["arcade"]},{gameMap:"Didier France",name:"Didier (France)",categories:["arcade"]},{gameMap:"Dyslexdria",name:"Dyslexdria",categories:["world","fictional"]},{gameMap:"East Asia",name:"East Asia",categories:["asia"]},{gameMap:"Europe",name:"Europe",categories:["continental","europe"]},{gameMap:"Europe Classic",name:"Europe (Classic)",categories:["continental","europe"]},{gameMap:"Falkland Islands",name:"Falkland Islands",categories:["south_america"]},{gameMap:"Faroe Islands",name:"Faroe Islands",categories:["europe"]},{gameMap:"Finger Lakes",name:"Finger Lakes",categories:["north_america"]},{gameMap:"Four Islands",name:"Four Islands",categories:["fictional"]},{gameMap:"France",name:"France",categories:["europe","countries"]},{gameMap:"Gateway to the Atlantic",name:"Gateway to the Atlantic",categories:["europe"]},{gameMap:"Germany",name:"Germany",categories:["europe","countries"]},{gameMap:"Giant World Map",name:"Giant World Map",categories:["world"]},{gameMap:"Great Lakes",name:"Great Lakes",categories:["north_america"]},{gameMap:"Gulf Of Guinea",name:"Gulf Of Guinea",categories:["africa"]},{gameMap:"Gulf Of Mexico",name:"Gulf Of Mexico",categories:["north_america"]},{gameMap:"Gulf of St. Lawrence",name:"Gulf of St. Lawrence",categories:["north_america"]},{gameMap:"Halkidiki",name:"Halkidiki",categories:["europe"]},{gameMap:"Hawaii",name:"Hawaii",categories:["oceania"]},{gameMap:"Hecate Strait",name:"Hecate Strait",categories:["north_america"]},{gameMap:"Hong Kong",name:"Hong Kong",categories:["asia"]},{gameMap:"Horn Of Africa",name:"Horn Of Africa",categories:["africa"]},{gameMap:"Iceland",name:"Iceland",categories:["europe"]},{gameMap:"Indian Subcontinent",name:"Indian Subcontinent",categories:["asia"]},{gameMap:"Irish Sea",name:"Irish Sea",categories:["europe"]},{gameMap:"Italia",name:"Italia",categories:["europe"]},{gameMap:"Japan",name:"Japan",categories:["asia","countries"]},{gameMap:"Juan De Fuca Strait",name:"Juan De Fuca Strait",categories:["north_america"]},{gameMap:"Korea",name:"Korea",categories:["asia","countries"]},{gameMap:"Labyrinth",name:"Labyrinth",categories:["arcade"]},{gameMap:"Las Vegas Strip",name:"Las Vegas Strip",categories:["north_america"]},{gameMap:"Lemnos",name:"Lemnos",categories:["europe"]},{gameMap:"Levant",name:"Levant",categories:["asia"]},{gameMap:"Lisbon",name:"Lisbon",categories:["europe"]},{gameMap:"Los Angeles",name:"Los Angeles",categories:["north_america"]},{gameMap:"Luna",name:"Luna",categories:["cosmic"]},{gameMap:"Madagascar",name:"Madagascar",categories:["africa"]},{gameMap:"Manicouagan",name:"Manicouagan",categories:["north_america"]},{gameMap:"Mare Nostrum",name:"Mare Nostrum",categories:["europe","asia","africa"]},{gameMap:"Mars",name:"Mars",categories:["cosmic"]},{gameMap:"Mena",name:"MENA",categories:["asia","africa"]},{gameMap:"Middle East",name:"Middle East",categories:["asia"]},{gameMap:"MilkyWay",name:"Milky Way",categories:["cosmic"]},{gameMap:"Mississippi River",name:"Mississippi River",categories:["north_america"]},{gameMap:"Montreal",name:"Montreal",categories:["north_america"]},{gameMap:"More Than Luck",name:"More Than Luck",categories:["arcade"]},{gameMap:"New York City",name:"New York City",categories:["north_america"]},{gameMap:"New Zealand",name:"New Zealand",categories:["oceania"]},{gameMap:"Nile Delta",name:"Nile Delta",categories:["africa"]},{gameMap:"North America",name:"North America",categories:["continental","north_america"]},{gameMap:"Northwest Passage",name:"Northwest Passage",categories:["north_america"]},{gameMap:"Oceania",name:"Oceania",categories:["continental","oceania"]},{gameMap:"Ommatrypta",name:"Ommatrypta",categories:["arcade"]},{gameMap:"Onion",name:"Onion",categories:["arcade"]},{gameMap:"Pangaea",name:"Pangaea",categories:["fictional"]},{gameMap:"Passage",name:"Passage",categories:["fictional"]},{gameMap:"Pluto",name:"Pluto",categories:["cosmic"]},{gameMap:"Pulicat Lake",name:"Pulicat Lake",categories:["asia"]},{gameMap:"Qing China",name:"Qing China",categories:["asia","countries"]},{gameMap:"Rio de Janeiro",name:"Rio de Janeiro",categories:["south_america"]},{gameMap:"Russia",name:"Russia",categories:["europe","asia","countries"]},{gameMap:"San Francisco",name:"San Francisco",categories:["north_america"]},{gameMap:"Scandinavia",name:"Scandinavia",categories:["europe"]},{gameMap:"Sierpinski",name:"Sierpinski",categories:["arcade"]},{gameMap:"Sol",name:"Sol",categories:["cosmic"]},{gameMap:"South America",name:"South America",categories:["continental","south_america"]},{gameMap:"SoutheastAsia",name:"Southeast Asia",categories:["asia"]},{gameMap:"Strait of Gibraltar",name:"Strait of Gibraltar",categories:["europe","africa"]},{gameMap:"Strait of Hormuz",name:"Strait of Hormuz",categories:["asia"]},{gameMap:"Strait Of Malacca",name:"Strait Of Malacca",categories:["asia"]},{gameMap:"Surrounded",name:"Surrounded",categories:["fictional"]},{gameMap:"Svalmel",name:"Svalmel",categories:["europe","north_america","fictional"]},{gameMap:"Taiwan Strait",name:"Taiwan Strait",categories:["asia"]},{gameMap:"The Box",name:"The Box",categories:["arcade"]},{gameMap:"Tierra Del Fuego",name:"Tierra Del Fuego",categories:["south_america"]},{gameMap:"Titan",name:"Titan",categories:["cosmic"]},{gameMap:"Tourney 2 Teams",name:"Tourney 2 Teams",categories:["tournament"],assetKey:"tourney1"},{gameMap:"Tourney 3 Teams",name:"Tourney 3 Teams",categories:["tournament"],assetKey:"tourney2"},{gameMap:"Tourney 4 Teams",name:"Tourney 4 Teams",categories:["tournament"],assetKey:"tourney3"},{gameMap:"Tourney 8 Teams",name:"Tourney 8 Teams",categories:["tournament"],assetKey:"tourney4"},{gameMap:"Traders Dream",name:"Traders Dream",categories:["fictional"]},{gameMap:"Two Lakes",name:"Two Lakes",categories:["europe"]},{gameMap:"United States",name:"United States",categories:["north_america","countries"]},{gameMap:"Vancouver Island",name:"Vancouver Island",categories:["north_america"]},{gameMap:"Venice",name:"Venice",categories:["europe"]},{gameMap:"Vietnam",name:"Vietnam",categories:["asia","countries"]},{gameMap:"Warship Warship",name:"Warship Warship",categories:["arcade"]},{gameMap:"World",name:"World",categories:["world"]},{gameMap:"World Inverted",name:"World Inverted",categories:["world","fictional"]},{gameMap:"Yangtze River",name:"Yangtze River",categories:["asia"]},{gameMap:"Yellow Sea",name:"Yellow Sea",categories:["asia"]},{gameMap:"Yenisei",name:"Yenisei",categories:["asia"]}];var st="any";function Pe(a){if(!a)return null;let e=a.toLowerCase().trim();return e==="free for all"||e==="ffa"||e==="free-for-all"?"FFA":e==="team"||e==="teams"?"Team":null}var lt=new Map(H.map(a=>[a.gameMap,a.name])),dt=new Map(H.flatMap(a=>a.assetKey?[[a.gameMap,a.assetKey]]:[]));function re(a){return lt.get(a)??a}function A(a){return Pe(a.gameConfig?.gameMode)}function W(a){let e=a.publicGameType?.toLowerCase().trim();return e==="ffa"||e==="team"||e==="special"||e==="hosted"?e:null}function oe(a){if(a==="Duos"||a==="Trios"||a==="Quads"||a==="Humans Vs Nations"||a==="8+"||typeof a=="number"&&Number.isFinite(a)&&a>0)return a;if(typeof a=="string"){let e=parseInt(a,10);if(!Number.isNaN(e)&&e>0)return e}return null}function N(a){let e=a.gameConfig;if(!e||A(a)!=="Team")return null;let t=oe(e.playerTeams??null);return t!==null?t:oe(e.teamCount??e.teams??null)}function $(a){let e=a.gameConfig;return e?e.maxPlayers??e.maxClients??e.maxPlayersPerGame??a.maxClients??null:null}function He(a){return typeof a.numClients=="number"?a.numClients:null}function D(a,e){return!a||!e?null:a==="Duos"?2:a==="Trios"?3:a==="Quads"?4:a==="Humans Vs Nations"?e:typeof a=="number"&&a>0?Math.floor(e/a):null}function ct(a){return W(a)==="hosted"||a.custom===!0}var ut=["Atom Bomb","Hydrogen Bomb","MIRV"];function pt(a,e){let t=a.gameConfig,i=t?.disabledUnits??[];switch(e){case"isCompact":return t?.gameMapSize==="Compact";case"isRandomSpawn":return t?.randomSpawn===!0;case"isAlliancesDisabled":return t?.disableAlliances===!0;case"isNukesDisabled":return ut.every(o=>i.includes(o));case"isSAMsDisabled":return i.includes("SAM Launcher");case"isWaterNukes":return t?.waterNukes===!0;case"isDoomsdayClock":return t?.doomsdayClock!==void 0&&t.doomsdayClock.enabled!==!1;case"isTrusted":return t?.trusted;case"startingGold":return t?.startingGold??void 0;case"goldMultiplier":return t?.goldMultiplier??void 0;default:return}}function L(a,e){if(ct(a))return pt(a,e);let t=a.gameConfig?.publicGameModifiers;switch(e){case"isCompact":return t?.isCompact;case"isRandomSpawn":return t?.isRandomSpawn;case"isCrowded":return t?.isCrowded;case"isHardNations":return t?.isHardNations;case"isAlliancesDisabled":return t?.isAlliancesDisabled;case"isNukesDisabled":return t?.isNukesDisabled;case"isSAMsDisabled":return t?.isSAMsDisabled;case"isPeaceTime":return t?.isPeaceTime;case"isWaterNukes":return t?.isWaterNukes;case"isDoomsdayClock":return t?.isDoomsdayClock;case"isTrusted":return a.gameConfig?.trusted;case"startingGold":return t?.startingGold??a.gameConfig?.startingGold??void 0;case"goldMultiplier":return t?.goldMultiplier??a.gameConfig?.goldMultiplier??void 0;default:return}}function De(a){let e=A(a),t=N(a),i=$(a);if(e==="FFA")return i!==null?`FFA \u2022 ${i} slots`:"FFA";if(e!=="Team")return"Unsupported mode";if(t==="Humans Vs Nations")return i!==null?`Humans Vs Nations (${i})`:"Humans Vs Nations";if(t==="Duos")return"Duos";if(t==="Trios")return"Trios";if(t==="Quads")return"Quads";if(typeof t=="number"&&i!==null){let o=D(t,i);return o!==null?`${t} teams (${o} per team)`:`${t} teams`}return"Team"}function mt(a){let e=A(a),t=N(a);return e==="FFA"?"FFA":e!=="Team"?"Unsupported mode":t==="Humans Vs Nations"?"Humans Vs Nations":t==="Duos"||t==="Trios"||t==="Quads"?t:typeof t=="number"?`${t} teams`:"Team"}function ne(a){return a>=1e6&&a%1e6===0?`${a/1e6}M`:a>=1e3&&a%1e3===0?`${a/1e3}K`:String(a)}function ft(a){let e=r=>!!L(a,r),t=[];e("isCompact")&&t.push("Compact"),e("isRandomSpawn")&&t.push("Random"),e("isCrowded")&&t.push("Crowded"),e("isHardNations")&&t.push("Hard");let i=L(a,"startingGold");typeof i=="number"&&t.push(ne(i));let o=L(a,"goldMultiplier");return typeof o=="number"&&t.push(`x${o}`),e("isAlliancesDisabled")&&t.push("No Alliances"),e("isNukesDisabled")&&t.push("No Nukes"),e("isSAMsDisabled")&&t.push("No SAMs"),e("isPeaceTime")&&t.push("Peace"),e("isWaterNukes")&&t.push("Water Nukes"),e("isDoomsdayClock")&&t.push("Doomsday"),e("isTrusted")&&t.push("Trusted"),t}function Fe(a){let e=[],t=a.gameConfig?.gameMap?.trim(),i=$(a),o=N(a),r=mt(a);if(t&&e.push(re(t)),A(a)==="Team"&&o!=="Humans Vs Nations"){e.push(r);let c=D(o,i);c!==null&&e.push(`${c}/team`)}else e.push(r);let n=W(a);n==="hosted"?e.push("Hosted"):a.custom===!0?e.push("Custom"):n==="special"&&e.push("Special");let s=[];i!==null&&s.push(`${i} slots`);let p=ft(a);return p.length>0&&s.push(p.join(", ")),{title:e.join(" \u2022 "),body:s.join(" \u2022 ")}}function Ne(a){return typeof a=="number"&&Number.isFinite(a)?a:null}function w(a){return a==="blocked"||a==="rejected"?"blocked":a==="required"?"required":a==="any"||a==="allowed"||a==="indifferent"?"any":st}function $e(a){if(!a||typeof a!="object")return;let e={};for(let[t,i]of Object.entries(a)){let o=Number(t);Number.isFinite(o)&&(e[o]=w(i))}return Object.keys(e).length>0?e:void 0}function ht(a){if(!a||typeof a!="object")return;let e=a;return{isCompact:w(e.isCompact),isRandomSpawn:w(e.isRandomSpawn),isCrowded:w(e.isCrowded),isHardNations:w(e.isHardNations),isAlliancesDisabled:w(e.isAlliancesDisabled),isNukesDisabled:w(e.isNukesDisabled),isSAMsDisabled:w(e.isSAMsDisabled),isPeaceTime:w(e.isPeaceTime),isWaterNukes:w(e.isWaterNukes),isDoomsdayClock:w(e.isDoomsdayClock),isTrusted:w(e.isTrusted),startingGold:$e(e.startingGold),goldMultiplier:$e(e.goldMultiplier)}}function gt(a){let e=oe(a);return e==="Duos"||e==="Trios"||e==="Quads"?null:e}function bt(a){if(!Array.isArray(a))return[];let e=[];for(let t of a){let i=t,o=Pe(i.gameMode??null);if(!o)continue;let r=Ne(i.minPlayers),n=Ne(i.maxPlayers);o==="Team"&&(typeof r=="number"&&r<P&&(r=P),typeof r=="number"&&typeof n=="number"&&n<r&&(n=r)),e.push({gameMode:o,teamCount:o==="Team"?gt(i.teamCount??null):null,minPlayers:r,maxPlayers:n,modifiers:ht(i.modifiers)})}return e}function se(a,e=Date.now()){let t=Math.max(0,Math.floor((e-a)/1e3));return`${Math.floor(t/60)}m ${t%60}s`}function Oe(a,e,t){let i=a.gameConfig?.gameMap?.trim();if(!i)return null;let o=dt.get(i)??i.toLowerCase().replace(/[\s.()]+/g,"");if(!o)return null;let r=`maps/${encodeURIComponent(o)}/thumbnail.webp`,n=e?.[`maps/${o}/thumbnail.webp`];if(n){let s=(t??"").replace(/\/+$/,"");return s?`${s}${n}`:n}return`/${r}`}function yt(a){if(!a||typeof a!="object"||Array.isArray(a))return{};let e={};for(let[t,i]of Object.entries(a))t&&(i==="required"||i==="blocked")&&(e[t]=i);return e}function Be(a){return{criteria:bt(a?.criteria),discoveryEnabled:typeof a?.discoveryEnabled=="boolean"?a.discoveryEnabled:!0,soundEnabled:typeof a?.soundEnabled=="boolean"?a.soundEnabled:!0,desktopNotificationsEnabled:typeof a?.desktopNotificationsEnabled=="boolean"?a.desktopNotificationsEnabled:!1,isTeamTwoTimesMinEnabled:typeof a?.isTeamTwoTimesMinEnabled=="boolean"?a.isTeamTwoTimesMinEnabled:!!a?.isTeamThreeTimesMinEnabled,mapFilter:yt(a?.mapFilter)}}var vt=["isCompact","isRandomSpawn","isCrowded","isHardNations","isAlliancesDisabled","isNukesDisabled","isSAMsDisabled","isPeaceTime","isWaterNukes","isDoomsdayClock","isTrusted"],j=class{matchesCriteria(e,t,i={}){if(!e||!e.gameConfig||!t||t.length===0||!this.matchesMapFilter(e.gameConfig.gameMap,i))return!1;let o=A(e),r=$(e);if(!o||r===null)return!1;let n=N(e),s=o==="Team"?D(n,r):null,p=this.resolveLobbyTeamCount(n,s,r);for(let c of t){if(c.gameMode!==o)continue;if(o==="Team"){let h=c.teamCount!==null&&c.teamCount!==void 0;if(!h&&n==="Humans Vs Nations")continue;if(h){if(c.teamCount==="8+"){if(p===null||p<8)continue}else if(c.teamCount==="Humans Vs Nations"||c.teamCount==="Duos"||c.teamCount==="Trios"||c.teamCount==="Quads"){if(c.teamCount!==n)continue}else if(p===null||c.teamCount!==p)continue}if(s===null)continue}let d=o==="Team"?s:r;if(d!==null&&!(n!=="Humans Vs Nations"&&(c.minPlayers!==null&&d<c.minPlayers||c.maxPlayers!==null&&d>c.maxPlayers))&&this.matchesModifiers(e,c.modifiers))return!0}return!1}resolveLobbyTeamCount(e,t,i){return typeof e=="number"?e:e==="Humans Vs Nations"?null:t!==null&&t>0&&i!==null?Math.floor(i/t):null}matchesMapFilter(e,t){return e!==void 0&&t[e]==="blocked"?!1:Object.values(t).some(o=>o==="required")?e!==void 0&&t[e]==="required":!0}matchesModifiers(e,t){if(!t)return!0;for(let i of vt){let o=t[i];if(!o||o==="any")continue;let r=!!L(e,i);if(o==="blocked"&&r||o==="required"&&!r)return!1}return!(!this.matchesNumericModifier(L(e,"startingGold"),t.startingGold)||!this.matchesNumericModifier(L(e,"goldMultiplier"),t.goldMultiplier))}matchesNumericModifier(e,t){if(!t)return!0;let i=typeof e=="number"&&Number.isFinite(e)?e:null,o=Object.entries(t);if(o.length===0)return!0;let r=o.filter(([,s])=>s==="blocked").map(([s])=>Number(s));if(i!==null&&r.includes(i))return!1;let n=o.filter(([,s])=>s==="required").map(([s])=>Number(s));return!(n.length>0&&(i===null||!n.includes(i)))}};function le(a){return a.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;")}function I(a,e){if(e.length===0)return a;let t=e[0],i=e[e.length-1];return a<t?t:a>i?i:a}function F(a,e){if(e.length<2)return 0;let t=I(a,e),i=e.length-1;if(t>=e[i])return 1;if(t<=e[0])return 0;for(let o=0;o<i;o++){let r=e[o],n=e[o+1];if(t>=r&&t<=n){let s=(t-r)/(n-r);return(o+s)/i}}return 1}function de(a,e){if(e.length<2)return e[0]??0;let t=e.length-1;if(a<=0)return e[0];if(a>=1)return e[t];let i=a*t,o=Math.floor(i),r=i-o,n=e[o]+r*(e[o+1]-e[o]);return Math.round(n)}var O=1e3,q=class{constructor(e){this.onMinSliderInput=()=>{let e=parseInt(this.minSlider.value,10)/O,t=de(e,this.stops);this.applyValues(t,this.lastMax,{fireOnChange:!0,changed:"min"})};this.onMaxSliderInput=()=>{let e=parseInt(this.maxSlider.value,10)/O,t=de(e,this.stops);this.applyValues(this.lastMin,t,{fireOnChange:!0,changed:"max"})};this.onMinInputChange=()=>{let e=parseInt(this.minInput.value,10);if(!Number.isFinite(e)){this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"both"});return}let t=I(e,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(t,this.lastMax,{fireOnChange:!0,changed:"min"})};this.onMaxInputChange=()=>{let e=parseInt(this.maxInput.value,10);if(!Number.isFinite(e)){this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"both"});return}let t=I(e,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(this.lastMin,t,{fireOnChange:!0,changed:"max"})};if(this.cfg=e,this.stops=e.stops??[e.bounds.min,e.bounds.max],this.root=e.root??document,this.minSlider=this.find(e.minSliderId),this.maxSlider=this.find(e.maxSliderId),this.minInput=this.find(e.minInputId),this.maxInput=this.find(e.maxInputId),this.rangeRoot=this.find(e.rangeRootId),this.container=this.find(e.containerId),!this.minSlider||!this.maxSlider||!this.minInput||!this.maxInput)throw new Error(`RangeSlider: missing required element in ${e.rangeRootId}`);this.minSlider.min="0",this.minSlider.max=String(O),this.maxSlider.min="0",this.maxSlider.max=String(O),this.lastMin=this.readInputClamped(this.minInput,e.bounds.min),this.lastMax=this.readInputClamped(this.maxInput,e.bounds.max),this.lastMax<this.lastMin&&(this.lastMax=this.lastMin),this.minSlider.addEventListener("input",this.onMinSliderInput),this.maxSlider.addEventListener("input",this.onMaxSliderInput),this.minInput.addEventListener("change",this.onMinInputChange),this.maxInput.addEventListener("change",this.onMaxInputChange),this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"both"}),this.renderTicks(),this.wireSteppers(),this.applyLockState()}find(e){return this.root.querySelector(`[id="${e}"]`)}applyLockState(){let e=!!this.cfg.lockMaxToTwiceMin?.();this.maxSlider.disabled=e,this.maxSlider.classList.toggle("is-max-locked",e),this.maxInput.disabled=e,this.container&&this.container.querySelectorAll('.ld-step-btn[data-target="max"]').forEach(t=>{t.disabled=e}),e&&this.applyValues(this.lastMin,this.lastMax,{fireOnChange:!1,changed:"min"})}setMin(e){this.applyValues(e,this.lastMax,{fireOnChange:!0,changed:"min"})}setRange(e,t){this.applyValues(e,t,{fireOnChange:!1,changed:"both"})}readInputClamped(e,t){let i=parseInt(e.value,10);return Number.isFinite(i)?I(i,[this.cfg.bounds.min,this.cfg.bounds.max]):t}applyValues(e,t,i){let o=e,r=t;if(this.cfg.lockMaxToTwiceMin?.()&&(r=I(o*2,[this.cfg.bounds.min,this.cfg.bounds.max])),o>r){let n=i.changed??"both";n==="min"?r=o:n==="max"?o=r:(o=Math.min(e,t),r=Math.max(e,t))}if(this.lastMin=o,this.lastMax=r,this.minInput.value=String(o),this.maxInput.value=String(r),this.minSlider.value=String(Math.round(F(o,this.stops)*O)),this.maxSlider.value=String(Math.round(F(r,this.stops)*O)),this.rangeRoot){let n=F(o,this.stops)*100,s=F(r,this.stops)*100;this.rangeRoot.style.setProperty("--lo",`${n}%`),this.rangeRoot.style.setProperty("--hi",`${s}%`)}i.fireOnChange&&this.cfg.onChange(o,r)}renderTicks(){if(!this.cfg.ticksContainerId||!this.cfg.stops)return;let e=this.find(this.cfg.ticksContainerId);if(e){e.innerHTML="";for(let t of this.cfg.stops){let i=F(t,this.cfg.stops)*100,o=document.createElement("div");o.className="ld-tick",o.style.left=`${i}%`;let r=document.createElement("span");r.className="ld-tick-label",r.style.left=`${i}%`,r.textContent=String(t),e.appendChild(o),e.appendChild(r)}}}wireSteppers(){if(!this.container)return;this.container.querySelectorAll(".ld-step-btn").forEach(t=>{let i=t.dataset.target,o=t.dataset.action;!i||!o||t.addEventListener("click",()=>{let r=o==="inc"?1:-1;if(i==="min"){let n=I(this.lastMin+r,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(n,this.lastMax,{fireOnChange:!0,changed:"min"})}else{let n=I(this.lastMax+r,[this.cfg.bounds.min,this.cfg.bounds.max]);this.applyValues(this.lastMin,n,{fireOnChange:!0,changed:"max"})}})})}};var Re=[1e6,5e6,25e6],Ge=[2],xt=["modifier-isCompact","modifier-isRandomSpawn","modifier-isCrowded","modifier-isHardNations","modifier-isAlliancesDisabled","modifier-isNukesDisabled","modifier-isSAMsDisabled","modifier-isPeaceTime","modifier-isWaterNukes","modifier-isDoomsdayClock","modifier-isTrusted"],ce=[...xt,...Re.map(a=>`modifier-startingGold-${a}`),...Ge.map(a=>`modifier-goldMultiplier-${a}`)],qe=[["discovery-team-hvn","Humans Vs Nations"],["discovery-team-2","2"],["discovery-team-3","3"],["discovery-team-4","4"],["discovery-team-5","5"],["discovery-team-6","6"],["discovery-team-7","7"],["discovery-team-8plus","8+"]],ue=qe.map(([a])=>a),me=["modes","modifiers","maps"],Mt={modes:!1,modifiers:!1,maps:!0},pe='<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>',St='<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg>';function wt(){let a=GM_getValue(S.lobbyDiscoveryCollapsedSections,null),e={...Mt};for(let t of me){let i=a?.[t];typeof i=="boolean"&&(e[t]=i)}return e}function _e(a){return a==="any"?"required":a==="required"?"blocked":"any"}var Q=class{constructor(e){this.collapsedSections=wt();this.knownMaps=new Set(H.map(e=>e.gameMap));this.root=null;this.ffaSlider=null;this.teamSlider=null;this.criteria=e.initial.criteria,this.isTeamTwoTimesMinEnabled=e.initial.isTeamTwoTimesMinEnabled,this.mapFilter=e.initial.mapFilter,this.onChange=e.onChange}getSettings(){return{criteria:this.criteria,isTeamTwoTimesMinEnabled:this.isTeamTwoTimesMinEnabled,mapFilter:this.mapFilter}}mount(e){this.cleanup();let t=document.createElement("div");t.className="discovery-body",t.innerHTML=this.renderBody(),e.appendChild(t),this.root=t,this.setupEventListeners(),this.loadUIFromSettings();for(let i of me)this.applySectionCollapse(i);this.ffaSlider=new q({root:t,containerId:"discovery-ffa-slider-row",rangeRootId:"discovery-ffa-range-root",minSliderId:"discovery-ffa-min-slider",maxSliderId:"discovery-ffa-max-slider",minInputId:"discovery-ffa-min",maxInputId:"discovery-ffa-max",fillId:"discovery-ffa-range-fill",bounds:{min:1,max:125},onChange:()=>this.refreshCriteria()}),this.teamSlider=new q({root:t,containerId:"discovery-team-slider-row",rangeRootId:"discovery-team-range-root",minSliderId:"discovery-team-min-slider",maxSliderId:"discovery-team-max-slider",minInputId:"discovery-team-min",maxInputId:"discovery-team-max",fillId:"discovery-team-range-fill",ticksContainerId:"discovery-team-ticks",bounds:{min:P,max:ie},stops:Me,lockMaxToTwiceMin:()=>this.isTeamTwoTimesMinEnabled,onChange:()=>this.refreshCriteria()}),this.updateFilterCount()}cleanup(){this.root?.remove(),this.root=null,this.ffaSlider=null,this.teamSlider=null}setCurrentGameInfo(e){let t=this.$("discovery-current-game-info");t&&(t.style.display=e===null?"none":"block",e!==null&&(t.textContent=e))}addFeedOnlyMaps(e){for(let t of e){let i=t.gameConfig?.gameMap?.trim();if(!i||this.knownMaps.has(i))continue;this.knownMaps.add(i);let o=this.ensureMapGroup("other");if(!o)continue;o.insertAdjacentHTML("beforeend",this.renderMapChip(i,i));let r=o.lastElementChild;r.addEventListener("click",()=>this.cycleMapState(r)),this.applyTriState(r,this.mapFilter[i]??"any");let n=this.$("discovery-maps-search");this.filterMapChips(n?.value??"")}}$(e){return this.root?.querySelector(`[id="${e}"]`)??null}getNumberValue(e){let t=this.$(e);if(!t)return null;let i=parseInt(t.value,10);return Number.isNaN(i)?null:i}getModifierState(e){let t=this.$(e)?.dataset.state;return t==="required"||t==="blocked"?t:"any"}setModifierState(e,t){let i=this.$(e);i&&this.applyTriState(i,t)}applyTriState(e,t){e.dataset.state=t,e.setAttribute("aria-pressed",String(t!=="any"));let i=e.dataset.modName??e.getAttribute("aria-label")??"",o=t==="blocked"?"excluded":t;i&&e.setAttribute("aria-label",t==="any"?i:`${i} \xB7 ${o}`);let r=e.querySelector(".ld-mod-ind");r&&(t==="required"?r.innerHTML=pe:t==="blocked"?r.innerHTML=St:r.innerHTML="")}cycleModifierState(e){this.setModifierState(e,_e(this.getModifierState(e)))}getMapChips(){return Array.from(this.root?.querySelectorAll("[data-game-map]")??[])}cycleMapState(e){let t=e.dataset.gameMap??"",i=_e(this.mapFilter[t]??"any"),o={...this.mapFilter};i==="any"?delete o[t]:o[t]=i,this.setMapFilter(o)}setMapFilter(e){this.mapFilter=e,this.syncMapChips(),this.onChange("maps")}syncMapChips(){for(let n of this.getMapChips())this.applyTriState(n,this.mapFilter[n.dataset.gameMap??""]??"any");let e=Object.values(this.mapFilter),t=e.filter(n=>n==="required").length,i=e.filter(n=>n==="blocked").length,o=[...t>0?[`${t} required`]:[],...i>0?[`${i} excluded`]:[]],r=this.$("discovery-maps-summary");r&&(r.textContent=o.length>0?o.join(" \xB7 "):"Any map")}filterMapChips(e){let t=e.trim().toLowerCase();for(let i of this.getMapChips())i.hidden=t!==""&&!(i.dataset.modName??"").toLowerCase().includes(t);for(let i of Array.from(this.root?.querySelectorAll("[data-category]")??[]))i.hidden=!i.querySelector("[data-game-map]:not([hidden])")}ensureMapGroup(e){let t=this.$("discovery-maps-groups");if(!t)return null;let i=t.querySelector(`[data-category="${e}"] .ld-mods`);return i||(t.insertAdjacentHTML("beforeend",this.renderMapGroup(e,"")),t.querySelector(`[data-category="${e}"] .ld-mods`))}getNumericModifierState(e){let t={};for(let[i,o]of Object.entries(e))t[Number(i)]=this.getModifierState(o);return t}getModifierFiltersFromUI(){return{isCompact:this.getModifierState("modifier-isCompact"),isRandomSpawn:this.getModifierState("modifier-isRandomSpawn"),isCrowded:this.getModifierState("modifier-isCrowded"),isHardNations:this.getModifierState("modifier-isHardNations"),isAlliancesDisabled:this.getModifierState("modifier-isAlliancesDisabled"),isNukesDisabled:this.getModifierState("modifier-isNukesDisabled"),isSAMsDisabled:this.getModifierState("modifier-isSAMsDisabled"),isPeaceTime:this.getModifierState("modifier-isPeaceTime"),isWaterNukes:this.getModifierState("modifier-isWaterNukes"),isDoomsdayClock:this.getModifierState("modifier-isDoomsdayClock"),isTrusted:this.getModifierState("modifier-isTrusted"),startingGold:this.getNumericModifierState({1e6:"modifier-startingGold-1000000",5e6:"modifier-startingGold-5000000",25e6:"modifier-startingGold-25000000"}),goldMultiplier:this.getNumericModifierState({2:"modifier-goldMultiplier-2"})}}isChecked(e){return this.$(e)?.checked===!0}getAllTeamCountValues(){let e=[];for(let[t,i]of qe)if(this.isChecked(t))if(i==="Humans Vs Nations"||i==="8+")e.push(i);else{let o=parseInt(i,10);Number.isNaN(o)||e.push(o)}return e}setAllTeamCounts(e){for(let t of ue){let i=this.$(t);i&&(i.checked=e,this.syncChipState(t))}}syncChipState(e){let t=this.$(e);if(!t)return;let i=t.closest(".ld-chip, .ld-mode-btn, .ld-2x");i&&(i.classList.toggle("is-on",t.checked),i.setAttribute("aria-pressed",String(t.checked)))}buildCriteriaFromUI(){let e=this.getModifierFiltersFromUI(),t=[];if(this.isChecked("discovery-ffa")&&t.push({gameMode:"FFA",teamCount:null,minPlayers:this.getNumberValue("discovery-ffa-min"),maxPlayers:this.getNumberValue("discovery-ffa-max"),modifiers:e}),!this.isChecked("discovery-team"))return t;let i=this.getAllTeamCountValues();if(i.length===0)return t.push({gameMode:"Team",teamCount:null,minPlayers:this.getNumberValue("discovery-team-min"),maxPlayers:this.getNumberValue("discovery-team-max"),modifiers:e}),t;for(let o of i)t.push({gameMode:"Team",teamCount:o,minPlayers:this.getNumberValue("discovery-team-min"),maxPlayers:this.getNumberValue("discovery-team-max"),modifiers:e});return t}updateFilterCount(){let e=this.$("discovery-filter-count"),t=this.$("discovery-filter-word");if(!e||!t)return;let i=ue.filter(n=>this.isChecked(n)).length,o=ce.filter(n=>this.getModifierState(n)!=="any").length,r=(this.isChecked("discovery-ffa")?1:0)+(this.isChecked("discovery-team")?1:0)+i+o;e.textContent=String(r),t.textContent=r===1?"filter":"filters"}setModePanelActive(e,t){this.$(e)?.classList.toggle("is-off",!t)}loadUIFromSettings(){let e=this.criteria.find(s=>s.gameMode==="FFA"),t=this.criteria.filter(s=>s.gameMode==="Team"),i=this.$("discovery-ffa"),o=this.$("discovery-team");if(i&&(i.checked=!!e,this.syncChipState("discovery-ffa"),this.setModePanelActive("discovery-ffa-config",!!e)),o&&(o.checked=t.length>0,this.syncChipState("discovery-team"),this.setModePanelActive("discovery-team-config",t.length>0)),e){let s=this.$("discovery-ffa-min"),p=this.$("discovery-ffa-max");s&&e.minPlayers!==null&&(s.value=String(e.minPlayers)),p&&e.maxPlayers!==null&&(p.value=String(e.maxPlayers))}if(t[0]){let s=this.$("discovery-team-min"),p=this.$("discovery-team-max");s&&t[0].minPlayers!==null&&(s.value=String(t[0].minPlayers)),p&&t[0].maxPlayers!==null&&(p.value=String(t[0].maxPlayers)),this.setTeamCountSelections(t.map(c=>c.teamCount))}let r=(e??t[0])?.modifiers;if(r){this.setModifierState("modifier-isCompact",r.isCompact??"any"),this.setModifierState("modifier-isRandomSpawn",r.isRandomSpawn??"any"),this.setModifierState("modifier-isCrowded",r.isCrowded??"any"),this.setModifierState("modifier-isHardNations",r.isHardNations??"any"),this.setModifierState("modifier-isAlliancesDisabled",r.isAlliancesDisabled??"any"),this.setModifierState("modifier-isNukesDisabled",r.isNukesDisabled??"any"),this.setModifierState("modifier-isSAMsDisabled",r.isSAMsDisabled??"any"),this.setModifierState("modifier-isPeaceTime",r.isPeaceTime??"any"),this.setModifierState("modifier-isWaterNukes",r.isWaterNukes??"any"),this.setModifierState("modifier-isDoomsdayClock",r.isDoomsdayClock??"any"),this.setModifierState("modifier-isTrusted",r.isTrusted??"any");for(let s of Re)this.setModifierState(`modifier-startingGold-${s}`,r.startingGold?.[s]??"any");for(let s of Ge)this.setModifierState(`modifier-goldMultiplier-${s}`,r.goldMultiplier?.[s]??"any")}let n=this.$("discovery-team-two-times");n&&(n.checked=this.isTeamTwoTimesMinEnabled,this.syncChipState("discovery-team-two-times")),this.syncMapChips(),this.updateFilterCount()}setTeamCountSelections(e){for(let t of e){let i=null;t==="Humans Vs Nations"?i=this.$("discovery-team-hvn"):t==="8+"?i=this.$("discovery-team-8plus"):typeof t=="number"&&(i=this.$(`discovery-team-${t}`)),i&&(i.checked=!0,this.syncChipState(i.id))}}refreshCriteria(){this.criteria=this.buildCriteriaFromUI(),this.updateFilterCount(),this.onChange("criteria")}resetAll(){let e=this.$("discovery-ffa"),t=this.$("discovery-team");e&&(e.checked=!1,this.syncChipState("discovery-ffa"),this.setModePanelActive("discovery-ffa-config",!1)),t&&(t.checked=!1,this.syncChipState("discovery-team"),this.setModePanelActive("discovery-team-config",!1)),this.setAllTeamCounts(!1);let i=this.$("discovery-team-two-times");i&&(i.checked=!1,this.syncChipState("discovery-team-two-times")),this.isTeamTwoTimesMinEnabled=!1;for(let o of ce)this.setModifierState(o,"any");this.mapFilter={},this.syncMapChips(),this.ffaSlider?.setRange(1,125),this.teamSlider?.setRange(P,ie),this.teamSlider?.applyLockState(),this.refreshCriteria()}setupEventListeners(){for(let[i,o]of[["discovery-ffa","discovery-ffa-config"],["discovery-team","discovery-team-config"]]){let r=this.$(i);r?.addEventListener("change",()=>{this.syncChipState(i),this.setModePanelActive(o,r.checked),this.refreshCriteria()})}let e=this.$("discovery-team-two-times");e?.addEventListener("change",()=>{this.isTeamTwoTimesMinEnabled=e.checked,this.syncChipState("discovery-team-two-times"),this.teamSlider?.applyLockState(),this.refreshCriteria()});for(let i of me)this.$(`discovery-${i}-toggle`)?.addEventListener("click",()=>{this.collapsedSections[i]=!this.collapsedSections[i],GM_setValue(S.lobbyDiscoveryCollapsedSections,this.collapsedSections),this.applySectionCollapse(i)});let t=this.$("discovery-maps-search");t?.addEventListener("input",()=>this.filterMapChips(t.value)),this.$("discovery-maps-clear")?.addEventListener("click",()=>{this.setMapFilter({})});for(let i of this.getMapChips())i.addEventListener("click",()=>this.cycleMapState(i));this.$("discovery-reset")?.addEventListener("click",()=>{this.resetAll()});for(let i of ue)this.$(i)?.addEventListener("change",()=>{this.syncChipState(i),this.refreshCriteria()});for(let i of ce)this.$(i)?.addEventListener("click",()=>{this.cycleModifierState(i),this.refreshCriteria()})}renderModeButton(e,t){return`
       <label class="ld-mode-btn" aria-pressed="false">
         <input type="checkbox" id="${e}" value="${e==="discovery-ffa"?"FFA":"Team"}">
-        <span class="check">${j}</span>
+        <span class="check">${pe}</span>
         <span>${t}</span>
       </label>
     `}renderChip(e,t,i){return`
@@ -1186,38 +1450,17 @@
         <span class="ld-section-label">${t}</span>
         <span class="ld-section-head-end">${i}<span class="ld-section-chevron" aria-hidden="true"></span></span>
       </button>
-    `}applySectionCollapse(e){let t=this.collapsedSections[e],i=document.getElementById(`discovery-${e}-body`);i&&(i.hidden=t),document.getElementById(`discovery-${e}-toggle`)?.setAttribute("aria-expanded",String(!t))}renderMapChip(e,t){let i=L(t);return`
-      <button type="button" class="ld-mod" data-game-map="${L(e)}" data-state="any" data-mod-name="${i}" aria-pressed="false" aria-label="${i}">
+    `}applySectionCollapse(e){let t=this.collapsedSections[e],i=this.$(`discovery-${e}-body`);i&&(i.hidden=t),this.$(`discovery-${e}-toggle`)?.setAttribute("aria-expanded",String(!t))}renderMapChip(e,t){let i=le(t);return`
+      <button type="button" class="ld-mod" data-game-map="${le(e)}" data-state="any" data-mod-name="${i}" aria-pressed="false" aria-label="${i}">
         <span class="ld-mod-ind"></span>
         <span class="ld-mod-name">${i}</span>
       </button>
     `}renderMapGroup(e,t){return`
       <div class="ld-mod-group" data-category="${e}">
-        <div class="ld-mod-group-label">${de[e]}</div>
+        <div class="ld-mod-group-label">${Ae[e]}</div>
         <div class="ld-mods">${t}</div>
       </div>
-    `}renderMapGroups(){return ce.map(e=>{let t=F.filter(i=>i.categories.includes(e));return t.length===0?"":this.renderMapGroup(e,t.map(i=>this.renderMapChip(i.gameMap,i.name)).join(""))}).join("")}renderIconButton(e,t,i){return`
-      <label class="ld-icon-btn" title="${t}" aria-label="${t}">
-        <input type="checkbox" id="${e}">${i}
-      </label>
-    `}createUI(){if(!document.getElementById("openfront-discovery-panel")){this.panel=document.createElement("div"),this.panel.id="openfront-discovery-panel",this.panel.className="of-panel discovery-panel",this.panel.style.width="380px",this.panel.innerHTML=`
-      <div class="ld-status">
-        <span class="ld-pulse" aria-hidden="true"></span>
-        <div class="ld-status-text" id="discovery-status" role="button" tabindex="0">
-          <strong>Discovery active</strong>
-          <span class="sep">\xB7</span>
-          <span class="meta" id="discovery-search-timer"></span>
-        </div>
-        <div class="ld-icons">
-          ${this.renderIconButton("discovery-sound-toggle","Sound alert",ze)}
-          ${this.renderIconButton("discovery-desktop-toggle","Desktop notification",We)}
-        </div>
-      </div>
-      <div class="ld-head">
-        <div class="ld-eyebrow">Notify + quick-join \xB7 never auto-joins</div>
-        <h2 class="ld-title">OpenFront Game Notifier</h2>
-      </div>
-      <div class="discovery-body">
+    `}renderMapGroups(){return Ie.map(e=>{let t=H.filter(i=>i.categories.includes(e));return t.length===0?"":this.renderMapGroup(e,t.map(i=>this.renderMapChip(i.gameMap,i.name)).join(""))}).join("")}renderBody(){return`
         <div class="discovery-content" style="overflow-y: auto;">
           <div class="ld-section">
             ${this.renderSectionToggle("modes","Modes",'<span class="ld-section-aside">Pick one or both</span>')}
@@ -1302,7 +1545,7 @@
               </div>
               <label class="ld-2x" aria-pressed="false">
                 <input type="checkbox" id="discovery-team-two-times">
-                <span class="check">${j}</span>
+                <span class="check">${pe}</span>
                 <span class="lbl"><strong>Lock max-per-team to 2\xD7 the min</strong></span>
               </label>
               <div class="ld-current-game-info" id="discovery-current-game-info" style="display: none;"></div>
@@ -1370,17 +1613,6 @@
               </div>
             </div>
           </div>
-
-          <div class="ld-section">
-            ${this.renderSectionToggle("lobbies","Lobbies","")}
-            <div class="ld-section-body" id="discovery-lobbies-body">
-              <label class="ld-2x" aria-pressed="false">
-                <input type="checkbox" id="discovery-hosted-toggle">
-                <span class="check">${j}</span>
-                <span class="lbl"><strong>Include hosted and custom lobbies</strong></span>
-              </label>
-            </div>
-          </div>
         </div>
         <div class="discovery-footer">
           <div class="summary">
@@ -1389,5 +1621,31 @@
           </div>
           <button type="button" class="reset" id="discovery-reset">Reset all</button>
         </div>
+    `}};var C=[{queue:"ffa",label:"FFA"},{queue:"team",label:"Team"},{queue:"special",label:"Special"},{queue:"hosted",label:"Hosted"}];function Y(a){let e={ffa:[],team:[],special:[],hosted:[]};for(let t of a){let i=W(t);i&&e[i].push(t)}return e}function Ue(a){return a===0?"Live":`#${a}`}function ze(a){let e=Math.max(0,Math.ceil(a/1e3)),t=Math.floor(e/60),i=e%60;return`${t}:${String(i).padStart(2,"0")}`}function Lt(a,e,t){return e==="hosted"?typeof a.autoStartAt=="number"?a.autoStartAt:null:t===0&&typeof a.startsAt=="number"?a.startsAt:null}function Ve(a,e){let t=a??0;return e===null?{count:String(t),word:t===1?"player":"players"}:{count:`${t} / ${e}`,word:"players"}}function We(a,e,t,i,o,r=[]){let n=He(a),s=$(a);return{gameID:a.gameID,queue:e,mapName:re(a.gameConfig?.gameMap?.trim()||"Unknown map"),thumbnailUrl:Oe(a,i,o),countdownTargetMs:Lt(a,e,t),formatText:Tt(a),players:n,capacity:s,fillPercent:n!==null&&s?Math.min(100,Math.round(n/s*100)):0,modifiers:Et(a,r),hasCustomTag:e==="special"&&a.custom===!0}}function je(a){return a.replace(/-/g,"\u2011")}function he(a){return{count:String(a),word:a===1?"lobby":"lobbies"}}function ge(a){return{count:String(a),word:a===1?"match":"matches"}}function Qe(a){let{word:e}=he(a);return`${a} ${e}`}function Ye(a){let{word:e}=ge(a);return`${a} ${e}`}function Tt(a){let e=A(a),t=$(a);if(e==="FFA")return t!==null?`Free for all \xB7 ${t} players`:"Free for all";if(e!=="Team")return"Unsupported mode";let i=N(a);if(i==="Humans Vs Nations")return t!==null?`Humans vs Nations \xB7 ${t} humans`:"Humans vs Nations";let o=D(i,t),r=i==="Duos"||i==="Trios"||i==="Quads",n=null;return r?(n=o!==null&&t!==null?`${Math.floor(t/o)} teams of ${o}`:null,n?`${i} \xB7 ${n}`:i):typeof i=="number"?o!==null?`${i} teams of ${o}`:`${i} teams`:"Teams"}var Ct=[["isCompact","Compact"],["isRandomSpawn","Random Spawn"],["isCrowded","Crowded"],["isHardNations","Hard Nations"],["isAlliancesDisabled","Alliances Off"],["isNukesDisabled","Nukes Off"],["isSAMsDisabled","SAMs Off"],["isPeaceTime","Peace Time"],["isWaterNukes","Water Nukes"],["isDoomsdayClock","Doomsday Clock"],["isTrusted","Trusted"]];function fe(a){return a==="required"||a==="blocked"?a:"neutral"}function Et(a,e){let t=A(a),i=e.find(s=>s.gameMode===t&&s.modifiers)?.modifiers,o=[];for(let[s,p]of Ct)L(a,s)&&o.push({name:p,state:fe(i?.[s])});let r=L(a,"startingGold");typeof r=="number"&&o.push({name:`Start Gold ${ne(r)}`,state:fe(i?.startingGold?.[r])});let n=L(a,"goldMultiplier");return typeof n=="number"&&o.push({name:`Gold \xD7${n}`,state:fe(i?.goldMultiplier?.[n])}),o}var Ke="ease-out";function Je(){return typeof HTMLElement.prototype.animate!="function"?!1:!window.matchMedia?.("(prefers-reduced-motion: reduce)").matches}function Xe(a){a.getAnimations?.().forEach(e=>e.finish())}function be(a){let e=a.parentElement;if(!e?.dataset.queue||e.dataset.row===void 0)return null;let{top:t,left:i}=a.getBoundingClientRect();return{queue:e.dataset.queue,row:e.dataset.row,top:t,left:i}}function Ze(a,e,t){if(e.queue===t.queue&&e.row===t.row)return;let i=e.left-t.left,o=e.top-t.top;i===0&&o===0||a.animate([{transform:`translate(${i}px, ${o}px)`},{transform:"translate(0px, 0px)"}],{duration:250,easing:Ke})}function et(a){let e=getComputedStyle(a).opacity||"1";a.animate([{opacity:"0",transform:"translateY(8px)"},{opacity:e,transform:"translateY(0px)"}],{duration:300,easing:Ke})}var kt="\xAB",At="\xBB",K=class{constructor(){this.summary="";this.root=null;this.collapsed=GM_getValue(S.lobbyBoardSidebarCollapsed,!1)===!0}build(){let e=document.createElement("aside");e.className="of-board-sidebar",e.setAttribute("aria-label","Filters");let t=document.createElement("div");t.className="of-board-sidebar-head";let i=document.createElement("span");i.className="of-board-sidebar-title",i.textContent="Filters";let o=document.createElement("button");o.type="button",o.id="of-board-sidebar-toggle",o.className="of-board-sidebar-toggle",o.addEventListener("click",()=>this.setCollapsed(!this.collapsed)),t.append(i,o);let r=document.createElement("div");r.className="of-board-sidebar-body";let n=document.createElement("div");return n.className="of-board-sidebar-summary",e.append(t,r,n),this.root=e,this.apply(),{element:e,body:r}}setSummary(e){this.summary=e;let t=this.root?.querySelector(".of-board-sidebar-summary");t&&(t.textContent=e)}setCollapsed(e){this.collapsed=e,GM_setValue(S.lobbyBoardSidebarCollapsed,e),this.apply()}apply(){let e=this.root;if(!e)return;e.classList.toggle("is-collapsed",this.collapsed),e.querySelector(".of-board-sidebar-body").hidden=this.collapsed;let t=e.querySelector(".of-board-sidebar-summary");t.hidden=!this.collapsed,t.textContent=this.summary;let i=e.querySelector(".of-board-sidebar-toggle");i.textContent=this.collapsed?At:kt,i.setAttribute("aria-expanded",String(!this.collapsed)),i.setAttribute("aria-label",this.collapsed?"Expand filters":"Collapse filters")}};var It="of-lobby-board",Nt=2e3,tt=16,$t=80,ye="http://www.w3.org/2000/svg",J=class{constructor(e){this.options=e;this.root=null;this.hosts=null;this.sidebar=new K;this.pageGrid=null;this.savedStyles=[];this.clockOffsetMs=0;this.tickInterval=null;this.totals=null;this.grid=null;this.rowCount=-1;this.cards=new Map;this.cardParts=new WeakMap;this.signatures=new Map;this.flashTimers=new Map;this.hasShownCards=!1;this.resizeObserver=null;this.observedGrid=null;this.onWindowResize=()=>this.measureLayout()}render(e){let t=this.isShowing(),i=this.ensureMounted();if(!i||!this.grid)return;let o=Je(),r=o&&t?this.readPlacements():new Map,n=[];i.style.display="",this.takeOverPage(),this.startMeasuringLayout(),this.clockOffsetMs=e.clockOffsetMs;let s=Y(e.lobbies),p=Math.max(0,...C.map(({queue:l})=>s[l].length));p!==this.rowCount&&this.buildGrid(p);let{manifest:c,cdnBase:d}=this.options.getAssets(),h=new Set,{matchedIds:y}=e;i.classList.toggle("of-board-matching-off",y===null);let v=l=>y?l.filter(f=>y.has(f.gameID)).length:0;for(let{queue:l}of C)this.renderColumnHead(l,s[l].length,y?v(s[l]):null);if(this.totals){let l=C.reduce((T,{queue:M})=>T+s[M].length,0),f=C.reduce((T,{queue:M})=>T+v(s[M]),0);this.totals.textContent=`${Ye(f)} \xB7 ${Qe(l)}`}for(let{queue:l}of C)for(let f=0;f<p;f++){let T=this.getCell(l,f),M=s[l][f];if(!T)continue;if(!M){T.querySelector(".of-board-empty")||T.replaceChildren(this.buildEmpty());continue}h.add(M.gameID);let ot=We(M,l,f,c,d,e.criteria),E=this.cards.get(M.gameID);E||(E=this.createCard(M.gameID),n.push(E)),this.updateCard(E,ot),this.applyNewBadge(E,e.newGameIds.has(M.gameID)),E.classList.toggle("of-board-card-match",y?.has(M.gameID)===!0),E.classList.toggle("of-board-card-dim",y!==null&&!y.has(M.gameID)),E.parentElement!==T&&T.replaceChildren(E)}for(let l of[...this.cards.keys()])h.has(l)||(this.cards.get(l)?.remove(),this.cards.delete(l),this.signatures.delete(l));o&&this.playMotion(r,n),h.size>0&&(this.hasShownCards=!0),this.tickCountdowns(),this.tickInterval||(this.tickInterval=setInterval(()=>this.tickCountdowns(),1e3))}isShowing(){return!!this.root?.isConnected&&this.root.style.display!=="none"}flashCard(e){let t=this.cards.get(e);t&&(t.scrollIntoView?.({block:"center",behavior:"smooth"}),clearTimeout(this.flashTimers.get(e)),t.classList.add("of-board-card-flash"),this.flashTimers.set(e,setTimeout(()=>{this.flashTimers.delete(e),t.classList.remove("of-board-card-flash")},Nt)))}getHosts(){return this.root?.isConnected?this.hosts:null}setFilterSummary(e){this.sidebar.setSummary(e)}hide(){this.hasShownCards=!1,this.stopTicking(),this.stopMeasuringLayout(),this.root&&(this.root.style.display="none"),this.restorePage()}dispose(){this.stopTicking(),this.stopMeasuringLayout();for(let e of this.flashTimers.values())clearTimeout(e);this.flashTimers.clear(),this.restorePage(),this.root?.remove(),this.root=null,this.hosts=null,this.pageGrid=null,this.totals=null,this.grid=null,this.rowCount=-1,this.hasShownCards=!1,this.cards.clear(),this.signatures.clear()}readPlacements(){let e=new Map;for(let[t,i]of this.cards){let o=be(i);o&&e.set(t,o)}return e}playMotion(e,t){for(let i of this.cards.values())Xe(i);for(let[i,o]of e){let r=this.cards.get(i),n=r?be(r):null;r&&n&&Ze(r,o,n)}if(this.hasShownCards)for(let i of t)et(i)}takeOverPage(){let e=this.pageGrid;if(e){for(let t of Array.from(e.children))t!==this.root&&Ee(t)&&this.setStyle(t,"display","none");this.setStyle(e,"grid-template-rows","auto"),this.setStyle(e,"grid-template-columns","minmax(0, 2fr) minmax(0, 1fr)");for(let t=e.parentElement;t&&t!==document.documentElement;t=t.parentElement)getComputedStyle(t).overflowX==="clip"&&this.setStyle(t,"overflow-x","visible")}}measureLayout(){if(!this.root||!this.pageGrid)return;let e=document.documentElement.clientWidth-2*tt,t=tt-this.pageGrid.getBoundingClientRect().left;this.root.style.setProperty("--of-board-left",`${t}px`),this.root.style.setProperty("--of-board-width",`${e}px`)}startMeasuringLayout(){this.measureLayout();let e=this.pageGrid;e&&(this.resizeObserver&&this.observedGrid===e||(this.resizeObserver?.disconnect(),this.resizeObserver=null,window.addEventListener("resize",this.onWindowResize),!(typeof ResizeObserver>"u")&&(this.resizeObserver=new ResizeObserver(()=>this.measureLayout()),this.resizeObserver.observe(document.documentElement),this.resizeObserver.observe(e),this.observedGrid=e)))}stopMeasuringLayout(){window.removeEventListener("resize",this.onWindowResize),this.resizeObserver?.disconnect(),this.resizeObserver=null,this.observedGrid=null}setStyle(e,t,i){this.savedStyles.some(o=>o.element===e&&o.property===t)||this.savedStyles.push({element:e,property:t,value:e.style.getPropertyValue(t)}),e.style.setProperty(t,i)}restorePage(){for(let{element:e,property:t,value:i}of this.savedStyles)i?e.style.setProperty(t,i):e.style.removeProperty(t),e.getAttribute("style")===""&&e.removeAttribute("style");this.savedStyles=[]}stopTicking(){this.tickInterval&&clearInterval(this.tickInterval),this.tickInterval=null}tickCountdowns(){let e=Date.now()+this.clockOffsetMs;for(let t of Array.from(this.grid?.querySelectorAll(".of-board-countdown[data-countdown-to]")??[])){let i=ze(Number(t.dataset.countdownTo)-e);t.textContent!==i&&(t.textContent=i)}}getCell(e,t){return this.grid?.querySelector(`.of-board-cell[data-queue="${e}"][data-row="${t}"]`)??null}canMount(){return!!this.root?.isConnected||G()!==null}ensureMounted(){if(this.root?.isConnected)return this.root;let e=G();if(!e)return null;let t=document.createElement("div");t.id=It,t.className="of-board";let i=document.createElement("div");i.className="of-board-head";let o=document.createElement("span");o.className="of-board-title",o.textContent="Lobby Board";let r=document.createElement("span");r.className="of-board-totals";let n=document.createElement("div");n.className="of-board-controls",i.append(o,r,n);let{element:s,body:p}=this.sidebar.build(),c=document.createElement("div");c.className="of-board-grid";let d=document.createElement("div");return d.className="of-board-main",d.append(s,c),t.append(i,d),e.insertBefore(t,e.firstChild),this.root=t,this.hosts={sidebarBody:p,controls:n},this.pageGrid=e,this.totals=r,this.grid=c,this.rowCount=-1,t}buildGrid(e){let t=this.grid,i=[document.createElement("div")];for(let{queue:o,label:r}of C){let n=document.createElement("div");n.className="of-board-colhead",n.dataset.queue=o,n.append(document.createElement("b"),document.createElement("span"),document.createElement("em")),n.firstElementChild.textContent=r,i.push(n)}for(let o=0;o<e;o++){let r=document.createElement("div");r.className=`of-board-rowlabel${o===0?" of-board-rowlabel-live":""}`,r.textContent=Ue(o),i.push(r);for(let{queue:n}of C){let s=document.createElement("div");s.className="of-board-cell",s.dataset.queue=n,s.dataset.row=String(o),i.push(s)}}t.replaceChildren(...i),this.rowCount=e}renderColumnHead(e,t,i){let o=this.grid?.querySelector(`.of-board-colhead[data-queue="${e}"]`);if(!o)return;let[,r,n]=Array.from(o.children);if(this.setCountAndWord(r,he(t)),!i){n.firstChild&&n.replaceChildren();return}let s=ge(i);this.setCountAndWord(n,{...s,count:`\xB7 ${s.count}`})}buildEmpty(){let e=document.createElement("div");return e.className="of-board-empty",e}createCard(e){let t=document.createElement("button");t.type="button",t.className="of-board-card",t.dataset.gameId=e,t.addEventListener("click",()=>this.options.onJoin(e));let i=this.createSpan("of-board-thumb"),o=this.createSpan("of-board-map"),r=this.createSpan("of-board-nameline");r.append(o);let n=this.createSpan("of-board-format"),s=this.createSpan("of-board-formatline");s.append(n);let p=this.createSpan("of-board-mods"),c=this.createSpan("of-board-text");c.append(r,s,p);let d=this.createSpan("of-board-gauge"),h=document.createElement("i");h.className="of-board-fill";let y=document.createElement("b");y.className="of-board-players";let v=document.createElement("span");y.append(this.createPersonIcon(),v);let l=document.createElement("em");l.className="of-board-percent",d.append(h,y,l);let f=this.createSpan("of-board-join");return f.textContent="Join \u203A",f.setAttribute("aria-hidden","true"),t.append(i,c,d,f),this.cardParts.set(t,{thumb:i,nameLine:r,name:o,format:n,modifiers:p,gauge:d,fill:h,players:v,percent:l}),this.cards.set(e,t),t}createPersonIcon(){let e=document.createElementNS(ye,"svg");e.setAttribute("viewBox","0 0 16 16"),e.setAttribute("aria-hidden","true");let t=document.createElementNS(ye,"circle");t.setAttribute("cx","8"),t.setAttribute("cy","5"),t.setAttribute("r","3");let i=document.createElementNS(ye,"path");return i.setAttribute("d","M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6z"),e.append(t,i),e}createSpan(e){let t=document.createElement("span");return t.className=e,t}applyNewBadge(e,t){let i=this.cardParts.get(e)?.nameLine;if(!i)return;let o=i.querySelector(".of-board-new");if(t){if(o)return;let r=this.createSpan("of-board-new");r.textContent="New",i.insertBefore(r,i.querySelector(".of-board-countdown"))}else o?.remove()}updateCard(e,t){let i=JSON.stringify(t);if(this.signatures.get(t.gameID)===i)return;this.signatures.set(t.gameID,i);let o=this.cardParts.get(e);o&&(this.updateThumbnail(o.thumb,t.thumbnailUrl),this.updateCountdown(o.nameLine,t.countdownTargetMs),this.setText(o.name,je(t.mapName)),this.setText(o.format,t.formatText),o.gauge.classList.toggle("of-board-gauge-hot",t.fillPercent>=$t),o.fill.style.width=`${t.fillPercent}%`,this.setCountAndWord(o.players,Ve(t.players,t.capacity)),this.setText(o.percent,t.capacity===null?"":`\xB7 ${t.fillPercent}%`),this.reconcileChildren(o.modifiers,0,[...t.hasCustomTag?[{className:"of-board-tag",text:"Custom"}]:[],...t.modifiers.length===0?[{className:"of-board-nomods",text:"No modifiers"}]:t.modifiers.map(r=>({className:`of-board-mod${r.state==="neutral"?"":` of-board-mod-${r.state}`}`,text:r.name}))]),e.setAttribute("aria-label",`Open ${t.mapName} in OpenFront's join modal`))}updateCountdown(e,t){let i=e.querySelector(".of-board-countdown");if(t===null){i?.remove();return}i||(i=this.createSpan("of-board-countdown"),e.append(i)),i.dataset.countdownTo=String(t)}updateThumbnail(e,t){let i=e.querySelector("img");if(!t){i?.remove();return}if(i){i.getAttribute("src")!==t&&(i.hidden=!1,i.src=t);return}let o=document.createElement("img");o.addEventListener("error",()=>{o.hidden=!0}),o.src=t,o.alt="",o.loading="lazy",e.prepend(o)}reconcileChildren(e,t,i){let o=Array.from(e.children).slice(t);i.forEach(({className:r,text:n},s)=>{let p=o[s]??e.appendChild(this.createSpan(r));p.className!==r&&(p.className=r),this.setText(p,n)});for(let r of o.slice(i.length))r.remove()}setCountAndWord(e,{count:t,word:i}){let o=e.lastElementChild;(!o?.classList.contains("of-board-word")||e.firstChild?.nodeType!==Node.TEXT_NODE)&&(o=this.createSpan("of-board-word"),e.replaceChildren(document.createTextNode(""),o));let r=e.firstChild;r.textContent!==t&&(r.textContent=t),this.setText(o,` ${i}`)}setText(e,t){e.textContent!==t&&(e.textContent=t)}};var X=class{constructor(){this.entries=new Map}alert(e,t){this.entries.set(e,t)}retain(e){for(let t of[...this.entries.keys()])e.has(t)||this.entries.delete(t)}clear(){this.entries.clear()}getNewGameIds(){return new Set(this.entries.values())}};var ve=a=>a!==void 0&&a!=="any";function Pt(a){if(!a)return 0;let e=0;for(let t of Object.values(a))typeof t=="string"?ve(t)&&e++:t&&(e+=Object.values(t).filter(ve).length);return e}function it(a){let{criteria:e,mapFilter:t}=a,i=Object.values(t).filter(ve).length;if(e.length===0&&i===0)return"No filters";let o=[];e.some(s=>s.gameMode==="FFA")&&o.push("FFA"),e.some(s=>s.gameMode==="Team")&&o.push("Teams");let r=Math.max(0,...e.map(s=>Pt(s.modifiers))),n=[o.length>0?o.join(" + "):"No mode"];return r>0&&n.push(`${r} ${r===1?"modifier":"modifiers"}`),i>0&&n.push(`${i} ${i===1?"map":"maps"}`),n.join(" \xB7 ")}var Ht='<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M19 5a9 9 0 010 14"/></svg>',Dt='<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg>',Z=class{constructor(e){this.options=e;this.searchActive=!1;this.timerText=null;this.root=null;this.discoveryEnabled=e.discoveryEnabled,this.soundEnabled=e.soundEnabled,this.desktopEnabled=e.desktopNotificationsEnabled,this.originalPage=e.originalPage}mount(e){this.cleanup();let t=document.createElement("div");t.className="ld-status",t.innerHTML=`
+      <span class="ld-pulse" aria-hidden="true"></span>
+      <div class="ld-status-text" id="discovery-status" role="button" tabindex="0">
+        <strong>Discovery active</strong>
+        <span class="sep">\xB7</span>
+        <span class="meta" id="discovery-search-timer"></span>
       </div>
-    `,document.body.appendChild(this.panel),this.setupEventListeners(),this.loadUIFromSettings();for(let e of oe)this.applySectionCollapse(e);this.ffaSlider=new _({containerId:"discovery-ffa-slider-row",rangeRootId:"discovery-ffa-range-root",minSliderId:"discovery-ffa-min-slider",maxSliderId:"discovery-ffa-max-slider",minInputId:"discovery-ffa-min",maxInputId:"discovery-ffa-max",fillId:"discovery-ffa-range-fill",bounds:{min:1,max:125},onChange:()=>this.refreshCriteria()}),this.teamSlider=new _({containerId:"discovery-team-slider-row",rangeRootId:"discovery-team-range-root",minSliderId:"discovery-team-min-slider",maxSliderId:"discovery-team-max-slider",minInputId:"discovery-team-min",maxInputId:"discovery-team-max",fillId:"discovery-team-range-fill",ticksContainerId:"discovery-team-ticks",bounds:{min:E,max:J},stops:re,lockMaxToTwiceMin:()=>this.isTeamTwoTimesMinEnabled,onChange:()=>this.refreshCriteria()}),this.updateStatusLabel(),this.updateFilterCount(),this.syncSearchTimer(),this.startGameInfoUpdates()}}updateSleepState(){let e=U.isOnLobbyPage();this.sleeping=!e,this.sleeping?(this.panel.classList.add("hidden"),this.stopTimer(),this.stopGameInfoUpdates(),this.updateQueueCardPulses(new Set),this.updateSeeAllSignals(!1,new Set),this.hideUpcomingStrip()):(this.panel.classList.remove("hidden"),this.syncSearchTimer(),this.startGameInfoUpdates())}cleanup(){this.isDisposed=!0,this.stopTimer(),this.stopGameInfoUpdates(),this.pulseSyncTimeout&&(clearTimeout(this.pulseSyncTimeout),this.pulseSyncTimeout=null),this.activeMatchSources.clear(),this.applyQueueCardPulses(),this.updateSeeAllSignals(!1,new Set),this.seeAllObserver?.disconnect(),this.seeAllObserver=null,this.observedSeeAllView=null,this.upcomingStrip?.parentNode?.removeChild(this.upcomingStrip),this.upcomingStrip=null,this.lastUpcomingSlots=new Map,this.lastUpcomingMatchSources=new Set,this.upcomingSlotSignatures.clear(),this.panel.parentNode?.removeChild(this.panel)}};var K=class{constructor(){this.observer=null;this.animationFrameId=null}start(){this.observer||(this.observer=new MutationObserver(()=>this.scheduleApplyHighlights()),this.observer.observe(document.body,{attributes:!1,childList:!0,subtree:!0}),this.applyHighlights())}stop(){this.observer?.disconnect(),this.observer=null,this.animationFrameId!==null&&(cancelAnimationFrame(this.animationFrameId),this.animationFrameId=null)}scheduleApplyHighlights(){this.animationFrameId===null&&(this.animationFrameId=requestAnimationFrame(()=>{this.animationFrameId=null,this.applyHighlights()}))}applyHighlights(){for(let e of Array.from(document.querySelectorAll("lobby-player-view")))this.applyHighlightToView(e)}applyHighlightToView(e){this.clearHighlights(e);let t=Array.from(e.querySelectorAll(".player-tag.current-player"));if(t.length>0){t.forEach(o=>o.classList.add("of-current-player-boost"));return}let i=this.getNativeTeamRows(e);i.forEach(o=>o.classList.add("of-current-player-boost"));let n=this.getNativeTeamCards(e);n.forEach(o=>o.classList.add("of-current-player-team-boost")),!(i.length>0||n.length>0)&&this.applyFallbackHighlight(e)}clearHighlights(e){e.querySelectorAll(".of-current-player-boost").forEach(t=>{t.classList.remove("of-current-player-boost")}),e.querySelectorAll(".of-current-player-team-boost").forEach(t=>{t.classList.remove("of-current-player-team-boost")})}getNativeTeamRows(e){return Array.from(e.querySelectorAll("div")).filter(t=>{let i=t.classList;return i.contains("bg-sky-600/20")&&i.contains("border-sky-500/40")})}getNativeTeamCards(e){return Array.from(e.querySelectorAll("div")).filter(t=>{let i=t.classList;return i.contains("rounded-xl")&&i.contains("border-sky-500/60")})}applyFallbackHighlight(e){let t=e.currentClientID,i=Array.isArray(e.clients)?e.clients:[];if(!t||i.length===0)return;let n=i.findIndex(u=>u?.clientID===t);if(n<0)return;let o=i[n],s=this.formatDisplayName(o),r=Array.from(e.querySelectorAll(".player-tag"));if(r[n]){r[n].classList.add("of-current-player-boost");return}Array.from(e.querySelectorAll("[data-client-id]")).filter(u=>u.dataset.clientId===t).forEach(u=>u.classList.add("of-current-player-boost")),this.findRowsByDisplayName(e,s).forEach(u=>u.classList.add("of-current-player-boost"));let c=Array.from(e.querySelectorAll(".rounded-xl")),p=(Array.isArray(e.teamPreview)?e.teamPreview:[]).filter(u=>Array.isArray(u.players)&&u.players.length>0).findIndex(u=>Array.isArray(u.players)&&u.players.some(v=>v?.clientID===t));p>=0&&c[p]&&(c[p].classList.add("of-current-player-team-boost"),this.findRowsByDisplayName(c[p],s).forEach(v=>v.classList.add("of-current-player-boost")))}formatDisplayName(e){return e?.username?e.clanTag?`[${e.clanTag}] ${e.username}`:e.username:""}findRowsByDisplayName(e,t){if(!t)return[];let i=[];for(let n of Array.from(e.querySelectorAll("span, div"))){let o=n.textContent?.trim();if(!o||o!==t)continue;let s=n.closest("[data-client-id]")??n.closest(".player-tag")??n.closest(".team-player-row")??n.closest("div");s&&!i.includes(s)&&i.push(s)}return i}};(function(){"use strict";console.log("[OpenFront Game Notifier] Initializing adaptation for OpenFront 0.30..."),GM_addStyle(le()),P.preloadSounds(),$.init(),X.start();let a=new Y,e=new K;X.subscribe(n=>{a.receiveLobbyUpdate(n)}),e.start();let t=n=>{try{return new URL(n).searchParams.has("live")}catch{return!1}},i=t(location.href);$.subscribe(n=>{let o=t(n);!i&&o&&a.isSoundEnabled()&&P.playGameStartSound(),i=o}),console.log("[OpenFront Game Notifier] Ready! \u{1F680}")})();})();
+      <div class="ld-icons">
+        ${this.renderIconButton("discovery-sound-toggle","Sound alert",Ht)}
+        ${this.renderIconButton("discovery-desktop-toggle","Desktop notification",Dt)}
+      </div>
+      <label class="ld-original-switch" title="Show OpenFront's original lobby area">
+        <input type="checkbox" id="discovery-original-toggle">
+        <span class="ld-original-track" aria-hidden="true"></span>
+        <span>Original page</span>
+      </label>
+    `,e.appendChild(t),this.root=t,this.$("discovery-status")?.addEventListener("click",()=>this.options.onToggleDiscovery()),this.$("discovery-sound-toggle")?.addEventListener("change",i=>{let o=i.target.checked;this.setSoundOn(o),this.options.onSoundChange(o)}),this.$("discovery-desktop-toggle")?.addEventListener("change",i=>{this.options.onDesktopChange(i.target.checked)}),this.$("discovery-original-toggle")?.addEventListener("change",i=>{let o=i.target.checked;this.originalPage=o,this.options.onOriginalPageChange(o)}),this.setSoundOn(this.soundEnabled),this.setOriginalPageOn(this.originalPage),this.setDesktopOn(this.desktopEnabled),this.setDiscoveryEnabled(this.discoveryEnabled),this.setSearchActive(this.searchActive),this.setTimerText(this.timerText)}cleanup(){this.root?.remove(),this.root=null}setDiscoveryEnabled(e){this.discoveryEnabled=e;let t=this.root?.querySelector(".ld-status-text strong");t&&(t.textContent=e?"Discovery active":"Discovery paused")}setSearchActive(e){this.searchActive=e,this.root?.querySelector(".ld-pulse")?.classList.toggle("is-paused",!e)}setTimerText(e){this.timerText=e;let t=this.$("discovery-search-timer");t&&(t.textContent=e??"",t.style.display=e===null?"none":"inline")}setSoundOn(e){this.soundEnabled=e,this.syncToggle("discovery-sound-toggle",e)}setDesktopOn(e){this.desktopEnabled=e,this.syncToggle("discovery-desktop-toggle",e)}setOriginalPageOn(e){this.originalPage=e,this.syncToggle("discovery-original-toggle",e)}syncToggle(e,t){let i=this.$(e);i&&(i.checked=t,i.toggleAttribute("checked",t),i.closest(".ld-icon-btn")?.classList.toggle("is-on",t))}$(e){return this.root?.querySelector(`[id="${e}"]`)??null}renderIconButton(e,t,i){return`
+      <label class="ld-icon-btn" title="${t}" aria-label="${t}">
+        <input type="checkbox" id="${e}">${i}
+      </label>
+    `}};function Ft(){try{if(typeof unsafeWindow<"u"&&unsafeWindow.__OF_DEBUG_DISCOVERY===!0)return!0}catch{}if(globalThis.__OF_DEBUG_DISCOVERY===!0)return!0;try{if(typeof localStorage<"u"&&localStorage.getItem("__OF_DEBUG_DISCOVERY")==="true")return!0}catch{}return!1}var U="page-detailed-view",Ot="of-discovery-see-all-match";function at(){try{if(typeof unsafeWindow<"u")return unsafeWindow}catch{}return window}var ee=class{constructor(){this.discoveryEnabled=!0;this.searchStartTime=null;this.lastMatchTime=null;this.soundEnabled=!0;this.desktopNotificationsEnabled=!1;this.desktopNotificationRequestId=0;this.activeMatchSources=new Set;this.seeAllPulseActive=!1;this.seeAllMatchIds=new Set;this.seeAllObserver=null;this.observedSeeAllView=null;this.seenLobbies=new Set;this.desktopNotifiedLobbies=new Set;this.sleeping=!1;this.boardMode="board";this.isDisposed=!1;this.lastLobbies=[];this.timerInterval=null;this.gameInfoInterval=null;this.pulseSyncTimeout=null;this.filtersHost=null;this.controlsHost=null;this.boardAlerts=new X;this.clockOffsetMs=0;this.handleFocusLost=()=>{this.boardAlerts.clear(),this.updateLobbyBoard(this.lastLobbies)};this.handleWindowBlur=()=>{document.hasFocus()||this.handleFocusLost()};this.handleVisibilityChange=()=>{document.visibilityState==="hidden"&&this.handleFocusLost()};this.engine=new j,this.lobbyBoard=new J({onJoin:e=>this.navigateToGame(`/game/${e}`),getAssets:()=>this.getAssetContext()}),this.loadSettings(),this.createUI(),this.updateSleepState(),_.subscribe(()=>this.updateSleepState()),window.addEventListener("blur",this.handleWindowBlur),document.addEventListener("visibilitychange",this.handleVisibilityChange)}get criteriaList(){return this.filters.getSettings().criteria}get mapFilter(){return this.filters.getSettings().mapFilter}receiveLobbyUpdate(e,t=null){this.lastLobbies=e,t!==null&&(this.clockOffsetMs=t-Date.now()),this.processLobbies(e)}isSoundEnabled(){return this.soundEnabled}loadSettings(){let e=GM_getValue(S.lobbyDiscoverySettings,null),t=Be(e);GM_setValue(S.lobbyDiscoverySettings,t),this.soundEnabled=t.soundEnabled,this.desktopNotificationsEnabled=t.desktopNotificationsEnabled,this.discoveryEnabled=t.discoveryEnabled,this.boardMode=GM_getValue(S.lobbyBoardMode,"board")==="original"?"original":"board",this.controls=new Z({discoveryEnabled:t.discoveryEnabled,soundEnabled:t.soundEnabled,desktopNotificationsEnabled:t.desktopNotificationsEnabled,originalPage:this.boardMode==="original",onToggleDiscovery:()=>this.setDiscoveryEnabled(!this.discoveryEnabled,{resetTimer:!0}),onSoundChange:i=>{this.soundEnabled=i,this.saveSettings()},onDesktopChange:i=>void this.handleDesktopNotificationChange(i),onOriginalPageChange:i=>this.setBoardMode(i?"original":"board")}),this.filters=new Q({initial:{criteria:t.criteria,isTeamTwoTimesMinEnabled:t.isTeamTwoTimesMinEnabled,mapFilter:t.mapFilter??{}},onChange:i=>this.handleFilterChange(i)})}handleFilterChange(e){this.saveSettings(),this.dropAlertsOfNonMatches(),this.updateLobbyBoard(this.lastLobbies),this.syncSearchTimer({resetStart:!0}),e==="maps"&&this.processLobbies(this.lastLobbies)}dropAlertsOfNonMatches(){let e=new Set;for(let{lobby:t,matched:i}of this.evaluateLobbies(this.lastLobbies))i&&e.add(this.getNotificationKey(t));this.boardAlerts.retain(e)}saveSettings(){let e=this.filters.getSettings();GM_setValue(S.lobbyDiscoverySettings,{criteria:e.criteria,discoveryEnabled:this.discoveryEnabled,soundEnabled:this.soundEnabled,desktopNotificationsEnabled:this.desktopNotificationsEnabled,isTeamTwoTimesMinEnabled:e.isTeamTwoTimesMinEnabled,mapFilter:e.mapFilter})}updateStatusText(){if(!this.discoveryEnabled||this.criteriaList.length===0||!this.isDiscoveryFeedbackAllowed()){this.controls.setTimerText(null);return}this.lastMatchTime!==null?this.controls.setTimerText(`last match ${se(this.lastMatchTime)}`):this.searchStartTime!==null?this.controls.setTimerText(`searching \xB7 ${se(this.searchStartTime)}`):this.controls.setTimerText("awaiting filters")}updateCurrentGameInfo(){if(!R.isOnLobbyPage()){this.filters.setCurrentGameInfo(null);return}let e=document.querySelector("public-lobby");if(!e||!Array.isArray(e.lobbies)||e.lobbies.length===0){this.filters.setCurrentGameInfo(null);return}let t=e.lobbies[0];if(!t||!t.gameConfig){this.filters.setCurrentGameInfo(null);return}this.filters.setCurrentGameInfo(`Current game: ${De(t)}`)}evaluateLobbies(e){let t=Y(e),i=[];for(let{queue:o}of C)t[o].forEach((r,n)=>{let s=this.engine.matchesCriteria(r,this.criteriaList,this.mapFilter);i.push({lobby:r,queue:o,index:n,matched:s})});return i}processLobbies(e){try{if(this.updateCurrentGameInfo(),this.syncSearchTimer(),this.filters.addFeedOnlyMaps(e),!this.discoveryEnabled||this.criteriaList.length===0){this.seenLobbies.clear(),this.desktopNotifiedLobbies.clear(),this.boardAlerts.clear(),this.updateQueueCardPulses(new Set),this.updateSeeAllSignals(!1,new Set),this.updateStatusText();return}let t=new Set,i=new Set,o=!1,r=new Set,n=[],s=[],p=Ft();for(let{lobby:d,queue:h,index:y,matched:v}of this.evaluateLobbies(e)){if(p&&console.log("[OF Discovery]",{lobbyId:d.gameID,queue:h,index:y,mode:d.gameConfig?.gameMode,map:d.gameConfig?.gameMap,playerTeams:d.gameConfig?.playerTeams,modifiers:d.gameConfig?.publicGameModifiers,hostGold:{startingGold:d.gameConfig?.startingGold,goldMultiplier:d.gameConfig?.goldMultiplier},criteriaCount:this.criteriaList.length,matched:v}),!v)continue;let l=h!=="hosted"&&y===0;l?t.add(h):o=!0,i.add(d.gameID);let f=this.getNotificationKey(d);r.add(f),this.seenLobbies.has(f)||s.push({key:f,gameID:d.gameID}),this.desktopNotifiedLobbies.has(f)||n.push({lobby:d,queue:h,seeAllOnly:!l})}if(!this.isDiscoveryFeedbackAllowed()){this.seenLobbies=new Set([...this.seenLobbies].filter(d=>r.has(d))),this.desktopNotifiedLobbies=new Set([...this.desktopNotifiedLobbies].filter(d=>r.has(d))),this.boardAlerts.retain(r),this.updateQueueCardPulses(new Set),this.updateSeeAllSignals(!1,new Set),this.updateStatusText();return}let c=!this.canShowBoard();this.updateQueueCardPulses(c?t:new Set),this.updateSeeAllSignals(c&&o,c?i:new Set),this.boardAlerts.retain(r);for(let{key:d,gameID:h}of s)this.badgeNewMatch(d,h);if(s.length>0&&(this.lastMatchTime=Date.now(),this.soundEnabled&&B.playGameFoundSound()),this.desktopNotificationsEnabled){let d=new Set;for(let{lobby:h,queue:y,seeAllOnly:v}of n){let l=Fe(h),f=this.getNotificationKey(h);V.show({title:l.title,body:l.body,tag:f,onClick:()=>this.handleNotificationClick(h.gameID,y,v)})&&d.add(f)}this.desktopNotifiedLobbies=new Set([...[...this.desktopNotifiedLobbies].filter(h=>r.has(h)),...d])}else this.desktopNotifiedLobbies.clear();this.seenLobbies=r,r.size===0&&(this.lastMatchTime=null),this.updateStatusText()}catch(t){console.error("[LobbyDiscovery] Error processing lobbies:",t)}finally{this.updateLobbyBoard(e)}}handleNotificationClick(e,t,i){this.lobbyBoard.isShowing()?this.lobbyBoard.flashCard(e):i&&this.openSeeAllView(t)}badgeNewMatch(e,t){V.isBackgrounded()&&this.boardAlerts.alert(e,t)}setBoardMode(e){e!==this.boardMode&&(this.boardMode=e,GM_setValue(S.lobbyBoardMode,e),this.controls.setOriginalPageOn(e==="original"),this.processLobbies(this.lastLobbies))}canShowBoard(){return this.boardMode==="board"&&this.lobbyBoard.canMount()}updateLobbyBoard(e){if(this.sleeping||this.boardMode==="original"||!R.isOnLobbyPage()){this.lobbyBoard.hide(),this.placeSurfaces();return}let t=this.discoveryEnabled&&this.criteriaList.length>0,i=new Set;if(t)for(let{lobby:o,matched:r}of this.evaluateLobbies(e))r&&i.add(o.gameID);this.lobbyBoard.render({lobbies:e,matchedIds:t?i:null,clockOffsetMs:this.clockOffsetMs,criteria:t?this.criteriaList:[],newGameIds:this.isDiscoveryFeedbackAllowed()?this.boardAlerts.getNewGameIds():new Set}),this.placeSurfaces()}getNotificationKey(e){return JSON.stringify({gameID:e.gameID,map:e.gameConfig?.gameMap??null,mode:e.gameConfig?.gameMode??null,playerTeams:e.gameConfig?.playerTeams??e.gameConfig?.teamCount??null,capacity:e.gameConfig?.maxPlayers??e.maxClients??null,modifiers:e.gameConfig?.publicGameModifiers??{}})}isDiscoveryFeedbackAllowed(){return!(!R.isOnLobbyPage()||document.getElementById("page-play")?.classList.contains("hidden")&&!this.isSeeAllViewVisible()||document.querySelector("public-lobby")?.isLobbyHighlighted===!0||document.querySelector("join-lobby-modal")?.currentLobbyId||document.querySelector("host-lobby-modal")?.lobbyId)}getQueueCardElements(){let e=document.querySelector("game-mode-selector"),t=G(e);if(!e||!t)return{};let{ffaCell:i,cardCells:o}=ke(t),r=e.lobbies?.games,n=Array.isArray(r?.team)&&r.team.length>0,s=Array.isArray(r?.special)&&r.special.length>0,p=n?o[0]:void 0,c=s?o[n?1:0]:void 0;return{ffa:i?.querySelector("button"),team:p?.querySelector("button"),special:c?.querySelector("button")}}updateQueueCardPulses(e){this.activeMatchSources=new Set(e),this.applyQueueCardPulses(),this.scheduleQueueCardPulseSync()}isSeeAllViewVisible(){let e=document.getElementById(U);return!!e&&!e.classList.contains("hidden")}getSeeAllButton(){return document.querySelector('game-mode-selector button[class~="group/upcoming"]')}updateSeeAllSignals(e,t){this.seeAllPulseActive=e,this.seeAllMatchIds=t,this.applySeeAllSignals()}applySeeAllSignals(){this.getSeeAllButton()?.classList.toggle("of-discovery-card-active",this.seeAllPulseActive),this.observeSeeAllView(),this.applySeeAllHighlights()}observeSeeAllView(){let e=document.getElementById(U);!e||e===this.observedSeeAllView||(this.seeAllObserver?.disconnect(),this.seeAllObserver=new MutationObserver(()=>this.applySeeAllHighlights()),this.seeAllObserver.observe(e,{childList:!0,subtree:!0}),this.observedSeeAllView=e)}applySeeAllHighlights(){let e=document.getElementById(U);if(e)for(let t of Array.from(e.querySelectorAll("[data-lobby-slot]")))t.classList.toggle(Ot,this.seeAllMatchIds.has(t.dataset.lobbySlot??""))}openSeeAllView(e){if(at().showPage?.(U),e==="hosted")return;document.getElementById(U)?.open?.({tab:e})}applyQueueCardPulses(){let e=this.getQueueCardElements();for(let t of["ffa","special","team"]){let i=e[t];i&&i.classList.toggle("of-discovery-card-active",this.activeMatchSources.has(t))}}scheduleQueueCardPulseSync(){this.pulseSyncTimeout&&clearTimeout(this.pulseSyncTimeout),this.pulseSyncTimeout=setTimeout(()=>{this.pulseSyncTimeout=null,this.applyQueueCardPulses(),this.applySeeAllSignals()},16)}getAssetContext(){let e=at();return{manifest:e.BOOTSTRAP_CONFIG?.assetManifest??e.__ASSET_MANIFEST__??null,cdnBase:e.BOOTSTRAP_CONFIG?.cdnBase??e.__CDN_BASE__??null}}navigateToGame(e){window.location.assign(e)}stopTimer(){this.timerInterval&&(clearInterval(this.timerInterval),this.timerInterval=null)}startGameInfoUpdates(){this.stopGameInfoUpdates(),this.updateCurrentGameInfo(),this.gameInfoInterval=setInterval(()=>this.updateCurrentGameInfo(),1e3)}stopGameInfoUpdates(){this.gameInfoInterval&&(clearInterval(this.gameInfoInterval),this.gameInfoInterval=null)}syncSearchTimer(e={}){let{resetStart:t=!1}=e;this.stopTimer(),t&&(this.searchStartTime=null,this.lastMatchTime=null,this.seenLobbies.clear(),this.desktopNotifiedLobbies.clear()),this.discoveryEnabled&&this.criteriaList.length>0&&this.isDiscoveryFeedbackAllowed()?(this.searchStartTime===null&&(this.searchStartTime=Date.now()),this.timerInterval=setInterval(()=>this.updateStatusText(),1e3)):(this.searchStartTime=null,this.lastMatchTime=null),this.updateStatusText(),this.updatePulseIndicator()}updatePulseIndicator(){this.controls.setSearchActive(this.discoveryEnabled&&this.criteriaList.length>0)}setDiscoveryEnabled(e,t={}){this.discoveryEnabled=e,this.saveSettings(),this.controls.setDiscoveryEnabled(e),this.syncSearchTimer({resetStart:t.resetTimer??!1}),this.updateLobbyBoard(this.lastLobbies)}async handleDesktopNotificationChange(e){let t=++this.desktopNotificationRequestId;if(!e){this.desktopNotificationsEnabled=!1,this.controls.setDesktopOn(!1),this.saveSettings();return}let i=await V.ensurePermission();t!==this.desktopNotificationRequestId||this.isDisposed||(this.desktopNotificationsEnabled=i,this.controls.setDesktopOn(i),this.saveSettings())}createUI(){this.panel=document.createElement("div"),this.panel.id="openfront-discovery-panel",this.panel.className="of-panel discovery-panel",this.panel.style.width="380px",this.panel.innerHTML=`
+      <div class="ld-panel-slot" data-slot="controls"></div>
+      <div class="ld-head">
+        <div class="ld-eyebrow">Notify + quick-join \xB7 never auto-joins</div>
+        <h2 class="ld-title">OpenFront Game Notifier</h2>
+      </div>
+      <div class="ld-panel-slot" data-slot="filters"></div>
+    `,this.panelControlsSlot=this.panel.querySelector('[data-slot="controls"]'),this.panelFiltersSlot=this.panel.querySelector('[data-slot="filters"]'),this.syncSearchTimer(),this.startGameInfoUpdates()}placeSurfaces(){let e=this.boardMode==="board"?this.lobbyBoard.getHosts():null;e?(this.detachPanel(),this.mountSurfaces(e.controls,e.sidebarBody),this.lobbyBoard.setFilterSummary(it(this.filters.getSettings()))):this.sleeping?this.detachPanel():(this.panel.isConnected||document.body.appendChild(this.panel),this.mountSurfaces(this.panelControlsSlot,this.panelFiltersSlot))}mountSurfaces(e,t){(this.controlsHost!==e||!e.isConnected)&&(this.controls.mount(e),this.controlsHost=e),(this.filtersHost!==t||!t.isConnected)&&(this.filters.mount(t),this.filtersHost=t)}detachPanel(){this.panel.remove()}updateSleepState(){let e=R.isOnLobbyPage();this.sleeping=!e,this.sleeping?(this.stopTimer(),this.stopGameInfoUpdates(),this.updateQueueCardPulses(new Set),this.updateSeeAllSignals(!1,new Set),this.lobbyBoard.hide(),this.placeSurfaces()):(this.syncSearchTimer(),this.startGameInfoUpdates(),this.updateLobbyBoard(this.lastLobbies))}cleanup(){this.isDisposed=!0,window.removeEventListener("blur",this.handleWindowBlur),document.removeEventListener("visibilitychange",this.handleVisibilityChange),this.stopTimer(),this.stopGameInfoUpdates(),this.pulseSyncTimeout&&(clearTimeout(this.pulseSyncTimeout),this.pulseSyncTimeout=null),this.activeMatchSources.clear(),this.applyQueueCardPulses(),this.updateSeeAllSignals(!1,new Set),this.seeAllObserver?.disconnect(),this.seeAllObserver=null,this.observedSeeAllView=null,this.boardAlerts.clear(),this.lobbyBoard.dispose(),this.filters.cleanup(),this.controls.cleanup(),this.panel.remove()}};var te=class{constructor(){this.observer=null;this.animationFrameId=null}start(){this.observer||(this.observer=new MutationObserver(()=>this.scheduleApplyHighlights()),this.observer.observe(document.body,{attributes:!1,childList:!0,subtree:!0}),this.applyHighlights())}stop(){this.observer?.disconnect(),this.observer=null,this.animationFrameId!==null&&(cancelAnimationFrame(this.animationFrameId),this.animationFrameId=null)}scheduleApplyHighlights(){this.animationFrameId===null&&(this.animationFrameId=requestAnimationFrame(()=>{this.animationFrameId=null,this.applyHighlights()}))}applyHighlights(){for(let e of Array.from(document.querySelectorAll("lobby-player-view")))this.applyHighlightToView(e)}applyHighlightToView(e){this.clearHighlights(e);let t=Array.from(e.querySelectorAll(".player-tag.current-player"));if(t.length>0){t.forEach(r=>r.classList.add("of-current-player-boost"));return}let i=this.getNativeTeamRows(e);i.forEach(r=>r.classList.add("of-current-player-boost"));let o=this.getNativeTeamCards(e);o.forEach(r=>r.classList.add("of-current-player-team-boost")),!(i.length>0||o.length>0)&&this.applyFallbackHighlight(e)}clearHighlights(e){e.querySelectorAll(".of-current-player-boost").forEach(t=>{t.classList.remove("of-current-player-boost")}),e.querySelectorAll(".of-current-player-team-boost").forEach(t=>{t.classList.remove("of-current-player-team-boost")})}getNativeTeamRows(e){return Array.from(e.querySelectorAll("div")).filter(t=>{let i=t.classList;return i.contains("bg-sky-600/20")&&i.contains("border-sky-500/40")})}getNativeTeamCards(e){return Array.from(e.querySelectorAll("div")).filter(t=>{let i=t.classList;return i.contains("rounded-xl")&&i.contains("border-sky-500/60")})}applyFallbackHighlight(e){let t=e.currentClientID,i=Array.isArray(e.clients)?e.clients:[];if(!t||i.length===0)return;let o=i.findIndex(l=>l?.clientID===t);if(o<0)return;let r=i[o],n=this.formatDisplayName(r),s=Array.from(e.querySelectorAll(".player-tag"));if(s[o]){s[o].classList.add("of-current-player-boost");return}Array.from(e.querySelectorAll("[data-client-id]")).filter(l=>l.dataset.clientId===t).forEach(l=>l.classList.add("of-current-player-boost")),this.findRowsByDisplayName(e,n).forEach(l=>l.classList.add("of-current-player-boost"));let d=Array.from(e.querySelectorAll(".rounded-xl")),v=(Array.isArray(e.teamPreview)?e.teamPreview:[]).filter(l=>Array.isArray(l.players)&&l.players.length>0).findIndex(l=>Array.isArray(l.players)&&l.players.some(f=>f?.clientID===t));v>=0&&d[v]&&(d[v].classList.add("of-current-player-team-boost"),this.findRowsByDisplayName(d[v],n).forEach(f=>f.classList.add("of-current-player-boost")))}formatDisplayName(e){return e?.username?e.clanTag?`[${e.clanTag}] ${e.username}`:e.username:""}findRowsByDisplayName(e,t){if(!t)return[];let i=[];for(let o of Array.from(e.querySelectorAll("span, div"))){let r=o.textContent?.trim();if(!r||r!==t)continue;let n=o.closest("[data-client-id]")??o.closest(".player-tag")??o.closest(".team-player-row")??o.closest("div");n&&!i.includes(n)&&i.push(n)}return i}};(function(){"use strict";console.log("[OpenFront Game Notifier] Initializing adaptation for OpenFront 0.30..."),GM_addStyle(Le()),B.preloadSounds(),_.init(),ae.start();let a=new ee,e=new te;ae.subscribe((o,r)=>{a.receiveLobbyUpdate(o,r)}),e.start();let t=o=>{try{return new URL(o).searchParams.has("live")}catch{return!1}},i=t(location.href);_.subscribe(o=>{let r=t(o);!i&&r&&a.isSoundEnabled()&&B.playGameStartSound(),i=r}),console.log("[OpenFront Game Notifier] Ready! \u{1F680}")})();})();

@@ -41,6 +41,74 @@ export const COLORS = {
   error: '#d27a6b',
 } as const;
 
+/** Colours of the Lobby Board, which sit on a dark violet surface of their own. */
+export const BOARD_COLORS = {
+  surface: 'rgba(16, 10, 24, 0.92)',
+  /** The orange of the Live row, the countdown and the frame of a matching card. */
+  live: '#e8600c',
+  /** The text on the orange countdown. */
+  onLive: '#0a0610',
+  /** The soft inner glow of the flash after a desktop notification click. */
+  liveGlow: 'rgba(232, 96, 12, 0.45)',
+  text: '#fff',
+  /** The text on the accent tag. */
+  onAccent: '#0d0a14',
+  /** The text on the "New" badge. */
+  onNew: '#0a0610',
+  chip: 'rgba(255, 255, 255, 0.08)',
+  blockedBg: 'rgba(200, 70, 50, 0.25)',
+  blockedText: '#f2c4bb',
+  /** The players gauge along the bottom of a card. */
+  gaugeTrack: 'rgba(255, 255, 255, 0.04)',
+  gaugeFill: 'rgba(159, 184, 166, 0.62)',
+  /** The fill of a nearly full lobby. */
+  gaugeFillHot: 'rgba(232, 96, 12, 0.65)',
+  /** Keeps the white gauge text readable over the fill and over the empty track. */
+  gaugeTextShadow: 'rgba(0, 0, 0, 0.7)',
+  /** The text column of the card under the pointer while matching is off: a little lighter than its rest colour. */
+  textColumnHover: '#1d2126',
+  /** The text column of a matching card under the pointer: the rest colour with an orange tint. */
+  matchTextColumnHover: '#362318',
+  /** The "Join ›" label at the right end of the gauge, at rest. */
+  joinRest: '#3f4349',
+  joinRestText: '#d6d4ce',
+  /** The "Join ›" label of a hovered card that does not match. */
+  joinHover: '#4c5057',
+  joinHoverText: '#e4e2dc',
+  /** The "Join ›" label of a hovered card while matching is off. It stays grey, because orange means a match. */
+  joinNeutralHover: '#565a61',
+} as const;
+
+/** Sizes of the Lobby Board, in px. */
+export const BOARD_SIZES = {
+  /** The width of the map thumbnail on the left of a card. */
+  thumbWidthPx: 112,
+  /** The thumbnail width of a card narrower than `narrowCardBelowPx`. */
+  thumbWidthNarrowPx: 64,
+  /** The thumbnail width of a card narrower than `narrowestCardBelowPx`. */
+  thumbWidthNarrowestPx: 48,
+  /** A card narrower than this gets the narrow thumbnail. */
+  narrowCardBelowPx: 300,
+  /** A card narrower than this gets the narrowest thumbnail. */
+  narrowestCardBelowPx: 200,
+  /** A card narrower than this hides the word "players" on its gauge. */
+  playersWordHiddenBelowPx: 260,
+  /** A column header narrower than this hides the word "lobbies". */
+  lobbiesWordHiddenBelowPx: 240,
+  /** A column header narrower than this tightens its letter spacing. */
+  tightHeaderBelowPx: 180,
+  /** A column header narrower than this hides the word "matches". */
+  matchesWordHiddenBelowPx: 165,
+  /** The height of the players gauge along the bottom of a card. */
+  gaugeHeightPx: 18,
+  /** The width of the "Join ›" slot at the right end of the gauge band. */
+  joinWidthPx: 58,
+  /** The smallest card height, gauge included. A card with more modifier lines grows. */
+  cardMinHeightPx: 120,
+  /** The space between two rows and between two columns of the board. */
+  gridGapPx: 12,
+} as const;
+
 export const FONTS = {
   body: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",
   display: "'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif",

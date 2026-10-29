@@ -40,6 +40,9 @@ export function normalizeGameMode(
 }
 
 const MAP_NAMES = new Map(MAP_CATALOGUE.map((entry) => [entry.gameMap, entry.name]));
+const MAP_ASSET_KEYS = new Map(
+  MAP_CATALOGUE.flatMap((entry) => (entry.assetKey ? [[entry.gameMap, entry.assetKey] as const] : []))
+);
 
 /** OpenFront's English name for a `gameMap` value, or the value itself for an unknown map. */
 export function getMapDisplayName(gameMap: string): string {
@@ -288,7 +291,7 @@ function getLobbyModeLabel(lobby: Lobby): string {
   return 'Team';
 }
 
-function formatStartingGold(value: number): string {
+export function formatStartingGold(value: number): string {
   if (value >= 1_000_000 && value % 1_000_000 === 0) {
     return `${value / 1_000_000}M`;
   }
@@ -556,10 +559,9 @@ export function getLobbyMapThumbnailUrl(
   const mapName = lobby.gameConfig?.gameMap?.trim();
   if (!mapName) return null;
 
-  // Mirror OpenFront's normalization (src/core/AssetUrls.ts + GamePreviewBuilder):
-  // strip whitespace, dots, AND parentheses so parenthesized map names resolve to
-  // the same manifest key OpenFront uses.
-  const normalizedMap = mapName.toLowerCase().replace(/[\s.()]+/g, '');
+  // Mirrors OpenFront's normaliseMapKey: the map id when it differs, else the slugged name.
+  const normalizedMap =
+    MAP_ASSET_KEYS.get(mapName) ?? mapName.toLowerCase().replace(/[\s.()]+/g, '');
   if (!normalizedMap) return null;
 
   const path = `maps/${encodeURIComponent(normalizedMap)}/thumbnail.webp`;
@@ -570,36 +572,6 @@ export function getLobbyMapThumbnailUrl(
   }
 
   return `/${path}`;
-}
-
-export interface UpcomingCardModel {
-  gameID: string;
-  mapName: string;
-  modeText: string;
-  capacityLabel: string;
-  modifierLabels: string[];
-  thumbnailUrl: string | null;
-}
-
-/**
- * Display model for an upcoming ("Up Next") card. Pure — DOM building lives in
- * LobbyDiscoveryUI. Capacity is rendered as total slots ("N slots") because an
- * upcoming game has no current player count until it is promoted to live.
- */
-export function buildUpcomingCardModel(
-  lobby: Lobby,
-  assetManifest?: Record<string, string> | null,
-  cdnBase?: string | null
-): UpcomingCardModel {
-  const capacity = getLobbyCapacity(lobby);
-  return {
-    gameID: lobby.gameID,
-    mapName: getMapDisplayName(lobby.gameConfig?.gameMap?.trim() || 'Unknown map'),
-    modeText: getLobbyModeText(lobby),
-    capacityLabel: capacity !== null ? `${capacity} slots` : '',
-    modifierLabels: getActiveModifierLabels(lobby),
-    thumbnailUrl: getLobbyMapThumbnailUrl(lobby, assetManifest, cdnBase),
-  };
 }
 
 // Stores only required and blocked maps, so an unset map and 'any' read the same.
@@ -633,14 +605,6 @@ export function normalizeSettings(
       typeof current?.isTeamTwoTimesMinEnabled === 'boolean'
         ? current.isTeamTwoTimesMinEnabled
         : !!current?.isTeamThreeTimesMinEnabled,
-    notifyUpcomingEnabled:
-      typeof current?.notifyUpcomingEnabled === 'boolean'
-        ? current.notifyUpcomingEnabled
-        : true,
-    includeHostedAndCustomLobbies:
-      typeof current?.includeHostedAndCustomLobbies === 'boolean'
-        ? current.includeHostedAndCustomLobbies
-        : true,
     mapFilter: sanitizeMapFilter(current?.mapFilter),
   };
 }
