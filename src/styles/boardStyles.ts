@@ -2,7 +2,10 @@
  * CSS of the Lobby Board.
  */
 
-import { BOARD_COLORS, COLORS, FONTS, RADIUS, SPACING, TIMING } from '@/config/theme';
+import { BOARD_COLORS, COLORS, FONTS, RADIUS, TIMING } from '@/config/theme';
+
+const THUMB_WIDTH_PX = 84;
+const GAUGE_HEIGHT_PX = 18;
 
 export function getBoardStyles(): string {
   return `
@@ -91,136 +94,160 @@ export function getBoardStyles(): string {
     }
 
     .of-board-card {
-      /* The text panel cancels this padding with a negative margin to reach the card edges. */
-      --of-board-card-padding: ${SPACING.sm};
+      /* The gauge height is also the bottom padding that keeps the content above the gauge. */
+      --of-board-thumb-width: ${THUMB_WIDTH_PX}px;
+      --of-board-gauge-height: ${GAUGE_HEIGHT_PX}px;
       position: relative;
+      box-sizing: border-box;
       flex: 1;
       min-width: 0;
-      min-height: 118px;
+      min-height: 92px;
       display: flex;
-      flex-direction: column;
-      justify-content: space-between;
       align-items: stretch;
-      gap: 6px;
-      padding: var(--of-board-card-padding);
+      padding: 0 0 var(--of-board-gauge-height);
       overflow: hidden;
       border: 1px solid var(--of-hud-line-2);
       border-radius: ${RADIUS.lg};
       background: var(--of-hud-bg-1);
       color: ${BOARD_COLORS.text};
+      font-family: ${FONTS.body};
+      font-size: 14px;
+      line-height: 1.3;
       text-align: left;
       cursor: pointer;
       transition: opacity ${TIMING.normal}, border-color ${TIMING.fast};
     }
     .of-board-thumb {
-      position: absolute;
-      inset: 0;
+      position: relative;
       z-index: 0;
+      flex: none;
+      width: var(--of-board-thumb-width);
+      overflow: hidden;
+      background: var(--of-hud-bg-2);
       pointer-events: none;
     }
     .of-board-thumb img {
+      position: absolute;
+      inset: 0;
       width: 100%;
       height: 100%;
       object-fit: cover;
-      opacity: 0.55;
     }
-    .of-board-top,
-    .of-board-body {
-      position: relative;
+    .of-board-countdown {
+      position: absolute;
+      top: 5px;
+      left: 5px;
       z-index: 1;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: ${BOARD_COLORS.live};
+      color: ${BOARD_COLORS.onLive};
+      font: 800 11px/1.4 ${FONTS.mono};
+      white-space: nowrap;
+    }
+    .of-board-text {
+      flex: 1;
       min-width: 0;
-    }
-    .of-board-top {
-      display: flex;
-      flex-wrap: wrap;
-      align-items: center;
-      gap: 4px;
-    }
-    .of-board-body {
       display: flex;
       flex-direction: column;
-      gap: 3px;
-      margin: 0 calc(-1 * var(--of-board-card-padding)) calc(-1 * var(--of-board-card-padding));
-      padding: 7px var(--of-board-card-padding) var(--of-board-card-padding);
-      border-top: 1px solid var(--of-hud-line-3);
-      background: ${BOARD_COLORS.panel};
-    }
-    .of-board-badge {
-      padding: 2px 6px;
-      border: 1px solid var(--of-hud-line-3);
-      border-radius: 4px;
-      background: ${BOARD_COLORS.badgeBg};
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      line-height: 1.3;
-      white-space: nowrap;
-      color: ${BOARD_COLORS.textSoft};
-    }
-    .of-board-badge[data-countdown-to] {
-      border-color: transparent;
-      background: ${BOARD_COLORS.live};
-      color: ${BOARD_COLORS.text};
-      font-family: ${FONTS.mono};
-    }
-    .of-board-tag {
-      padding: 2px 6px;
-      border-radius: 4px;
-      background: var(--of-hud-accent);
-      font-size: 10px;
-      font-weight: 800;
-      letter-spacing: 0.5px;
-      text-transform: uppercase;
-      line-height: 1.3;
-      color: ${BOARD_COLORS.onAccent};
+      justify-content: center;
+      gap: 5px;
+      padding: 10px 10px 11px;
+      background: var(--of-hud-bg-1);
     }
     .of-board-map {
-      max-width: 100%;
-      overflow: hidden;
-      text-overflow: ellipsis;
-      white-space: nowrap;
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 14px;
       font-weight: 800;
+      line-height: 1.25;
       letter-spacing: 0.2px;
     }
-    .of-board-format {
-      font-size: 12px;
-      color: var(--of-hud-text-1);
-    }
-    .of-board-playersrow {
+    .of-board-formatline {
       display: flex;
       align-items: center;
-      gap: 8px;
-      font-size: 11px;
-      font-family: ${FONTS.mono};
-      color: var(--of-hud-text-2);
+      gap: 6px;
+      min-width: 0;
     }
-    .of-board-bar {
-      flex: 1;
-      min-width: 40px;
-      height: 5px;
+    .of-board-format {
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.25;
+      color: var(--of-hud-text-1);
+    }
+    .of-board-tag {
+      flex: none;
+      padding: 0 5px;
       border-radius: 3px;
-      background: ${BOARD_COLORS.track};
-      overflow: hidden;
+      background: var(--of-hud-accent);
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 1.5;
+      white-space: nowrap;
+      color: ${BOARD_COLORS.onAccent};
+    }
+    .of-board-gauge {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 1;
+      box-sizing: border-box;
+      height: var(--of-board-gauge-height);
+      display: flex;
+      align-items: center;
+      border-top: 1px solid var(--of-hud-line-3);
+      background: ${BOARD_COLORS.gaugeTrack};
     }
     .of-board-fill {
-      display: block;
-      height: 100%;
-      background: ${BOARD_COLORS.fill};
+      position: absolute;
+      top: 0;
+      bottom: 0;
+      left: 0;
+      background: ${BOARD_COLORS.gaugeFill};
     }
-    .of-board-bar-hot .of-board-fill {
-      background: ${BOARD_COLORS.live};
+    .of-board-gauge-hot .of-board-fill {
+      background: ${BOARD_COLORS.gaugeFillHot};
+    }
+    .of-board-players {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+      padding-left: 8px;
+      font: 700 10.5px/1 ${FONTS.mono};
+      white-space: nowrap;
+      color: ${BOARD_COLORS.text};
+      text-shadow: 0 1px 2px ${BOARD_COLORS.gaugeTextShadow};
+    }
+    .of-board-players svg {
+      width: 11px;
+      height: 11px;
+      fill: currentColor;
+      opacity: 0.9;
+    }
+    .of-board-percent {
+      position: relative;
+      margin-left: auto;
+      padding-right: 8px;
+      font: 700 10px/1 ${FONTS.mono};
+      font-style: normal;
+      color: var(--of-hud-text-2);
+      text-shadow: 0 1px 2px ${BOARD_COLORS.gaugeTextShadow};
     }
     .of-board-mods {
       display: flex;
       flex-wrap: wrap;
-      gap: 4px;
+      gap: 3px 4px;
     }
     .of-board-mod {
       padding: 1px 6px;
       border-radius: 4px;
       background: ${BOARD_COLORS.chip};
-      font-size: 11px;
+      font-size: 10.5px;
+      line-height: 1.5;
       white-space: nowrap;
       color: var(--of-hud-text-2);
     }
@@ -236,11 +263,12 @@ export function getBoardStyles(): string {
       color: ${BOARD_COLORS.blockedText};
     }
     .of-board-nomods {
-      font-size: 11px;
+      font-size: 10.5px;
+      line-height: 1.5;
       font-style: italic;
-      color: var(--of-hud-text-4);
+      color: var(--of-hud-text-3);
     }
-    /* The overlay paints the frame and the flash above the thumbnail and the text panel.
+    /* The overlay paints the frame and the flash above every part of the card.
        It stays inside the card, so it never touches a neighbour. */
     .of-board-card::after {
       content: '';
@@ -277,6 +305,9 @@ export function getBoardStyles(): string {
       letter-spacing: 0.5px;
       text-transform: uppercase;
       color: ${BOARD_COLORS.onNew};
+    }
+    .of-board-card:has(> .of-board-new) .of-board-map {
+      padding-right: 34px;
     }
     /* The flash follows a click on a notification. Its glow is inset, so it stays in the card. */
     @keyframes ofBoardFlash {

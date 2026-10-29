@@ -13,6 +13,7 @@ import {
   formatCountdown,
   formatLobbyCount,
   formatMatchCount,
+  getBoardPlayersText,
   getRowLabel,
   groupLobbiesByQueue,
   type BoardCardModel,
@@ -63,18 +64,21 @@ export interface LobbyBoardState {
 const BOARD_ID = 'of-lobby-board';
 const FLASH_DURATION_MS = 2_000;
 const GUTTER_PX = 16;
+/** A lobby at or above this fill percentage shows an orange gauge. */
+const NEARLY_FULL_PERCENT = 80;
+const SVG_NS = 'http://www.w3.org/2000/svg';
 
 /** The nodes of a card that change with its model. They are built once and then updated in place. */
 interface CardParts {
   thumb: HTMLElement;
-  badge: HTMLElement;
-  top: HTMLElement;
   name: HTMLElement;
+  formatLine: HTMLElement;
   format: HTMLElement;
-  players: HTMLElement;
-  bar: HTMLElement;
-  fill: HTMLElement;
   modifiers: HTMLElement;
+  gauge: HTMLElement;
+  fill: HTMLElement;
+  players: HTMLElement;
+  percent: HTMLElement;
 }
 
 interface SavedStyle {
@@ -340,14 +344,14 @@ export class LobbyBoardView {
     this.tickInterval = null;
   }
 
-  /** Updates the text of every countdown badge. It does not rebuild any card. */
+  /** Updates the text of every countdown. It does not rebuild any card. */
   private tickCountdowns(): void {
     const now = Date.now() + this.clockOffsetMs;
-    for (const badge of Array.from(
-      this.grid?.querySelectorAll<HTMLElement>('.of-board-badge[data-countdown-to]') ?? []
+    for (const countdown of Array.from(
+      this.grid?.querySelectorAll<HTMLElement>('.of-board-countdown[data-countdown-to]') ?? []
     )) {
-      const text = formatCountdown(Number(badge.dataset.countdownTo) - now);
-      if (badge.textContent !== text) badge.textContent = text;
+      const text = formatCountdown(Number(countdown.dataset.countdownTo) - now);
+      if (countdown.textContent !== text) countdown.textContent = text;
     }
   }
 
@@ -455,26 +459,43 @@ export class LobbyBoardView {
     card.addEventListener('click', () => this.options.onJoin(gameID));
 
     const thumb = this.createSpan('of-board-thumb');
-    const badge = this.createSpan('of-board-badge');
-    const top = this.createSpan('of-board-top');
-    top.append(badge);
     const name = this.createSpan('of-board-map');
     const format = this.createSpan('of-board-format');
-    const playersRow = this.createSpan('of-board-playersrow');
-    const players = this.createSpan('of-board-players');
-    const bar = this.createSpan('of-board-bar');
+    const formatLine = this.createSpan('of-board-formatline');
+    formatLine.append(format);
+    const modifiers = this.createSpan('of-board-mods');
+    const text = this.createSpan('of-board-text');
+    text.append(name, formatLine, modifiers);
+
+    const gauge = this.createSpan('of-board-gauge');
     const fill = document.createElement('i');
     fill.className = 'of-board-fill';
-    bar.append(fill);
-    playersRow.append(players, bar);
-    const modifiers = this.createSpan('of-board-mods');
-    const body = this.createSpan('of-board-body');
-    body.append(name, format, playersRow, modifiers);
-    card.append(thumb, top, body);
+    const playersLabel = document.createElement('b');
+    playersLabel.className = 'of-board-players';
+    const players = document.createElement('span');
+    playersLabel.append(this.createPersonIcon(), players);
+    const percent = document.createElement('em');
+    percent.className = 'of-board-percent';
+    gauge.append(fill, playersLabel, percent);
+    card.append(thumb, text, gauge);
 
-    this.cardParts.set(card, { thumb, badge, top, name, format, players, bar, fill, modifiers });
+    this.cardParts.set(card, { thumb, name, formatLine, format, modifiers, gauge, fill, players, percent });
     this.cards.set(gameID, card);
     return card;
+  }
+
+  private createPersonIcon(): SVGSVGElement {
+    const svg = document.createElementNS(SVG_NS, 'svg');
+    svg.setAttribute('viewBox', '0 0 16 16');
+    svg.setAttribute('aria-hidden', 'true');
+    const head = document.createElementNS(SVG_NS, 'circle');
+    head.setAttribute('cx', '8');
+    head.setAttribute('cy', '5');
+    head.setAttribute('r', '3');
+    const body = document.createElementNS(SVG_NS, 'path');
+    body.setAttribute('d', 'M2 15c0-3.3 2.7-6 6-6s6 2.7 6 6z');
+    svg.append(head, body);
+    return svg;
   }
 
   private createSpan(className: string): HTMLSpanElement {
@@ -507,28 +528,20 @@ export class LobbyBoardView {
     if (!parts) return;
 
     this.updateThumbnail(parts.thumb, model.thumbnailUrl);
-
-    if (model.badge.kind === 'countdown') {
-      // The text is set by tickCountdowns, which knows the clock offset.
-      parts.badge.dataset.countdownTo = String(model.badge.targetMs);
-    } else {
-      delete parts.badge.dataset.countdownTo;
-      this.setText(parts.badge, model.badge.text);
-    }
-    this.reconcileChildren(
-      parts.top,
-      1,
-      model.tags.map((tag) => ({ className: 'of-board-tag', text: tag }))
-    );
+    this.updateCountdown(parts.thumb, model.countdownTargetMs);
 
     this.setText(parts.name, model.mapName);
     this.setText(parts.format, model.formatText);
-    this.setText(
-      parts.players,
-      model.capacity === null ? String(model.players ?? '') : `${model.players ?? 0} / ${model.capacity}`
+    this.reconcileChildren(
+      parts.formatLine,
+      1,
+      model.isCustom ? [{ className: 'of-board-tag', text: 'Custom' }] : []
     );
-    parts.bar.className = `of-board-bar${model.fillPercent >= 80 ? ' of-board-bar-hot' : ''}`;
+
+    parts.gauge.classList.toggle('of-board-gauge-hot', model.fillPercent >= NEARLY_FULL_PERCENT);
     parts.fill.style.width = `${model.fillPercent}%`;
+    this.setText(parts.players, getBoardPlayersText(model.players, model.capacity));
+    this.setText(parts.percent, model.capacity === null ? '' : `${model.fillPercent}%`);
 
     this.reconcileChildren(
       parts.modifiers,
@@ -542,6 +555,20 @@ export class LobbyBoardView {
     );
 
     card.setAttribute('aria-label', `Open ${model.mapName} in OpenFront's join modal`);
+  }
+
+  /** Shows the countdown pill on the thumbnail. Its text is set by tickCountdowns, which knows the clock offset. */
+  private updateCountdown(thumb: HTMLElement, targetMs: number | null): void {
+    let countdown = thumb.querySelector<HTMLElement>('.of-board-countdown');
+    if (targetMs === null) {
+      countdown?.remove();
+      return;
+    }
+    if (!countdown) {
+      countdown = this.createSpan('of-board-countdown');
+      thumb.append(countdown);
+    }
+    countdown.dataset.countdownTo = String(targetMs);
   }
 
   /** Keeps the image node while its URL stays the same. A card without a thumbnail has no image. */
@@ -559,7 +586,7 @@ export class LobbyBoardView {
     created.src = url;
     created.alt = '';
     created.loading = 'lazy';
-    thumb.append(created);
+    thumb.prepend(created);
   }
 
   /** Makes the children of `parent`, from index `from` on, match `wanted`. It reuses the nodes it has. */

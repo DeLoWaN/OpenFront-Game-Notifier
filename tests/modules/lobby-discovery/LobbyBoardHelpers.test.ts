@@ -1,5 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getBoardBadge, getBoardFormatText, getBoardModifiers } from '@/modules/lobby-discovery/LobbyBoardHelpers';
+import {
+  getBoardCountdownTarget,
+  getBoardFormatText,
+  getBoardModifiers,
+  getBoardPlayersText,
+} from '@/modules/lobby-discovery/LobbyBoardHelpers';
 import { LobbyDiscoveryFilters } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
 import type { DiscoveryCriteria } from '@/modules/lobby-discovery/LobbyDiscoveryTypes';
 
@@ -170,22 +175,45 @@ describe('getBoardModifiers', () => {
   });
 });
 
-describe('getBoardBadge', () => {
-  const hostedLobby = (extra: Record<string, unknown> = {}) =>
-    ({ gameID: 'h', publicGameType: 'hosted', gameConfig: { gameMode: 'Free For All' }, ...extra }) as any;
+describe('getBoardCountdownTarget', () => {
+  const at = (publicGameType: string, extra: Record<string, unknown> = {}) =>
+    ({ gameID: 'g', publicGameType, gameConfig: { gameMode: 'Free For All' }, ...extra }) as any;
 
-  it('counts down to autoStartAt on a Hosted Lobby', () => {
-    expect(getBoardBadge(hostedLobby({ autoStartAt: 5000 }), 'hosted', 0)).toEqual({
-      kind: 'countdown',
-      targetMs: 5000,
-    });
+  it('counts a Live Lobby down to startsAt', () => {
+    expect(getBoardCountdownTarget(at('ffa', { startsAt: 5000 }), 'ffa', 0)).toBe(5000);
+    expect(getBoardCountdownTarget(at('special', { startsAt: 7000 }), 'special', 0)).toBe(7000);
   });
 
-  it('never shows "Queue 0": a Hosted Queue has no Live Lobby', () => {
-    expect(getBoardBadge(hostedLobby(), 'hosted', 0)).toEqual({ kind: 'text', text: 'Waiting' });
+  it('gives no countdown to a Live Lobby without startsAt', () => {
+    expect(getBoardCountdownTarget(at('team'), 'team', 0)).toBeNull();
   });
 
-  it('shows the Queue Position of a later Hosted Lobby', () => {
-    expect(getBoardBadge(hostedLobby(), 'hosted', 2)).toEqual({ kind: 'text', text: 'Queue 2' });
+  it('gives no countdown to a later lobby of a Queue, even with startsAt', () => {
+    expect(getBoardCountdownTarget(at('ffa', { startsAt: 5000 }), 'ffa', 1)).toBeNull();
+  });
+
+  it('counts a Hosted Lobby down to autoStartAt at any Queue Position', () => {
+    expect(getBoardCountdownTarget(at('hosted', { autoStartAt: 5000 }), 'hosted', 0)).toBe(5000);
+    expect(getBoardCountdownTarget(at('hosted', { autoStartAt: 9000 }), 'hosted', 2)).toBe(9000);
+  });
+
+  it('gives no countdown to a Hosted Lobby that waits for its host', () => {
+    expect(getBoardCountdownTarget(at('hosted'), 'hosted', 0)).toBeNull();
+    expect(getBoardCountdownTarget(at('hosted', { startsAt: 5000 }), 'hosted', 0)).toBeNull();
+  });
+});
+
+describe('getBoardPlayersText', () => {
+  it('writes the players and the capacity', () => {
+    expect(getBoardPlayersText(12, 24)).toBe('12 / 24 players');
+  });
+
+  it('writes a missing player count as zero', () => {
+    expect(getBoardPlayersText(null, 24)).toBe('0 / 24 players');
+  });
+
+  it('writes the players alone when the capacity is unknown', () => {
+    expect(getBoardPlayersText(5, null)).toBe('5 players');
+    expect(getBoardPlayersText(1, null)).toBe('1 player');
   });
 });

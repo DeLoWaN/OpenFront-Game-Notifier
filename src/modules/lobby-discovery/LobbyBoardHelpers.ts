@@ -1,6 +1,6 @@
 /**
  * Pure helpers for the Lobby Board: the board columns, the card model and the
- * time badge. DOM building lives in LobbyBoardView.
+ * countdown. DOM building lives in LobbyBoardView.
  */
 
 import type { Lobby } from '@/types/game';
@@ -26,19 +26,13 @@ export const BOARD_QUEUES: ReadonlyArray<{ queue: QueueSource; label: string }> 
   { queue: 'hosted', label: 'Hosted' },
 ];
 
-export type BoardBadge =
-  /** A live countdown to `targetMs`, a timestamp on the feed's clock. */
-  | { kind: 'countdown'; targetMs: number }
-  | { kind: 'text'; text: string };
-
 export interface BoardCardModel {
   gameID: string;
   queue: QueueSource;
-  /** Zero for the first lobby of a Queue. */
-  queuePosition: number;
   mapName: string;
   thumbnailUrl: string | null;
-  badge: BoardBadge;
+  /** The timestamp, on the feed's clock, that the countdown runs to. Null for a lobby without a countdown. */
+  countdownTargetMs: number | null;
   /** The team format in plain words. */
   formatText: string;
   /** Null when the feed gives no player count. */
@@ -48,7 +42,7 @@ export interface BoardCardModel {
   /** The share of the capacity that the players fill, from 0 to 100. */
   fillPercent: number;
   modifiers: BoardModifier[];
-  tags: Array<'Hosted' | 'Custom'>;
+  isCustom: boolean;
 }
 
 /** Groups the lobbies by Queue and keeps the feed order inside each Queue. */
@@ -75,24 +69,20 @@ export function formatCountdown(remainingMs: number): string {
 }
 
 /**
- * A Live Lobby counts down to `startsAt`. A Hosted Lobby counts down to
- * `autoStartAt` when OpenFront gives it, and otherwise waits for its host.
- * Any other lobby shows its Queue Position, because it also starts as soon as it is full.
+ * A Live Lobby counts down to `startsAt`, and a Hosted Lobby to `autoStartAt`.
+ * Any other lobby has no start time: it starts as soon as it is full.
  */
-export function getBoardBadge(lobby: Lobby, queue: QueueSource, queuePosition: number): BoardBadge {
-  if (queue === 'hosted') {
-    if (typeof lobby.autoStartAt === 'number') {
-      return { kind: 'countdown', targetMs: lobby.autoStartAt };
-    }
-    // The Hosted Queue has no Live Lobby, so its first lobby has no Queue Position to show.
-    if (queuePosition === 0) return { kind: 'text', text: 'Waiting' };
-  } else if (queuePosition === 0) {
-    if (typeof lobby.startsAt === 'number') {
-      return { kind: 'countdown', targetMs: lobby.startsAt };
-    }
-    return { kind: 'text', text: 'Live' };
-  }
-  return { kind: 'text', text: `Queue ${queuePosition}` };
+export function getBoardCountdownTarget(lobby: Lobby, queue: QueueSource, queuePosition: number): number | null {
+  if (queue === 'hosted') return typeof lobby.autoStartAt === 'number' ? lobby.autoStartAt : null;
+  if (queuePosition === 0 && typeof lobby.startsAt === 'number') return lobby.startsAt;
+  return null;
+}
+
+/** "12 / 24 players", or "5 players" when the capacity is unknown. */
+export function getBoardPlayersText(players: number | null, capacity: number | null): string {
+  const count = players ?? 0;
+  if (capacity === null) return `${count} ${count === 1 ? 'player' : 'players'}`;
+  return `${count} / ${capacity} players`;
 }
 
 export function buildBoardCardModel(
@@ -105,23 +95,19 @@ export function buildBoardCardModel(
 ): BoardCardModel {
   const players = getLobbyCurrentPlayers(lobby);
   const capacity = getLobbyCapacity(lobby);
-  const tags: BoardCardModel['tags'] = [];
-  if (queue === 'hosted') tags.push('Hosted');
-  if (lobby.custom === true) tags.push('Custom');
   return {
     gameID: lobby.gameID,
     queue,
-    queuePosition,
     mapName: getMapDisplayName(lobby.gameConfig?.gameMap?.trim() || 'Unknown map'),
     thumbnailUrl: getLobbyMapThumbnailUrl(lobby, assetManifest, cdnBase),
-    badge: getBoardBadge(lobby, queue, queuePosition),
+    countdownTargetMs: getBoardCountdownTarget(lobby, queue, queuePosition),
     formatText: getBoardFormatText(lobby),
     players,
     capacity,
     fillPercent:
       players !== null && capacity ? Math.min(100, Math.round((players / capacity) * 100)) : 0,
     modifiers: getBoardModifiers(lobby, criteria),
-    tags,
+    isCustom: lobby.custom === true,
   };
 }
 

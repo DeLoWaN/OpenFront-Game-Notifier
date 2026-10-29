@@ -44,24 +44,27 @@ export const COLORS = {
 /** Colours of the Lobby Board, which sit on a dark violet surface of their own. */
 export const BOARD_COLORS = {
   surface: 'rgba(16, 10, 24, 0.92)',
-  /** The orange of the Live row, the countdown badge and a nearly full bar. */
+  /** The orange of the Live row, the countdown and the frame of a matching card. */
   live: '#e8600c',
+  /** The text on the orange countdown. */
+  onLive: '#0a0610',
   /** The soft inner glow of the flash after a desktop notification click. */
   liveGlow: 'rgba(232, 96, 12, 0.45)',
   text: '#fff',
-  textSoft: '#ddd',
   /** The text on the accent tag. */
   onAccent: '#0d0a14',
   /** The text on the "New" badge. */
   onNew: '#0a0610',
-  fill: '#9fb8a6',
-  badgeBg: 'rgba(0, 0, 0, 0.6)',
-  track: 'rgba(255, 255, 255, 0.09)',
   chip: 'rgba(255, 255, 255, 0.08)',
   blockedBg: 'rgba(200, 70, 50, 0.25)',
   blockedText: '#f2c4bb',
-  /** The panel behind the text of a card. The thumbnail shows through it. */
-  panel: 'rgba(10, 6, 16, 0.60)',
+  /** The players gauge along the bottom of a card. */
+  gaugeTrack: 'rgba(255, 255, 255, 0.04)',
+  gaugeFill: 'rgba(159, 184, 166, 0.62)',
+  /** The fill of a nearly full lobby. */
+  gaugeFillHot: 'rgba(232, 96, 12, 0.65)',
+  /** Keeps the white gauge text readable over the fill and over the empty track. */
+  gaugeTextShadow: 'rgba(0, 0, 0, 0.7)',
 } as const;
 
 export const FONTS = {

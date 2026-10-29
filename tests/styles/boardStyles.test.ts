@@ -2,7 +2,7 @@ import { readFileSync } from 'fs';
 import { resolve } from 'path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { getBoardStyles } from '@/styles/boardStyles';
-import { BOARD_COLORS, SPACING } from '@/config/theme';
+import { BOARD_COLORS } from '@/config/theme';
 
 describe('Lobby Board styles', () => {
   afterEach(() => {
@@ -33,23 +33,26 @@ describe('Lobby Board styles', () => {
     return getBoardStyles().match(new RegExp(`(?<!,)\\n\\s*${escaped} \\{([^}]*)\\}`))?.[1] ?? '';
   };
 
-  it('frames a matching card in orange with an overlay above the thumbnail and the text panel', () => {
+  const zIndexOf = (selector: string): number => Number(ruleBody(selector).match(/z-index: (\d+);/)?.[1] ?? 0);
+
+  it('frames a matching card in orange with an overlay above the thumbnail, the text and the gauge', () => {
     mountStyles();
     const card = document.createElement('button');
     card.className = 'of-board-card of-board-card-match';
     document.body.append(card);
 
     expect(getComputedStyle(card).borderColor).toBe(colorOf(BOARD_COLORS.live));
-    // The thumbnail and the text panel paint over a shadow on the card itself.
+    // The thumbnail and the text column paint over a shadow on the card itself.
     expect(getComputedStyle(card).boxShadow).toBe('');
 
     const overlay = ruleBody('.of-board-card::after');
     expect(overlay).toMatch(/position: absolute;/);
     expect(overlay).toMatch(/inset: 0;/);
     expect(overlay).toMatch(/pointer-events: none;/);
-    const overlayZ = Number(overlay.match(/z-index: (\d+);/)?.[1]);
-    const bodyZ = Number(ruleBody('.of-board-top,\n    .of-board-body').match(/z-index: (\d+);/)?.[1]);
-    expect(overlayZ).toBeGreaterThan(bodyZ);
+    const overlayZ = zIndexOf('.of-board-card::after');
+    for (const part of ['.of-board-thumb', '.of-board-countdown', '.of-board-gauge', '.of-board-new']) {
+      expect(overlayZ, part).toBeGreaterThan(zIndexOf(part));
+    }
 
     const frame = ruleBody('.of-board-card-match::after');
     expect(frame).toContain(BOARD_COLORS.live);
@@ -62,26 +65,66 @@ describe('Lobby Board styles', () => {
     expect(css).toMatch(/\.of-board-card-dim:hover \{[^}]*opacity: 0\.[5-9]/);
   });
 
-  it('puts the text block of a card on a dark panel that reaches the card edges', () => {
-    mountStyles();
-    const card = document.createElement('button');
-    card.className = 'of-board-card';
-    const body = document.createElement('span');
-    body.className = 'of-board-body';
-    card.append(body);
-    document.body.append(card);
+  it('puts the thumbnail in an 84 px column on the left, at full opacity', () => {
+    expect(ruleBody('.of-board-card')).toContain('--of-board-thumb-width: 84px;');
+    const thumb = ruleBody('.of-board-thumb');
+    expect(thumb).toContain('width: var(--of-board-thumb-width);');
+    expect(thumb).toContain('flex: none;');
+    expect(ruleBody('.of-board-thumb img')).not.toContain('opacity');
+  });
 
-    const style = getComputedStyle(body);
-    expect(style.backgroundColor).toBe(colorOf(BOARD_COLORS.panel));
-    expect(colorOf(BOARD_COLORS.panel)).toBe('rgba(10, 6, 16, 0.6)');
-    // The card padding and the negative margin of the panel share one custom property.
-    const bodyRule = ruleBody('.of-board-body');
-    expect(bodyRule).toContain(
-      'margin: 0 calc(-1 * var(--of-board-card-padding)) calc(-1 * var(--of-board-card-padding));'
-    );
-    expect(ruleBody('.of-board-card')).toContain('padding: var(--of-board-card-padding);');
-    expect(ruleBody('.of-board-card')).toContain(`--of-board-card-padding: ${SPACING.sm};`);
-    expect(getBoardStyles()).toMatch(/\.of-board-body \{[^}]*border-top: 1px solid/);
+  it('puts the text column on the solid dark background of the card', () => {
+    expect(ruleBody('.of-board-card')).toContain('background: var(--of-hud-bg-1);');
+    const text = ruleBody('.of-board-text');
+    expect(text).toContain('background: var(--of-hud-bg-1);');
+    expect(text).toContain('flex: 1;');
+    expect(text).toContain('min-width: 0;');
+  });
+
+  it('shows the countdown dark on orange at the top-left corner of the thumbnail', () => {
+    const countdown = ruleBody('.of-board-countdown');
+    expect(countdown).toContain('position: absolute;');
+    expect(countdown).toMatch(/top: \d+px;/);
+    expect(countdown).toMatch(/left: \d+px;/);
+    expect(countdown).toContain(`background: ${BOARD_COLORS.live};`);
+    expect(countdown).toContain(`color: ${BOARD_COLORS.onLive};`);
+    expect(colorOf(BOARD_COLORS.onLive)).toBe('rgb(10, 6, 16)');
+  });
+
+  it('puts the "New" badge at the top-right corner, away from the countdown, and keeps the map name clear of it', () => {
+    const badge = ruleBody('.of-board-new');
+    expect(badge).toMatch(/right: \d+px;/);
+    expect(badge).not.toMatch(/left:/);
+    expect(ruleBody('.of-board-card:has(> .of-board-new) .of-board-map')).toMatch(/padding-right: \d+px;/);
+  });
+
+  it('draws the players gauge as an 18 px band along the whole card bottom, with room reserved for it', () => {
+    const card = ruleBody('.of-board-card');
+    expect(card).toContain('--of-board-gauge-height: 18px;');
+    expect(card).toContain('padding: 0 0 var(--of-board-gauge-height);');
+    const gauge = ruleBody('.of-board-gauge');
+    expect(gauge).toContain('position: absolute;');
+    expect(gauge).toContain('left: 0;');
+    expect(gauge).toContain('right: 0;');
+    expect(gauge).toContain('bottom: 0;');
+    expect(gauge).toContain('height: var(--of-board-gauge-height);');
+    expect(gauge).toContain(`background: ${BOARD_COLORS.gaugeTrack};`);
+    expect(gauge).toMatch(/border-top: 1px solid/);
+    expect(ruleBody('.of-board-fill')).toContain(`background: ${BOARD_COLORS.gaugeFill};`);
+    expect(ruleBody('.of-board-gauge-hot .of-board-fill')).toContain(`background: ${BOARD_COLORS.gaugeFillHot};`);
+    expect(colorOf(BOARD_COLORS.gaugeTrack)).toBe('rgba(255, 255, 255, 0.04)');
+    expect(colorOf(BOARD_COLORS.gaugeFill)).toBe('rgba(159, 184, 166, 0.62)');
+    expect(colorOf(BOARD_COLORS.gaugeFillHot)).toBe('rgba(232, 96, 12, 0.65)');
+  });
+
+  it('writes the gauge text in bold mono white with a light shadow, the count left and the percentage right', () => {
+    const players = ruleBody('.of-board-players');
+    expect(players).toMatch(/font: 700 10(\.5)?px\/1 /);
+    expect(players).toContain(`color: ${BOARD_COLORS.text};`);
+    expect(players).toContain(`text-shadow: 0 1px 2px ${BOARD_COLORS.gaugeTextShadow};`);
+    const percent = ruleBody('.of-board-percent');
+    expect(percent).toContain('margin-left: auto;');
+    expect(percent).toMatch(/font: 700 10(\.5)?px\/1 /);
   });
 
   it('shows the thumbnail without a bottom gradient', () => {

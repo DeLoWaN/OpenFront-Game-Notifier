@@ -145,7 +145,7 @@ describe('Lobby Board', () => {
     document.body.innerHTML = '';
   });
 
-  it('renders every lobby of every Queue in its column and row, with the right time badge', () => {
+  it('renders every lobby of every Queue in its column and row, with a countdown only where a start time is known', () => {
     ui = new LobbyDiscoveryUI();
     ui.receiveLobbyUpdate(
       [
@@ -180,15 +180,15 @@ describe('Lobby Board', () => {
     expect(cell('team', 2)?.querySelector('.of-board-empty')).toBeTruthy();
     expect(cell('special', 1)?.querySelector('.of-board-empty')).toBeTruthy();
 
-    const badge = (queue: string, row: number) =>
-      cardIn(queue, row)?.querySelector('.of-board-badge')?.textContent;
-    expect(badge('ffa', 0)).toBe('1:05');
-    expect(badge('team', 0)).toBe('0:05');
-    expect(badge('special', 0)).toBe('10:00');
-    expect(badge('hosted', 0)).toBe('2:00');
-    expect(badge('ffa', 1)).toBe('Queue 1');
-    expect(badge('ffa', 2)).toBe('Queue 2');
-    expect(badge('hosted', 1)).toBe('Queue 1');
+    const countdown = (queue: string, row: number) =>
+      cardIn(queue, row)?.querySelector('.of-board-thumb .of-board-countdown')?.textContent ?? null;
+    expect(countdown('ffa', 0)).toBe('1:05');
+    expect(countdown('team', 0)).toBe('0:05');
+    expect(countdown('special', 0)).toBe('10:00');
+    expect(countdown('hosted', 0)).toBe('2:00');
+    expect(countdown('ffa', 1)).toBeNull();
+    expect(countdown('ffa', 2)).toBeNull();
+    expect(countdown('hosted', 1)).toBeNull();
 
     expect(cardIn('ffa', 0)?.querySelector('.of-board-map')?.textContent).toBe('Europe');
     expect(cardIn('ffa', 2)?.querySelector('.of-board-map')?.textContent).toBe('Asia');
@@ -523,7 +523,7 @@ describe('Lobby Board', () => {
 
   describe('countdowns and in-place updates', () => {
     const badgeOf = (queue: string, row: number) =>
-      cardIn(queue, row)?.querySelector('.of-board-badge') as HTMLElement;
+      cardIn(queue, row)?.querySelector('.of-board-countdown') as HTMLElement;
 
     it('corrects the countdown with the feed clock, so a wrong local clock does not shift it', () => {
       ui = new LobbyDiscoveryUI();
@@ -581,14 +581,17 @@ describe('Lobby Board', () => {
       const second = cardIn('ffa', 1);
 
       // The Live Lobby starts and leaves; a new lobby joins at the end.
-      ui.receiveLobbyUpdate([ffa('ffa-1'), ffa('ffa-2'), ffa('ffa-3')] as any, NOW);
+      ui.receiveLobbyUpdate(
+        [ffa('ffa-1', { startsAt: NOW + 30_000 }), ffa('ffa-2'), ffa('ffa-3')] as any,
+        NOW
+      );
 
       expect(cardIn('ffa', 0)).toBe(second);
       expect(cardIn('ffa', 0)?.dataset.gameId).toBe('ffa-1');
       expect(cardIn('ffa', 2)?.dataset.gameId).toBe('ffa-3');
       expect(document.querySelector('.of-board-card[data-game-id="ffa-0"]')).toBeNull();
-      expect(cardIn('ffa', 0)?.querySelector('.of-board-badge')?.textContent).toBe('Live');
-      expect(cardIn('ffa', 1)?.querySelector('.of-board-badge')?.textContent).toBe('Queue 1');
+      expect(cardIn('ffa', 0)?.querySelector('.of-board-countdown')?.textContent).toBe('0:30');
+      expect(cardIn('ffa', 1)?.querySelector('.of-board-countdown')).toBeNull();
     });
 
     it('shrinks the board when the longest Queue gets shorter', () => {
@@ -614,7 +617,42 @@ describe('Lobby Board', () => {
             : 'neutral',
       ]);
 
-    it('shows the team format in plain words, the players and the capacity with a fill bar', () => {
+    it('puts the thumbnail on the left, the text column on the right and the players gauge last', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', { startsAt: NOW + 30_000 })] as any, NOW);
+
+      const card = cardIn('ffa', 0)!;
+      expect(Array.from(card.children).map((child) => child.className)).toEqual([
+        'of-board-thumb',
+        'of-board-text',
+        'of-board-gauge',
+      ]);
+      const thumb = card.querySelector('.of-board-thumb')!;
+      expect(thumb.querySelector('img')).toBeTruthy();
+      // The countdown is the only text on the thumbnail.
+      expect(thumb.textContent).toBe('0:30');
+      const textColumn = card.querySelector('.of-board-text')!;
+      expect(Array.from(textColumn.children).map((child) => child.className)).toEqual([
+        'of-board-map',
+        'of-board-formatline',
+        'of-board-mods',
+      ]);
+    });
+
+    it('shows no Queue Position, mode or Hosted label on a card', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [ffa('ffa-0'), ffa('ffa-1'), team('team-0'), special('special-0'), hosted('hosted-0'), hosted('hosted-1')] as any,
+        NOW
+      );
+
+      for (const card of Array.from(document.querySelectorAll<HTMLElement>('.of-board-card'))) {
+        expect(card.textContent).not.toMatch(/Queue|Waiting|Live|Hosted|Special|FFA|Team\b/);
+        expect(card.querySelector('.of-board-countdown')).toBeNull();
+      }
+    });
+
+    it('shows the team format in plain words, and the players and the capacity on the gauge', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(
         [
@@ -629,11 +667,28 @@ describe('Lobby Board', () => {
       expect(text(cardIn('team', 0), '.of-board-format')).toBe('Quads · 11 teams of 4');
       expect(text(cardIn('team', 1), '.of-board-format')).toBe('7 teams of 16');
 
-      expect(text(cardIn('ffa', 0), '.of-board-players')).toBe('10 / 40');
+      expect(text(cardIn('ffa', 0), '.of-board-gauge .of-board-players')).toBe('10 / 40 players');
+      expect(text(cardIn('ffa', 0), '.of-board-gauge .of-board-percent')).toBe('25%');
       expect(
-        cardIn('ffa', 0)?.querySelector<HTMLElement>('.of-board-fill')?.style.width
+        cardIn('ffa', 0)?.querySelector<HTMLElement>('.of-board-gauge .of-board-fill')?.style.width
       ).toBe('25%');
-      expect(text(cardIn('team', 0), '.of-board-players')).toBe('6 / 44');
+      expect(cardIn('ffa', 0)?.querySelector('.of-board-players svg')).toBeTruthy();
+      expect(text(cardIn('team', 0), '.of-board-players')).toBe('6 / 44 players');
+      // The gauge is the only place that shows the player count.
+      expect(cardIn('ffa', 0)?.textContent?.match(/10 \/ 40/g)).toHaveLength(1);
+    });
+
+    it('turns the gauge orange when the lobby is nearly full', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [ffa('ffa-0', { numClients: 31 }, { maxPlayers: 40 }), ffa('ffa-1', { numClients: 32 }, { maxPlayers: 40 })] as any,
+        NOW
+      );
+
+      const isHot = (row: number) =>
+        cardIn('ffa', row)?.querySelector('.of-board-gauge')?.classList.contains('of-board-gauge-hot');
+      expect(isHot(0)).toBe(false);
+      expect(isHot(1)).toBe(true);
     });
 
     it('lists every active Modifier by its full name, without truncating it', () => {
@@ -716,7 +771,7 @@ describe('Lobby Board', () => {
       expect(modifiers(cardIn('ffa', 0))).toEqual([['Random Spawn', 'required']]);
     });
 
-    it('tags a Hosted Lobby "Hosted" and a Custom Lobby "Custom"', () => {
+    it('tags a Custom Lobby "Custom" on its format line, and no other lobby', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(
         [
@@ -733,7 +788,8 @@ describe('Lobby Board', () => {
       expect(tags(cardIn('ffa', 0))).toEqual([]);
       expect(tags(cardIn('special', 0))).toEqual([]);
       expect(tags(cardIn('special', 1))).toEqual(['Custom']);
-      expect(tags(cardIn('hosted', 0))).toEqual(['Hosted']);
+      expect(cardIn('special', 1)?.querySelector('.of-board-formatline .of-board-tag')).toBeTruthy();
+      expect(tags(cardIn('hosted', 0))).toEqual([]);
     });
 
     it('shows a countdown on a Hosted Lobby that has autoStartAt', () => {
@@ -743,7 +799,7 @@ describe('Lobby Board', () => {
         NOW
       );
 
-      const badge = cardIn('hosted', 0)?.querySelector<HTMLElement>('.of-board-badge');
+      const badge = cardIn('hosted', 0)?.querySelector<HTMLElement>('.of-board-thumb .of-board-countdown');
       expect(badge?.textContent).toBe('1:30');
       expect(badge?.dataset.countdownTo).toBe(String(NOW + 90_000));
 
@@ -751,12 +807,14 @@ describe('Lobby Board', () => {
       expect(badge?.textContent).toBe('1:20');
     });
 
-    it('does not show "Queue 0" on a Hosted Lobby without autoStartAt', () => {
+    it('removes the countdown when a lobby loses its start time', () => {
       ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate([ffa('ffa-0'), hosted('hosted-0'), hosted('hosted-1')] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0'), hosted('hosted-0', { autoStartAt: NOW + 90_000 })] as any, NOW);
+      expect(cardIn('hosted', 0)?.querySelector('.of-board-countdown')).toBeTruthy();
 
-      expect(text(cardIn('hosted', 0), '.of-board-badge')).toBe('Waiting');
-      expect(text(cardIn('hosted', 1), '.of-board-badge')).toBe('Queue 1');
+      ui.receiveLobbyUpdate([ffa('ffa-0'), hosted('hosted-0')] as any, NOW);
+
+      expect(cardIn('hosted', 0)?.querySelector('.of-board-countdown')).toBeNull();
     });
 
     it('redraws the card when its player count changes', () => {
@@ -764,28 +822,32 @@ describe('Lobby Board', () => {
       ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 10 })] as any, NOW);
       ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 30 })] as any, NOW);
 
-      expect(text(cardIn('ffa', 0), '.of-board-players')).toBe('30 / 40');
+      expect(text(cardIn('ffa', 0), '.of-board-players')).toBe('30 / 40 players');
     });
 
-    it('updates a card in place: a new player count keeps the card, the image and the badge nodes', () => {
+    it('updates a card in place: a new player count keeps the card, the image, the countdown and the gauge nodes', () => {
       ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 10 })] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 10, startsAt: NOW + 60_000 })] as any, NOW);
       const before = cardIn('ffa', 0)!;
       const img = before.querySelector('img');
-      const badge = before.querySelector('.of-board-badge');
+      const badge = before.querySelector('.of-board-countdown');
+      const gauge = before.querySelector('.of-board-gauge');
       const fill = before.querySelector('.of-board-fill') as HTMLElement;
       expect(img).toBeTruthy();
       expect(fill.style.width).toBe('25%');
 
-      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 30 })] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 30, startsAt: NOW + 60_000 })] as any, NOW);
 
       const after = cardIn('ffa', 0)!;
       expect(after).toBe(before);
+      expect(badge).toBeTruthy();
       expect(after.querySelector('img')).toBe(img);
-      expect(after.querySelector('.of-board-badge')).toBe(badge);
+      expect(after.querySelector('.of-board-countdown')).toBe(badge);
+      expect(after.querySelector('.of-board-gauge')).toBe(gauge);
       expect(after.querySelector('.of-board-fill')).toBe(fill);
       expect(fill.style.width).toBe('75%');
-      expect(text(after, '.of-board-players')).toBe('30 / 40');
+      expect(text(after, '.of-board-players')).toBe('30 / 40 players');
+      expect(text(after, '.of-board-percent')).toBe('75%');
     });
 
     it('keeps the image node when the map stays the same and replaces it when the map changes', () => {
