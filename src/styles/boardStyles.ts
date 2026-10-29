@@ -93,11 +93,12 @@ export function getBoardStyles(): string {
       position: relative;
       flex: 1;
       min-width: 0;
-      min-height: 84px;
+      min-height: 118px;
       display: flex;
       flex-direction: column;
       justify-content: space-between;
-      align-items: flex-start;
+      align-items: stretch;
+      gap: 6px;
       padding: 8px;
       overflow: hidden;
       border: 1px solid var(--of-hud-line-2);
@@ -126,10 +127,22 @@ export function getBoardStyles(): string {
       inset: 0;
       background: linear-gradient(180deg, rgba(10, 6, 16, 0) 30%, rgba(10, 6, 16, 0.85) 100%);
     }
-    .of-board-badge,
-    .of-board-map {
+    .of-board-top,
+    .of-board-body {
       position: relative;
       z-index: 1;
+      min-width: 0;
+    }
+    .of-board-top {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px;
+    }
+    .of-board-body {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
     }
     .of-board-badge {
       padding: 2px 6px;
@@ -150,6 +163,17 @@ export function getBoardStyles(): string {
       color: #fff;
       font-family: ${FONTS.mono};
     }
+    .of-board-tag {
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: var(--of-hud-accent);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 1.3;
+      color: #0d0a14;
+    }
     .of-board-map {
       max-width: 100%;
       overflow: hidden;
@@ -157,6 +181,63 @@ export function getBoardStyles(): string {
       white-space: nowrap;
       font-weight: 800;
       letter-spacing: 0.2px;
+    }
+    .of-board-format {
+      font-size: 12px;
+      color: var(--of-hud-text-1);
+    }
+    .of-board-playersrow {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 11px;
+      font-family: ${FONTS.mono};
+      color: var(--of-hud-text-2);
+    }
+    .of-board-bar {
+      flex: 1;
+      min-width: 40px;
+      height: 5px;
+      border-radius: 3px;
+      background: rgba(255, 255, 255, 0.09);
+      overflow: hidden;
+    }
+    .of-board-fill {
+      display: block;
+      height: 100%;
+      background: #9fb8a6;
+    }
+    .of-board-bar-hot .of-board-fill {
+      background: #e8600c;
+    }
+    .of-board-mods {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
+    .of-board-mod {
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: rgba(255, 255, 255, 0.08);
+      font-size: 11px;
+      white-space: nowrap;
+      color: var(--of-hud-text-2);
+    }
+    .of-board-mod-required {
+      background: var(--of-hud-accent-soft);
+      box-shadow: inset 0 0 0 1px var(--of-hud-accent);
+      font-weight: 700;
+      color: #fff;
+    }
+    .of-board-mod-blocked {
+      background: rgba(200, 70, 50, 0.25);
+      text-decoration: line-through;
+      color: #f2c4bb;
+    }
+    .of-board-nomods {
+      font-size: 11px;
+      font-style: italic;
+      color: var(--of-hud-text-4);
     }
     .of-board-card-match {
       border-color: ${COLORS.accentLine};

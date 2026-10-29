@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { getBoardFormatText, getBoardModifiers } from '@/modules/lobby-discovery/LobbyBoardHelpers';
+import { getBoardBadge, getBoardFormatText, getBoardModifiers } from '@/modules/lobby-discovery/LobbyBoardHelpers';
 import { LobbyDiscoveryFilters } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
 import type { DiscoveryCriteria } from '@/modules/lobby-discovery/LobbyDiscoveryTypes';
 
@@ -167,5 +167,25 @@ describe('getBoardModifiers', () => {
       modifiers: { isRandomSpawn: 'blocked' },
     };
     expect(getBoardModifiers(lobby, [teamCriterion])[0]?.state).toBe('neutral');
+  });
+});
+
+describe('getBoardBadge', () => {
+  const hostedLobby = (extra: Record<string, unknown> = {}) =>
+    ({ gameID: 'h', publicGameType: 'hosted', gameConfig: { gameMode: 'Free For All' }, ...extra }) as any;
+
+  it('counts down to autoStartAt on a Hosted Lobby', () => {
+    expect(getBoardBadge(hostedLobby({ autoStartAt: 5000 }), 'hosted', 0)).toEqual({
+      kind: 'countdown',
+      targetMs: 5000,
+    });
+  });
+
+  it('never shows "Queue 0": a Hosted Queue has no Live Lobby', () => {
+    expect(getBoardBadge(hostedLobby(), 'hosted', 0)).toEqual({ kind: 'text', text: 'Waiting' });
+  });
+
+  it('shows the Queue Position of a later Hosted Lobby', () => {
+    expect(getBoardBadge(hostedLobby(), 'hosted', 2)).toEqual({ kind: 'text', text: 'Queue 2' });
   });
 });

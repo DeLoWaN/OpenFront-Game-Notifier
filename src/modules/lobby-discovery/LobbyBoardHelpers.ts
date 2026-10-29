@@ -8,6 +8,7 @@ import type { DiscoveryCriteria, ModifierFilters, ModifierFilterState, QueueSour
 import {
   formatStartingGold,
   getLobbyCapacity,
+  getLobbyCurrentPlayers,
   getLobbyGameMode,
   getLobbyMapThumbnailUrl,
   getLobbyModifierValue,
@@ -38,6 +39,16 @@ export interface BoardCardModel {
   mapName: string;
   thumbnailUrl: string | null;
   badge: BoardBadge;
+  /** The team format in plain words. */
+  formatText: string;
+  /** Null when the feed gives no player count. */
+  players: number | null;
+  /** Null when the feed gives no capacity. */
+  capacity: number | null;
+  /** The share of the capacity that the players fill, from 0 to 100. */
+  fillPercent: number;
+  modifiers: BoardModifier[];
+  tags: Array<'Hosted' | 'Custom'>;
 }
 
 /** Groups the lobbies by Queue and keeps the feed order inside each Queue. */
@@ -65,14 +76,16 @@ export function formatCountdown(remainingMs: number): string {
 
 /**
  * A Live Lobby counts down to `startsAt`. A Hosted Lobby counts down to
- * `autoStartAt` when OpenFront gives it. Any other lobby shows its Queue
- * Position, because it also starts as soon as it is full.
+ * `autoStartAt` when OpenFront gives it, and otherwise waits for its host.
+ * Any other lobby shows its Queue Position, because it also starts as soon as it is full.
  */
 export function getBoardBadge(lobby: Lobby, queue: QueueSource, queuePosition: number): BoardBadge {
   if (queue === 'hosted') {
     if (typeof lobby.autoStartAt === 'number') {
       return { kind: 'countdown', targetMs: lobby.autoStartAt };
     }
+    // The Hosted Queue has no Live Lobby, so its first lobby has no Queue Position to show.
+    if (queuePosition === 0) return { kind: 'text', text: 'Waiting' };
   } else if (queuePosition === 0) {
     if (typeof lobby.startsAt === 'number') {
       return { kind: 'countdown', targetMs: lobby.startsAt };
@@ -87,8 +100,14 @@ export function buildBoardCardModel(
   queue: QueueSource,
   queuePosition: number,
   assetManifest?: Record<string, string> | null,
-  cdnBase?: string | null
+  cdnBase?: string | null,
+  criteria: DiscoveryCriteria[] = []
 ): BoardCardModel {
+  const players = getLobbyCurrentPlayers(lobby);
+  const capacity = getLobbyCapacity(lobby);
+  const tags: BoardCardModel['tags'] = [];
+  if (queue === 'hosted') tags.push('Hosted');
+  if (lobby.custom === true) tags.push('Custom');
   return {
     gameID: lobby.gameID,
     queue,
@@ -96,6 +115,13 @@ export function buildBoardCardModel(
     mapName: getMapDisplayName(lobby.gameConfig?.gameMap?.trim() || 'Unknown map'),
     thumbnailUrl: getLobbyMapThumbnailUrl(lobby, assetManifest, cdnBase),
     badge: getBoardBadge(lobby, queue, queuePosition),
+    formatText: getBoardFormatText(lobby),
+    players,
+    capacity,
+    fillPercent:
+      players !== null && capacity ? Math.min(100, Math.round((players / capacity) * 100)) : 0,
+    modifiers: getBoardModifiers(lobby, criteria),
+    tags,
   };
 }
 

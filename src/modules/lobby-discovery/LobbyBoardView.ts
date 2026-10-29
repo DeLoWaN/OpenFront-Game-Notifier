@@ -6,7 +6,7 @@
  */
 
 import type { Lobby } from '@/types/game';
-import type { QueueSource } from './LobbyDiscoveryTypes';
+import type { DiscoveryCriteria, QueueSource } from './LobbyDiscoveryTypes';
 import {
   BOARD_QUEUES,
   buildBoardCardModel,
@@ -38,6 +38,8 @@ export interface LobbyBoardState {
   matchedIds: Set<string> | null;
   /** Offset to add to the local clock to get the feed's clock. */
   clockOffsetMs: number;
+  /** The active Criteria. They tell which Modifiers a card shows as required or blocked. */
+  criteria?: DiscoveryCriteria[];
 }
 
 const BOARD_ID = 'of-lobby-board';
@@ -101,7 +103,7 @@ export class LobbyBoardView {
           continue;
         }
         liveIds.add(lobby.gameID);
-        const model = buildBoardCardModel(lobby, queue, row, manifest, cdnBase);
+        const model = buildBoardCardModel(lobby, queue, row, manifest, cdnBase, state.criteria);
         const card = this.cards.get(lobby.gameID) ?? this.createCard(lobby.gameID);
         this.updateCard(card, model);
         card.classList.toggle('of-board-card-match', matchedIds?.has(lobby.gameID) === true);
@@ -309,7 +311,7 @@ export class LobbyBoardView {
   }
 
   private updateCard(card: HTMLButtonElement, model: BoardCardModel): void {
-    const signature = JSON.stringify([model.mapName, model.thumbnailUrl, model.badge]);
+    const signature = JSON.stringify(model);
     if (this.signatures.get(model.gameID) === signature) return;
     this.signatures.set(model.gameID, signature);
 
@@ -336,7 +338,57 @@ export class LobbyBoardView {
     name.className = 'of-board-map';
     name.textContent = model.mapName;
 
+    const top = document.createElement('span');
+    top.className = 'of-board-top';
+    top.append(badge);
+    for (const tagText of model.tags) {
+      const tag = document.createElement('span');
+      tag.className = 'of-board-tag';
+      tag.textContent = tagText;
+      top.append(tag);
+    }
+
+    const format = document.createElement('span');
+    format.className = 'of-board-format';
+    format.textContent = model.formatText;
+
+    const modifiers = document.createElement('span');
+    modifiers.className = 'of-board-mods';
+    if (model.modifiers.length === 0) {
+      const none = document.createElement('span');
+      none.className = 'of-board-nomods';
+      none.textContent = 'No modifiers';
+      modifiers.append(none);
+    }
+    for (const modifier of model.modifiers) {
+      const chip = document.createElement('span');
+      chip.className = `of-board-mod${modifier.state === 'neutral' ? '' : ` of-board-mod-${modifier.state}`}`;
+      chip.textContent = modifier.name;
+      modifiers.append(chip);
+    }
+
+    const body = document.createElement('span');
+    body.className = 'of-board-body';
+    body.append(name, format, this.buildPlayers(model), modifiers);
+
     card.setAttribute('aria-label', `Open ${model.mapName} in OpenFront's join modal`);
-    card.replaceChildren(thumb, badge, name);
+    card.replaceChildren(thumb, top, body);
+  }
+
+  private buildPlayers(model: BoardCardModel): HTMLElement {
+    const row = document.createElement('span');
+    row.className = 'of-board-playersrow';
+    const count = document.createElement('span');
+    count.className = 'of-board-players';
+    count.textContent =
+      model.capacity === null ? String(model.players ?? '') : `${model.players ?? 0} / ${model.capacity}`;
+    const bar = document.createElement('span');
+    bar.className = `of-board-bar${model.fillPercent >= 80 ? ' of-board-bar-hot' : ''}`;
+    const fill = document.createElement('i');
+    fill.className = 'of-board-fill';
+    fill.style.width = `${model.fillPercent}%`;
+    bar.append(fill);
+    row.append(count, bar);
+    return row;
   }
 }
