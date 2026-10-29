@@ -7,7 +7,6 @@
  */
 
 export class LobbyBoardAlerts {
-  // Notification key -> gameID.
   private entries = new Map<string, string>();
 
   /** Gives the lobby of one key a badge. */

@@ -247,7 +247,7 @@ export class LobbyBoardView {
     return placements;
   }
 
-  /** Slides the cards that changed cell and fades in the new ones. The first render with cards has no motion. */
+  /** Slides the cards that changed cell and fades in the new ones. */
   private playMotion(placementsBefore: Map<string, CardPlacement>, createdCards: HTMLButtonElement[]): void {
     // A card in the middle of a slide or a fade-in has a transform that shifts its box.
     for (const card of this.cards.values()) finishAnimations(card);

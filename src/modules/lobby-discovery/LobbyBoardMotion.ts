@@ -6,6 +6,8 @@
  * player prefers reduced motion.
  */
 
+import type { QueueSource } from './LobbyDiscoveryTypes';
+
 const SLIDE_DURATION_MS = 250;
 const APPEAR_DURATION_MS = 300;
 const EASING = 'ease-out';
@@ -13,7 +15,7 @@ const APPEAR_OFFSET_PX = 8;
 
 /** The cell of a card and the place of the card on the screen. */
 export interface CardPlacement {
-  queue: string;
+  queue: QueueSource;
   row: string;
   top: number;
   left: number;
@@ -34,7 +36,7 @@ export function readPlacement(card: HTMLElement): CardPlacement | null {
   const cell = card.parentElement;
   if (!cell?.dataset.queue || cell.dataset.row === undefined) return null;
   const { top, left } = card.getBoundingClientRect();
-  return { queue: cell.dataset.queue, row: cell.dataset.row, top, left };
+  return { queue: cell.dataset.queue as QueueSource, row: cell.dataset.row, top, left };
 }
 
 /** Moves a card from its old place to its current place. Does nothing when the card did not change cell. */
