@@ -56,7 +56,6 @@ describe('LobbyDiscoveryHelpers', () => {
       soundEnabled: true,
       desktopNotificationsEnabled: false,
       isTeamTwoTimesMinEnabled: false,
-      includeHostedAndCustomLobbies: true,
       mapFilter: {},
     });
   });
@@ -510,12 +509,31 @@ describe('LobbyDiscoveryHelpers', () => {
     it('defaults the Map Filter to empty when the saved value is not an object', () => {
       expect(normalizeSettings({ mapFilter: 'Alps' } as any).mapFilter).toEqual({});
     });
+  });
 
-    it('defaults the Hosted and Custom option to on and keeps an explicit off', () => {
-      expect(normalizeSettings({} as any).includeHostedAndCustomLobbies).toBe(true);
-      expect(
-        normalizeSettings({ includeHostedAndCustomLobbies: false } as any).includeHostedAndCustomLobbies
-      ).toBe(false);
+  describe('normalizeSettings — saved includeHostedAndCustomLobbies', () => {
+    it('drops the removed includeHostedAndCustomLobbies value and keeps every other saved value', () => {
+      const saved = {
+        criteria: [{ gameMode: 'Team', teamCount: 4, minPlayers: 2, maxPlayers: 8 }],
+        discoveryEnabled: false,
+        soundEnabled: false,
+        desktopNotificationsEnabled: true,
+        isTeamTwoTimesMinEnabled: true,
+        includeHostedAndCustomLobbies: false,
+        mapFilter: { Alps: 'required' },
+      };
+
+      const settings = normalizeSettings(saved as any);
+
+      expect(settings).not.toHaveProperty('includeHostedAndCustomLobbies');
+      expect(settings).toEqual({
+        criteria: [{ gameMode: 'Team', teamCount: 4, minPlayers: 2, maxPlayers: 8 }],
+        discoveryEnabled: false,
+        soundEnabled: false,
+        desktopNotificationsEnabled: true,
+        isTeamTwoTimesMinEnabled: true,
+        mapFilter: { Alps: 'required' },
+      });
     });
   });
 
@@ -541,7 +559,6 @@ describe('LobbyDiscoveryHelpers', () => {
         soundEnabled: false,
         desktopNotificationsEnabled: true,
         isTeamTwoTimesMinEnabled: true,
-        includeHostedAndCustomLobbies: false,
         mapFilter: { Europe: 'blocked' },
       });
     });

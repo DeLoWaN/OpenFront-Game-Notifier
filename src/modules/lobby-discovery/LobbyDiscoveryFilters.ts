@@ -30,8 +30,8 @@ import type {
   TeamCount,
 } from './LobbyDiscoveryTypes';
 
-/** What changed: the Criteria, the Map Filter or the "Lobbies" option. */
-export type FilterChange = 'criteria' | 'maps' | 'lobbies';
+/** What changed: the Criteria or the Map Filter. */
+export type FilterChange = 'criteria' | 'maps';
 
 export interface LobbyDiscoveryFiltersOptions {
   initial: FilterSettings;
@@ -75,13 +75,12 @@ const TEAM_COUNT_IDS: Array<[string, string]> = [
 
 const ALL_TEAM_IDS: string[] = TEAM_COUNT_IDS.map(([id]) => id);
 
-const PANEL_SECTIONS = ['modes', 'modifiers', 'maps', 'lobbies'] as const;
+const PANEL_SECTIONS = ['modes', 'modifiers', 'maps'] as const;
 type PanelSection = (typeof PANEL_SECTIONS)[number];
 const DEFAULT_COLLAPSED_SECTIONS: Record<PanelSection, boolean> = {
   modes: false,
   modifiers: false,
   maps: true,
-  lobbies: false,
 };
 
 const ICON_CHECK = `<svg viewBox="0 0 24 24"><path d="M5 12l5 5L20 7"/></svg>`;
@@ -107,7 +106,6 @@ function nextTriState(state: ModifierFilterState): ModifierFilterState {
 export class LobbyDiscoveryFilters {
   private criteria: DiscoveryCriteria[];
   private isTeamTwoTimesMinEnabled: boolean;
-  private includeHostedAndCustomLobbies: boolean;
   private mapFilter: MapFilter;
   private collapsedSections: Record<PanelSection, boolean> = loadCollapsedSections();
   private knownMaps: Set<string> = new Set(MAP_CATALOGUE.map((entry) => entry.gameMap));
@@ -120,7 +118,6 @@ export class LobbyDiscoveryFilters {
   constructor(options: LobbyDiscoveryFiltersOptions) {
     this.criteria = options.initial.criteria;
     this.isTeamTwoTimesMinEnabled = options.initial.isTeamTwoTimesMinEnabled;
-    this.includeHostedAndCustomLobbies = options.initial.includeHostedAndCustomLobbies;
     this.mapFilter = options.initial.mapFilter;
     this.onChange = options.onChange;
   }
@@ -129,7 +126,6 @@ export class LobbyDiscoveryFilters {
     return {
       criteria: this.criteria,
       isTeamTwoTimesMinEnabled: this.isTeamTwoTimesMinEnabled,
-      includeHostedAndCustomLobbies: this.includeHostedAndCustomLobbies,
       mapFilter: this.mapFilter,
     };
   }
@@ -516,12 +512,6 @@ export class LobbyDiscoveryFilters {
 
     this.syncMapChips();
 
-    const hostedToggle = this.$('discovery-hosted-toggle') as HTMLInputElement | null;
-    if (hostedToggle) {
-      hostedToggle.checked = this.includeHostedAndCustomLobbies;
-      this.syncChipState('discovery-hosted-toggle');
-    }
-
     this.updateFilterCount();
   }
 
@@ -614,13 +604,6 @@ export class LobbyDiscoveryFilters {
     for (const chip of this.getMapChips()) {
       chip.addEventListener('click', () => this.cycleMapState(chip));
     }
-
-    const hostedToggle = this.$('discovery-hosted-toggle') as HTMLInputElement | null;
-    hostedToggle?.addEventListener('change', () => {
-      this.includeHostedAndCustomLobbies = hostedToggle.checked;
-      this.syncChipState('discovery-hosted-toggle');
-      this.onChange('lobbies');
-    });
 
     this.$('discovery-reset')?.addEventListener('click', () => {
       this.resetAll();
@@ -870,17 +853,6 @@ export class LobbyDiscoveryFilters {
               <div class="ld-mods-hint">
                 Applies to every mode. With a <strong class="req">Required</strong> map, only required maps match.
               </div>
-            </div>
-          </div>
-
-          <div class="ld-section">
-            ${this.renderSectionToggle('lobbies', 'Lobbies', '')}
-            <div class="ld-section-body" id="discovery-lobbies-body">
-              <label class="ld-2x" aria-pressed="false">
-                <input type="checkbox" id="discovery-hosted-toggle">
-                <span class="check">${ICON_CHECK}</span>
-                <span class="lbl"><strong>Include hosted and custom lobbies</strong></span>
-              </label>
             </div>
           </div>
         </div>

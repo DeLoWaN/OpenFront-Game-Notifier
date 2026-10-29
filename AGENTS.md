@@ -51,7 +51,7 @@ The userscript is built from modular TypeScript source in `src/` and compiled to
 │   │       ├── LobbyDiscoveryTypes.ts
 │   │       ├── LobbyDiscoveryHelpers.ts
 │   │       ├── LobbyDiscoveryEngine.ts
-│   │       ├── LobbyDiscoveryFilters.ts   # filter sections (Modes, Modifiers, Maps, Lobbies)
+│   │       ├── LobbyDiscoveryFilters.ts   # filter sections (Modes, Modifiers, Maps)
 │   │       ├── LobbyDiscoveryControls.ts  # discovery switch, timer, sound and desktop toggles
 │   │       ├── LobbyDiscoveryUI.ts
 │   │       ├── LobbyBoardView.ts          # Lobby Board DOM
@@ -137,7 +137,7 @@ npm run type-check  # tsc --noEmit
 
 - **Criteria-based matching**: filter by game mode (FFA / Team), player count range, team format (Duos / Trios / Quads / Humans Vs Nations / 2–7 teams), and lobby modifiers (compact, random spawn, crowded, hard nations, alliances/nukes/SAMs disabled, peace time, water nukes, Doomsday Clock, Trusted, starting gold, gold multiplier).
 - **Map Filter**: one global tri-state list of maps that applies to every Criterion (see `docs/adr/0001-global-map-filter.md`).
-- **Every advertised lobby**: all lobbies of every Queue are evaluated, Hosted and Custom Lobbies included (a global option excludes them). See `GLOSSARY.md` for Live Lobby and Upcoming Lobby.
+- **Every advertised lobby**: all lobbies of every Queue are evaluated, Hosted and Custom Lobbies included. See `GLOSSARY.md` for Live Lobby and Upcoming Lobby.
 - **Three notification channels**: in-page highlight, sound alert, and (optional) browser desktop notification. On the Lobby Board, a matching card has a thin orange frame. A match that arrives while the window has no focus also gets a "New" badge. The badge goes when the window loses focus again. A lobby alerts once when it starts to match, at any Queue Position. Clicking the desktop notification flashes the card on the Lobby Board. Without the board, it opens the See All View for a lobby that the home page does not show. Outside the board, the queue card of a Live Lobby, the "See all" button and the See All View card keep their highlight.
 - **Search timer**: shows how long the current search has been running.
 - **Sleep when in-game**: panel hides while a game is live (`body.in-game`, or the URL has `?live`).
@@ -156,14 +156,14 @@ npm run type-check  # tsc --noEmit
 
 ## Settings Persistence
 
-Stored under `OF_LOBBY_DISCOVERY_SETTINGS` via `GM_setValue`. The collapsed state of each panel section (Modes, Modifiers, Maps, Lobbies) is stored under `OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS`. Settings include:
+Stored under `OF_LOBBY_DISCOVERY_SETTINGS` via `GM_setValue`. The collapsed state of each panel section (Modes, Modifiers, Maps) is stored under `OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS`. Settings include:
 
 - Discovery criteria list
 - Discovery enabled/disabled
 - Sound enabled/disabled
 - Desktop notifications enabled/disabled
 - `isTeamTwoTimesMinEnabled` constraint flag
-- `includeHostedAndCustomLobbies` and the global `mapFilter`
+- the global `mapFilter`
 
 Two more values have their own storage keys:
 

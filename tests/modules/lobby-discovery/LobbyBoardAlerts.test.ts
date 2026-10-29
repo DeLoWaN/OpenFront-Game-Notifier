@@ -484,10 +484,11 @@ describe('Lobby Board alerts', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
 
-      // The option changes nothing for an FFA lobby that OpenFront lists itself.
-      const hostedToggle = document.getElementById('discovery-hosted-toggle') as HTMLInputElement;
-      hostedToggle.checked = false;
-      hostedToggle.dispatchEvent(new Event('change'));
+      // Two clicks block Asia. The lobby is on Europe, so it still matches.
+      const asia = document.querySelector('[data-game-map="Asia"]') as HTMLButtonElement;
+      asia.click();
+      asia.click();
+      expect(asia.dataset.state).toBe('blocked');
 
       expect(card('ffa-4')?.querySelector('.of-board-new')).toBeTruthy();
     });

@@ -108,7 +108,7 @@ describe('getBoardModifiers', () => {
   it('lists the Modifiers in the same order as the filter chips', () => {
     const lobby = withModifiers(everyModifier, { trusted: true });
     const chips = new LobbyDiscoveryFilters({
-      initial: { criteria: [], isTeamTwoTimesMinEnabled: false, includeHostedAndCustomLobbies: true, mapFilter: {} },
+      initial: { criteria: [], isTeamTwoTimesMinEnabled: false, mapFilter: {} },
       onChange: () => {},
     });
     const container = document.createElement('div');

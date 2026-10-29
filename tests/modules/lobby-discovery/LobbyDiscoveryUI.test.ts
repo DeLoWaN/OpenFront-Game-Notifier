@@ -499,7 +499,6 @@ describe('LobbyDiscoveryUI', () => {
       soundEnabled: false,
       desktopNotificationsEnabled: false,
       isTeamTwoTimesMinEnabled: false,
-      includeHostedAndCustomLobbies: true,
       mapFilter: {},
     });
   });
@@ -527,7 +526,6 @@ describe('LobbyDiscoveryUI', () => {
         soundEnabled: true,
         desktopNotificationsEnabled: false,
         isTeamTwoTimesMinEnabled: false,
-        includeHostedAndCustomLobbies: true,
         mapFilter: {},
       });
     });
@@ -572,7 +570,6 @@ describe('LobbyDiscoveryUI', () => {
         soundEnabled: true,
         desktopNotificationsEnabled: false,
         isTeamTwoTimesMinEnabled: false,
-        includeHostedAndCustomLobbies: true,
         mapFilter: {},
       });
     });
@@ -845,18 +842,13 @@ describe('LobbyDiscoveryUI', () => {
     expect(saved.criteria[0].modifiers.isTrusted).toBe('blocked');
   });
 
-  it('restores and persists the Hosted and Custom option, on by default', () => {
+  it('has no Hosted and Custom option, and drops the old saved value', () => {
+    store.set(STORAGE_KEYS.lobbyDiscoverySettings, { criteria: [], includeHostedAndCustomLobbies: false });
     ui = new LobbyDiscoveryUI();
-    const toggle = document.getElementById('discovery-hosted-toggle') as HTMLInputElement;
-    expect(toggle.checked).toBe(true);
 
-    toggle.checked = false;
-    toggle.dispatchEvent(new Event('change'));
-    expect(store.get(STORAGE_KEYS.lobbyDiscoverySettings).includeHostedAndCustomLobbies).toBe(false);
-
-    ui.cleanup();
-    ui = new LobbyDiscoveryUI();
-    expect((document.getElementById('discovery-hosted-toggle') as HTMLInputElement).checked).toBe(false);
+    expect(document.getElementById('discovery-hosted-toggle')).toBeNull();
+    expect(document.getElementById('discovery-lobbies-body')).toBeNull();
+    expect(store.get(STORAGE_KEYS.lobbyDiscoverySettings)).not.toHaveProperty('includeHostedAndCustomLobbies');
   });
 
   it('exposes a Water Nukes modifier control as a tri-state chip', () => {
@@ -1156,7 +1148,7 @@ describe('LobbyDiscoveryUI', () => {
       expect(slotHighlighted('ffa-0')).toBe(false);
     });
 
-    it('evaluates the Hosted Queue and honours the Hosted and Custom option', () => {
+    it('evaluates the Hosted Queue, even with an old saved option that excluded it', () => {
       mountSeeAll(['hosted-1']);
       const hosted = [{ ...ffaLobby('hosted-1', 40), publicGameType: 'hosted' }];
 
@@ -1171,17 +1163,17 @@ describe('LobbyDiscoveryUI', () => {
       bigFfaSettings({ includeHostedAndCustomLobbies: false });
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(hosted as any);
-      expect(seeAllPulsing()).toBe(false);
-      expect(SoundUtils.playGameFoundSound).not.toHaveBeenCalled();
+      expect(seeAllPulsing()).toBe(true);
+      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
     });
 
-    it('ignores a Custom Lobby in the Special Queue when the option is off', () => {
+    it('matches a Custom Lobby in the Special Queue like any other lobby', () => {
       bigFfaSettings({ includeHostedAndCustomLobbies: false });
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate([{ ...ffaLobby('custom-0', 40), publicGameType: 'special', custom: true }] as any);
 
-      expect(document.getElementById('special-card')?.classList.contains('of-discovery-card-active')).toBe(false);
-      expect(SoundUtils.playGameFoundSound).not.toHaveBeenCalled();
+      expect(document.getElementById('special-card')?.classList.contains('of-discovery-card-active')).toBe(true);
+      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
     });
 
     it('keeps matching while the See All View replaces the play page', () => {
@@ -1354,17 +1346,16 @@ describe('LobbyDiscoveryUI', () => {
   });
 
   describe('collapsible sections', () => {
-    const sections = ['modes', 'modifiers', 'maps', 'lobbies'];
+    const sections = ['modes', 'modifiers', 'maps'];
     const toggle = (name: string) => document.getElementById(`discovery-${name}-toggle`) as HTMLButtonElement;
     const body = (name: string) => document.getElementById(`discovery-${name}-body`) as HTMLElement;
 
-    it('opens Modes, Modifiers and Lobbies and collapses Maps by default', () => {
+    it('opens Modes and Modifiers and collapses Maps by default', () => {
       ui = new LobbyDiscoveryUI();
       expect(sections.map((name) => [name, body(name).hidden, toggle(name).getAttribute('aria-expanded')])).toEqual([
         ['modes', false, 'true'],
         ['modifiers', false, 'true'],
         ['maps', true, 'false'],
-        ['lobbies', false, 'true'],
       ]);
     });
 

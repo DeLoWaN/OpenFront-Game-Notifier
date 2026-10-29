@@ -8,7 +8,6 @@ import type { Lobby } from '@/types/game';
 const EMPTY_SETTINGS: FilterSettings = {
   criteria: [],
   isTeamTwoTimesMinEnabled: false,
-  includeHostedAndCustomLobbies: true,
   mapFilter: {},
 };
 
@@ -60,10 +59,12 @@ describe('LobbyDiscoveryFilters', () => {
   });
 
   describe('mount and cleanup', () => {
-    it('renders the four sections, the active filter count and "Reset all" into the container', () => {
+    it('renders the three sections, the active filter count and "Reset all" into the container', () => {
       const container = mountDetached(create());
 
-      for (const section of ['modes', 'modifiers', 'maps', 'lobbies']) {
+      expect(byId(container, 'discovery-hosted-toggle')).toBeNull();
+      expect(container.querySelector('#discovery-lobbies-body')).toBeNull();
+      for (const section of ['modes', 'modifiers', 'maps']) {
         expect(byId(container, `discovery-${section}-toggle`)).toBeTruthy();
         expect(byId(container, `discovery-${section}-body`)).toBeTruthy();
       }
@@ -96,7 +97,6 @@ describe('LobbyDiscoveryFilters', () => {
               modifiers: { isRandomSpawn: 'required', isCompact: 'blocked' },
             },
           ],
-          includeHostedAndCustomLobbies: false,
           mapFilter: { World: 'required' },
         })
       );
@@ -107,7 +107,6 @@ describe('LobbyDiscoveryFilters', () => {
       expect(byId<HTMLInputElement>(container, 'discovery-team-min').value).toBe('3');
       expect(byId(container, 'modifier-isRandomSpawn').dataset.state).toBe('required');
       expect(byId(container, 'modifier-isCompact').dataset.state).toBe('blocked');
-      expect(byId<HTMLInputElement>(container, 'discovery-hosted-toggle').checked).toBe(false);
       expect(byId(container, 'discovery-maps-summary').textContent).toBe('1 required');
       // Team mode + 1 team format + 2 modifiers.
       expect(byId(container, 'discovery-filter-count').textContent).toBe('4');
@@ -168,16 +167,6 @@ describe('LobbyDiscoveryFilters', () => {
       expect(byId(container, 'discovery-maps-summary').textContent).toBe('Any map');
     });
 
-    it('reports a lobbies change when the hosted and custom option is switched', () => {
-      const instance = create();
-      const container = mountDetached(instance);
-
-      flip(byId<HTMLInputElement>(container, 'discovery-hosted-toggle'));
-
-      expect(changes).toEqual(['lobbies']);
-      expect(instance.getSettings().includeHostedAndCustomLobbies).toBe(false);
-    });
-
     it('resets every filter and reports one criteria change on "Reset all"', () => {
       const instance = create({
         criteria: [
@@ -199,7 +188,6 @@ describe('LobbyDiscoveryFilters', () => {
       expect(instance.getSettings()).toEqual({
         criteria: [],
         isTeamTwoTimesMinEnabled: false,
-        includeHostedAndCustomLobbies: true,
         mapFilter: {},
       });
       expect(byId(container, 'modifier-isCompact').dataset.state).toBe('any');
@@ -254,7 +242,7 @@ describe('LobbyDiscoveryFilters', () => {
   });
 
   describe('collapsed sections', () => {
-    const sections = ['modes', 'modifiers', 'maps', 'lobbies'] as const;
+    const sections = ['modes', 'modifiers', 'maps'] as const;
 
     it('opens every section but Maps by default', () => {
       const container = mountDetached(create());
@@ -264,7 +252,6 @@ describe('LobbyDiscoveryFilters', () => {
         ['modes', false],
         ['modifiers', false],
         ['maps', true],
-        ['lobbies', false],
       ]);
     });
 
@@ -277,7 +264,6 @@ describe('LobbyDiscoveryFilters', () => {
         modes: true,
         modifiers: false,
         maps: false,
-        lobbies: false,
       });
       first.cleanup();
 

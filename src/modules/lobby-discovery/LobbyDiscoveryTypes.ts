@@ -47,7 +47,6 @@ export interface LobbyDiscoverySettings {
   desktopNotificationsEnabled: boolean;
   isTeamTwoTimesMinEnabled: boolean;
   isTeamThreeTimesMinEnabled?: boolean;
-  includeHostedAndCustomLobbies?: boolean;
   mapFilter?: MapFilter;
 }
 
@@ -55,6 +54,5 @@ export interface LobbyDiscoverySettings {
 export interface FilterSettings {
   criteria: DiscoveryCriteria[];
   isTeamTwoTimesMinEnabled: boolean;
-  includeHostedAndCustomLobbies: boolean;
   mapFilter: MapFilter;
 }

@@ -130,7 +130,6 @@ describe('Lobby Board sidebar and header', () => {
         'discovery-modes-body',
         'discovery-modifiers-body',
         'discovery-maps-body',
-        'discovery-lobbies-body',
         'discovery-reset',
         'discovery-filter-count',
       ]) {
@@ -221,7 +220,7 @@ describe('Lobby Board sidebar and header', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
       sidebarToggle().click();
-      (sidebar()!.querySelector('[id="discovery-hosted-toggle"]') as HTMLInputElement).click();
+      (sidebar()!.querySelector('[data-game-map="Asia"]') as HTMLButtonElement).click();
 
       // Lit replaces the page grid, so the board is built again.
       document.getElementById('page-play')!.innerHTML = `<game-mode-selector>${
@@ -233,8 +232,8 @@ describe('Lobby Board sidebar and header', () => {
       expect(sidebar()!.classList.contains('is-collapsed')).toBe(true);
       expect(sidebar()!.querySelector('[id="discovery-ffa"]')).toBeTruthy();
       expect(
-        (sidebar()!.querySelector('[id="discovery-hosted-toggle"]') as HTMLInputElement).checked
-      ).toBe(false);
+        (sidebar()!.querySelector('[data-game-map="Asia"]') as HTMLButtonElement).dataset.state
+      ).toBe('required');
       expect(head().querySelector('[id="discovery-sound-toggle"]')).toBeTruthy();
     });
   });

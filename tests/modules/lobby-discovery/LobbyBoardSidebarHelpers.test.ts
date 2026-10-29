@@ -5,7 +5,7 @@ import type { FilterSettings } from '@/modules/lobby-discovery/LobbyDiscoveryTyp
 const settings = (overrides: Partial<FilterSettings> = {}): FilterSettings => ({
   criteria: [],
   isTeamTwoTimesMinEnabled: false,
-  includeHostedAndCustomLobbies: true,
+ 
   mapFilter: {},
   ...overrides,
 });

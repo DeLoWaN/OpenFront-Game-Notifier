@@ -605,10 +605,6 @@ export function normalizeSettings(
       typeof current?.isTeamTwoTimesMinEnabled === 'boolean'
         ? current.isTeamTwoTimesMinEnabled
         : !!current?.isTeamThreeTimesMinEnabled,
-    includeHostedAndCustomLobbies:
-      typeof current?.includeHostedAndCustomLobbies === 'boolean'
-        ? current.includeHostedAndCustomLobbies
-        : true,
     mapFilter: sanitizeMapFilter(current?.mapFilter),
   };
 }

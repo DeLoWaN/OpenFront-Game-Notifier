@@ -13,7 +13,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Matching evaluates **every advertised lobby**: the live lobby, all upcoming lobbies of each queue (OpenFront's "See all" list), and hosted lobbies
 - Global **map filter**: mark maps as required or excluded, with search and categories
 - `Humans Vs Nations` matches only when its format is selected
-- Hosted and custom lobbies are included by default; one option excludes them
+- Hosted and custom lobbies always take part in matching and alerts, like any other lobby
 - Team panel splits into `Format` (`Humans Vs Nations`) and `Number of teams` (`2`–`7`)
 - Capacity sliders use the right semantics per mode: total lobby size for `FFA`, players-per-team for `Team`
 - Per-team slider uses log-scaled stops with editable steppers; optional `2×` lock pins the max to twice the minimum
@@ -38,7 +38,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - Filter settings persist across reloads
 - The filters live in a **sidebar** on the left of the Lobby Board, so nothing floats over the OpenFront page. The sidebar collapses to a thin rail that shows a short summary of your filters (for example `FFA · 2 modifiers · 1 map`), and it remembers whether it is collapsed across reloads
 - The Lobby Board **header** holds the discovery switch with its status, the search timer, the sound toggle and the desktop notification toggle
-- Every filter section (Modes, Modifiers, Maps, Lobbies) collapses, and the sidebar remembers which ones across reloads
+- Every filter section (Modes, Modifiers, Maps) collapses, and the sidebar remembers which ones across reloads
 - If the Lobby Board cannot show on the OpenFront page, the filters and the controls fall back to a floating panel
 - The **Original page** switch, in the Lobby Board header, hides the Lobby Board and brings back OpenFront's own lobby area. The filters and the controls then move to a floating panel, and the same switch in its header brings the Lobby Board back. In this mode the notifier highlights matches on OpenFront's page: the queue cards and the "See all" button pulse, and the matching cards in the See All View get a highlight. A click on a desktop notification opens the See All View when the home page does not show the lobby. The alerts (sound and desktop notification) follow the same rules in both modes. The notifier remembers the mode across reloads, and the Lobby Board is the default
 - Discovery feedback automatically pauses while you're already inside a joined lobby flow

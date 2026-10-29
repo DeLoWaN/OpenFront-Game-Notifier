@@ -178,7 +178,7 @@ describe('Original page switch', () => {
       expect(pageColumn().style.overflowX).toBe('clip');
       expect(panel()).toBeTruthy();
       // The filter component and the switch live in the floating panel.
-      expect(panel()!.querySelector('[id="discovery-hosted-toggle"]')).toBeTruthy();
+      expect(panel()!.querySelector('[id="discovery-ffa"]')).toBeTruthy();
       expect(switchIn(panel())?.checked).toBe(true);
     });
 
@@ -194,7 +194,7 @@ describe('Original page switch', () => {
       expect(ffaCell().style.display).toBe('none');
       expect(pageColumn().style.overflowX).toBe('visible');
       expect(panel()).toBeNull();
-      expect(board()!.querySelector('[id="discovery-hosted-toggle"]')).toBeTruthy();
+      expect(board()!.querySelector('[id="discovery-ffa"]')).toBeTruthy();
       expect(switchIn(boardHead())?.checked).toBe(false);
     });
 

@@ -255,13 +255,13 @@ describe('Lobby Board', () => {
       expect(document.querySelector('.of-board-totals')?.textContent).toBe('0 matches · 1 lobby');
     });
 
-    it('does not match a Hosted Lobby when Hosted and Custom Lobbies are excluded', () => {
+    it('matches a Hosted Lobby like any other lobby, even with an old saved option that excluded it', () => {
       setCriteria([ffaCriterion], { includeHostedAndCustomLobbies: false });
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate([ffa('ffa-0'), hosted('hosted-0')] as any, NOW);
 
       expect(cardIn('ffa', 0)?.classList.contains('of-board-card-match')).toBe(true);
-      expect(cardIn('hosted', 0)?.classList.contains('of-board-card-dim')).toBe(true);
+      expect(cardIn('hosted', 0)?.classList.contains('of-board-card-match')).toBe(true);
     });
 
     it('greys no card while no Criterion is active', () => {

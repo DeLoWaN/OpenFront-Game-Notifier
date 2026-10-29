@@ -21,7 +21,6 @@ import {
   formatElapsedSince,
   getBrowserNotificationContent,
   getGameDetailsText,
-  isHostConfiguredLobby,
   normalizeSettings,
 } from './LobbyDiscoveryHelpers';
 import { LobbyDiscoveryFilters, type FilterChange } from './LobbyDiscoveryFilters';
@@ -150,10 +149,6 @@ export class LobbyDiscoveryUI {
     return this.filters.getSettings().mapFilter;
   }
 
-  private get includeHostedAndCustomLobbies(): boolean {
-    return this.filters.getSettings().includeHostedAndCustomLobbies;
-  }
-
   receiveLobbyUpdate(lobbies: Lobby[], serverTime: number | null = null): void {
     this.lastLobbies = lobbies;
     if (serverTime !== null) this.clockOffsetMs = serverTime - Date.now();
@@ -195,7 +190,6 @@ export class LobbyDiscoveryUI {
       initial: {
         criteria: settings.criteria,
         isTeamTwoTimesMinEnabled: settings.isTeamTwoTimesMinEnabled,
-        includeHostedAndCustomLobbies: settings.includeHostedAndCustomLobbies ?? true,
         mapFilter: settings.mapFilter ?? {},
       },
       onChange: (change) => this.handleFilterChange(change),
@@ -206,8 +200,8 @@ export class LobbyDiscoveryUI {
     this.saveSettings();
     this.dropAlertsOfNonMatches();
     this.updateLobbyBoard(this.lastLobbies);
-    if (change !== 'lobbies') this.syncSearchTimer({ resetStart: true });
-    if (change !== 'criteria') this.processLobbies(this.lastLobbies);
+    this.syncSearchTimer({ resetStart: true });
+    if (change === 'maps') this.processLobbies(this.lastLobbies);
   }
 
   /** A card that no longer matches loses its "New" badge at once, without a feed update. */
@@ -227,7 +221,6 @@ export class LobbyDiscoveryUI {
       soundEnabled: this.soundEnabled,
       desktopNotificationsEnabled: this.desktopNotificationsEnabled,
       isTeamTwoTimesMinEnabled: filterSettings.isTeamTwoTimesMinEnabled,
-      includeHostedAndCustomLobbies: filterSettings.includeHostedAndCustomLobbies,
       mapFilter: filterSettings.mapFilter,
     } satisfies LobbyDiscoverySettings);
   }
@@ -274,14 +267,12 @@ export class LobbyDiscoveryUI {
 
   /**
    * Checks every lobby against the Criteria and the Map Filter, in Queue order.
-   * A Hosted or Custom Lobby that the "Lobbies" option excludes is left out.
    */
   private evaluateLobbies(lobbies: Lobby[]): LobbyEvaluation[] {
     const queues = groupLobbiesByQueue(lobbies);
     const evaluations: LobbyEvaluation[] = [];
     for (const { queue } of BOARD_QUEUES) {
       queues[queue].forEach((lobby, index) => {
-        if (!this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby)) return;
         const matched = this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter);
         evaluations.push({ lobby, queue, index, matched });
       });
