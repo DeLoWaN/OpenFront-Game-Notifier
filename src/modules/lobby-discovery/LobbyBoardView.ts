@@ -19,6 +19,7 @@ import {
   type BoardCardModel,
 } from './LobbyBoardHelpers';
 import { LobbyBoardSidebar } from './LobbyBoardSidebar';
+import { findHomeGrid, isLobbyCell } from '@/utils/HomePageUtils';
 
 export interface LobbyBoardAssets {
   manifest: Record<string, string> | null;
@@ -56,7 +57,6 @@ export interface LobbyBoardState {
 
 const BOARD_ID = 'of-lobby-board';
 const FLASH_DURATION_MS = 2_000;
-const GRID_CLASS_MARKER = 'sm:grid-cols-[2fr_1fr]';
 
 /** The nodes of a card that change with its model. They are built once and then updated in place. */
 interface CardParts {
@@ -220,7 +220,7 @@ export class LobbyBoardView {
     if (!pageGrid) return;
 
     for (const child of Array.from(pageGrid.children) as HTMLElement[]) {
-      if (child !== this.root && this.isLobbyCell(child)) this.setStyle(child, 'display', 'none');
+      if (child !== this.root && isLobbyCell(child)) this.setStyle(child, 'display', 'none');
     }
     // OpenFront gives the lobby row a fixed height.
     this.setStyle(pageGrid, 'grid-template-rows', 'auto');
@@ -234,14 +234,6 @@ export class LobbyBoardView {
         this.setStyle(ancestor, 'overflow-x', 'visible');
       }
     }
-  }
-
-  /** The FFA cell, and the section with the Team card, the Special card and the "See all" heading. */
-  private isLobbyCell(element: HTMLElement): boolean {
-    return (
-      element.tagName === 'SECTION' ||
-      (element.className.includes('sm:col-start-1') && element.className.includes('sm:row-start-2'))
-    );
   }
 
   private setStyle(element: HTMLElement, property: string, value: string): void {
@@ -284,22 +276,14 @@ export class LobbyBoardView {
 
   /** True while the board is on the page, or when OpenFront's page has a grid that can hold it. */
   canMount(): boolean {
-    return !!this.root?.isConnected || this.findPageGrid() !== null;
-  }
-
-  private findPageGrid(): HTMLElement | null {
-    const selector = document.querySelector('game-mode-selector');
-    const grid = selector
-      ? Array.from(selector.querySelectorAll('div')).find((el) => el.className.includes(GRID_CLASS_MARKER))
-      : null;
-    return grid ?? null;
+    return !!this.root?.isConnected || findHomeGrid() !== null;
   }
 
   /** Finds the grid of OpenFront's home page and puts the board before its first child. */
   private ensureMounted(): HTMLDivElement | null {
     if (this.root?.isConnected) return this.root;
 
-    const pageGrid = this.findPageGrid();
+    const pageGrid = findHomeGrid();
     if (!pageGrid) return null;
 
     const root = document.createElement('div');

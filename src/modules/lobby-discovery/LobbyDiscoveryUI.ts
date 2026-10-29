@@ -7,6 +7,7 @@ import { LobbyUtils } from '@/utils/LobbyUtils';
 import { BrowserNotificationUtils } from '@/utils/BrowserNotificationUtils';
 import { SoundUtils } from '@/utils/SoundUtils';
 import { URLObserver } from '@/utils/URLObserver';
+import { findHomeGrid, getHomeGridCells } from '@/utils/HomePageUtils';
 import type { Lobby } from '@/types/game';
 import type {
   BoardMode,
@@ -20,12 +21,12 @@ import {
   formatElapsedSince,
   getBrowserNotificationContent,
   getGameDetailsText,
-  getLobbyQueueSource,
   isHostConfiguredLobby,
   normalizeSettings,
 } from './LobbyDiscoveryHelpers';
 import { LobbyDiscoveryFilters, type FilterChange } from './LobbyDiscoveryFilters';
 import { LobbyBoardView } from './LobbyBoardView';
+import { BOARD_QUEUES, groupLobbiesByQueue } from './LobbyBoardHelpers';
 import { LobbyBoardAlerts, PULSE_DURATION_MS } from './LobbyBoardAlerts';
 import { formatFilterSummary } from './LobbyBoardSidebarHelpers';
 import { LobbyDiscoveryControls } from './LobbyDiscoveryControls';
@@ -54,8 +55,16 @@ function isDebugEnabled(): boolean {
 interface DiscoveryMatch {
   lobby: Lobby;
   queue: QueueSource;
-  // Only the See All View shows this lobby: it is past index 1 or in the Hosted Queue.
+  // The home page does not show this lobby: it is not a Live Lobby.
   seeAllOnly: boolean;
+}
+
+interface LobbyEvaluation {
+  lobby: Lobby;
+  queue: QueueSource;
+  /** The Queue Position, from zero. */
+  index: number;
+  matched: boolean;
 }
 
 const SEE_ALL_VIEW_ID = 'page-detailed-view';
@@ -104,7 +113,7 @@ export class LobbyDiscoveryUI {
   private gameInfoInterval: ReturnType<typeof setInterval> | null = null;
   private pulseSyncTimeout: ReturnType<typeof setTimeout> | null = null;
 
-  // The floating panel holds the filters and the controls only when the Lobby Board cannot show.
+  // The floating panel holds the filters and the controls only while the Lobby Board does not show.
   private panel!: HTMLDivElement;
   private panelControlsSlot!: HTMLDivElement;
   private panelFiltersSlot!: HTMLDivElement;
@@ -205,11 +214,8 @@ export class LobbyDiscoveryUI {
   /** A card that no longer matches loses its "New" badge and its pulse at once, without a feed update. */
   private dropAlertsOfNonMatches(): void {
     const matchedKeys = new Set<string>();
-    for (const lobby of this.lastLobbies) {
-      const excluded = !this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby);
-      if (!excluded && this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter)) {
-        matchedKeys.add(this.getNotificationKey(lobby));
-      }
+    for (const { lobby, matched } of this.evaluateLobbies(this.lastLobbies)) {
+      if (matched) matchedKeys.add(this.getNotificationKey(lobby));
     }
     this.boardAlerts.retain(matchedKeys);
   }
@@ -267,17 +273,21 @@ export class LobbyDiscoveryUI {
     this.filters.setCurrentGameInfo(`Current game: ${getGameDetailsText(currentLobby)}`);
   }
 
-  /** Group the flattened lobby snapshot by Queue, keeping the feed order. */
-  private parseQueues(lobbies: Lobby[]): Map<QueueSource, Lobby[]> {
-    const queues = new Map<QueueSource, Lobby[]>();
-    for (const lobby of lobbies) {
-      const queue = getLobbyQueueSource(lobby);
-      if (!queue) continue;
-      const queueLobbies = queues.get(queue) ?? [];
-      queueLobbies.push(lobby);
-      queues.set(queue, queueLobbies);
+  /**
+   * Checks every lobby against the Criteria and the Map Filter, in Queue order.
+   * A Hosted or Custom Lobby that the "Lobbies" option excludes is left out.
+   */
+  private evaluateLobbies(lobbies: Lobby[]): LobbyEvaluation[] {
+    const queues = groupLobbiesByQueue(lobbies);
+    const evaluations: LobbyEvaluation[] = [];
+    for (const { queue } of BOARD_QUEUES) {
+      queues[queue].forEach((lobby, index) => {
+        if (!this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby)) return;
+        const matched = this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter);
+        evaluations.push({ lobby, queue, index, matched });
+      });
     }
-    return queues;
+    return evaluations;
   }
 
   private processLobbies(lobbies: Lobby[]): void {
@@ -285,7 +295,6 @@ export class LobbyDiscoveryUI {
       this.updateCurrentGameInfo();
       this.syncSearchTimer();
 
-      const queues = this.parseQueues(lobbies);
       this.filters.addFeedOnlyMaps(lobbies);
 
       if (!this.discoveryEnabled || this.criteriaList.length === 0) {
@@ -307,12 +316,7 @@ export class LobbyDiscoveryUI {
       const newAlerts: Array<{ key: string; gameID: string }> = [];
 
       const debugEnabled = isDebugEnabled();
-      const evaluate = (lobby: Lobby, queue: QueueSource, index: number): void => {
-        if (!this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby)) return;
-
-        const isLive = queue !== 'hosted' && index === 0;
-        const seeAllOnly = !isLive;
-        const matched = this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter);
+      for (const { lobby, queue, index, matched } of this.evaluateLobbies(lobbies)) {
         if (debugEnabled) {
           console.log('[OF Discovery]', {
             lobbyId: lobby.gameID,
@@ -330,8 +334,9 @@ export class LobbyDiscoveryUI {
             matched,
           });
         }
-        if (!matched) return;
+        if (!matched) continue;
 
+        const isLive = queue !== 'hosted' && index === 0;
         if (isLive) liveMatchSources.add(queue);
         else hasSeeAllOnlyMatch = true;
         seeAllMatchIds.add(lobby.gameID);
@@ -342,12 +347,8 @@ export class LobbyDiscoveryUI {
           newAlerts.push({ key: notificationKey, gameID: lobby.gameID });
         }
         if (!this.desktopNotifiedLobbies.has(notificationKey)) {
-          newMatches.push({ lobby, queue, seeAllOnly });
+          newMatches.push({ lobby, queue, seeAllOnly: !isLive });
         }
-      };
-
-      for (const [queue, queueLobbies] of queues) {
-        queueLobbies.forEach((lobby, index) => evaluate(lobby, queue, index));
       }
 
       if (!this.isDiscoveryFeedbackAllowed()) {
@@ -453,11 +454,8 @@ export class LobbyDiscoveryUI {
     const isActive = this.discoveryEnabled && this.criteriaList.length > 0;
     const matchedIds = new Set<string>();
     if (isActive) {
-      for (const lobby of lobbies) {
-        const excluded = !this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby);
-        if (!excluded && this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter)) {
-          matchedIds.add(lobby.gameID);
-        }
+      for (const { lobby, matched } of this.evaluateLobbies(lobbies)) {
+        if (matched) matchedIds.add(lobby.gameID);
       }
     }
     this.lobbyBoard.render({
@@ -509,23 +507,11 @@ export class LobbyDiscoveryUI {
 
   private getQueueCardElements(): Partial<Record<QueueSource, HTMLElement>> {
     const selector = document.querySelector('game-mode-selector') as HTMLElement | null;
-    if (!selector) return {};
+    const grid = findHomeGrid(selector);
+    if (!selector || !grid) return {};
 
-    const grid = Array.from(selector.querySelectorAll('div')).find((element) =>
-      element.className.includes('sm:grid-cols-[2fr_1fr]')
-    );
-    if (!(grid instanceof HTMLElement)) return {};
-
+    const { ffaCell, cardCells } = getHomeGridCells(grid);
     // Lit skips the cell of an absent Queue, so the Team and Special positions come from the lobby data.
-    const gridChildren = Array.from(grid.children) as HTMLElement[];
-    const ffaCell = gridChildren.find(
-      (el) => el.className.includes('sm:col-start-1') && el.className.includes('sm:row-start-2')
-    );
-    const section = gridChildren.find((el) => el.tagName === 'SECTION');
-    const cardCells = section
-      ? (Array.from(section.children) as HTMLElement[]).filter((el) => el.tagName === 'DIV')
-      : [];
-
     const games = (selector as unknown as { lobbies?: { games?: Record<string, unknown[]> } })
       .lobbies?.games;
     const hasTeam = Array.isArray(games?.['team']) && games!['team'].length > 0;
@@ -617,17 +603,10 @@ export class LobbyDiscoveryUI {
     }, 16);
   }
 
-  /**
-   * Read OpenFront's asset manifest + CDN base from the page globals so board
-   * cards reuse the exact CDN map thumbnails. Returns nulls when unavailable
-   * (e.g. unsafeWindow not granted, or in tests).
-   */
+  /** Returns the asset manifest and the CDN base of the page, or nulls when the page has none. */
   private getAssetContext(): { manifest: Record<string, string> | null; cdnBase: string | null } {
     const win = getPageWindow();
-    // OpenFront v0.32 reads assets from window.BOOTSTRAP_CONFIG, with the
-    // globalThis.__ASSET_MANIFEST__/__CDN_BASE__ pair as its own fallback. Mirror
-    // that precedence so board cards reuse the exact fingerprinted CDN
-    // thumbnails; see OpenFront packages/shared/src/AssetUrls.ts (getAssetManifest/getCdnBase).
+    // The same order as getAssetManifest and getCdnBase in OpenFront's AssetUrls.ts.
     return {
       manifest: win.BOOTSTRAP_CONFIG?.assetManifest ?? win.__ASSET_MANIFEST__ ?? null,
       cdnBase: win.BOOTSTRAP_CONFIG?.cdnBase ?? win.__CDN_BASE__ ?? null,
@@ -739,10 +718,9 @@ export class LobbyDiscoveryUI {
   }
 
   /**
-   * The filters and the controls live in the Lobby Board while it is on the
-   * page. When it cannot show, or in original page mode, they move to the
-   * floating panel. A container
-   * that Lit removed from the page is replaced by the new one.
+   * The filters and the controls live in the Lobby Board while it shows.
+   * Otherwise they live in the floating panel.
+   * A container that Lit removed from the page is replaced by the new one.
    */
   private placeSurfaces(): void {
     const hosts = this.boardMode === 'board' ? this.lobbyBoard.getHosts() : null;
