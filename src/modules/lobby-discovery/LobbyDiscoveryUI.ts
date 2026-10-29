@@ -29,6 +29,7 @@ import {
   normalizeSettings,
 } from './LobbyDiscoveryHelpers';
 import { RangeSlider } from '@/modules/lobby-discovery/RangeSlider';
+import { LobbyBoardView } from './LobbyBoardView';
 import {
   MAP_CATALOGUE,
   MAP_CATEGORY_LABELS,
@@ -213,17 +214,25 @@ export class LobbyDiscoveryUI {
 
   private panel!: HTMLDivElement;
   private engine: LobbyDiscoveryEngine;
+  private lobbyBoard: LobbyBoardView;
+  // Offset to add to the local clock to get the feed's clock.
+  private clockOffsetMs = 0;
 
   constructor() {
     this.engine = new LobbyDiscoveryEngine();
+    this.lobbyBoard = new LobbyBoardView({
+      onJoin: (gameID) => this.navigateToGame(`/game/${gameID}`),
+      getAssets: () => this.getAssetContext(),
+    });
     this.loadSettings();
     this.createUI();
     this.updateSleepState();
     URLObserver.subscribe(() => this.updateSleepState());
   }
 
-  receiveLobbyUpdate(lobbies: Lobby[]): void {
+  receiveLobbyUpdate(lobbies: Lobby[], serverTime: number | null = null): void {
     this.lastLobbies = lobbies;
+    if (serverTime !== null) this.clockOffsetMs = serverTime - Date.now();
     this.processLobbies(lobbies);
   }
 
@@ -337,6 +346,7 @@ export class LobbyDiscoveryUI {
 
   private processLobbies(lobbies: Lobby[]): void {
     try {
+      this.updateLobbyBoard(lobbies);
       this.updateCurrentGameInfo();
       this.syncSearchTimer();
 
@@ -451,6 +461,24 @@ export class LobbyDiscoveryUI {
     } catch (error) {
       console.error('[LobbyDiscovery] Error processing lobbies:', error);
     }
+  }
+
+  private updateLobbyBoard(lobbies: Lobby[]): void {
+    const isActive = this.discoveryEnabled && this.criteriaList.length > 0;
+    const matchedIds = new Set<string>();
+    if (isActive) {
+      for (const lobby of lobbies) {
+        const excluded = !this.includeHostedAndCustomLobbies && isHostConfiguredLobby(lobby);
+        if (!excluded && this.engine.matchesCriteria(lobby, this.criteriaList, this.mapFilter)) {
+          matchedIds.add(lobby.gameID);
+        }
+      }
+    }
+    this.lobbyBoard.render({
+      lobbies,
+      matchedIds: isActive ? matchedIds : null,
+      clockOffsetMs: this.clockOffsetMs,
+    });
   }
 
   private getNotificationKey(lobby: Lobby): string {
@@ -1240,6 +1268,7 @@ export class LobbyDiscoveryUI {
     this.criteriaList = this.buildCriteriaFromUI();
     this.saveSettings();
     this.updateFilterCount();
+    this.updateLobbyBoard(this.lastLobbies);
     this.syncSearchTimer({ resetStart: true });
   }
 
@@ -1757,6 +1786,7 @@ export class LobbyDiscoveryUI {
     this.lastUpcomingSlots = new Map();
     this.lastUpcomingMatchSources = new Set();
     this.upcomingSlotSignatures.clear();
+    this.lobbyBoard.dispose();
     this.panel.parentNode?.removeChild(this.panel);
   }
 }
