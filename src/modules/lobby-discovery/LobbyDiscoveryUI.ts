@@ -132,13 +132,14 @@ export class LobbyDiscoveryUI {
     this.engine = new LobbyDiscoveryEngine();
     this.lobbyBoard = new LobbyBoardView({
       onJoin: (gameID) => this.navigateToGame(`/game/${gameID}`),
-      onCardSeen: (gameID) => this.handleCardSeen(gameID),
       getAssets: () => this.getAssetContext(),
     });
     this.loadSettings();
     this.createUI();
     this.updateSleepState();
     URLObserver.subscribe(() => this.updateSleepState());
+    window.addEventListener('blur', this.handleFocusLost);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
   private get criteriaList(): DiscoveryCriteria[] {
@@ -367,7 +368,7 @@ export class LobbyDiscoveryUI {
       this.updateQueueCardPulses(highlight ? liveMatchSources : new Set());
       this.updateSeeAllSignals(highlight && hasSeeAllOnlyMatch, highlight ? seeAllMatchIds : new Set());
       this.boardAlerts.retain(matchedKeys);
-      for (const { key, gameID } of newAlerts) this.startBoardAlert(key, gameID);
+      for (const { key, gameID } of newAlerts) this.badgeNewMatch(key, gameID);
       if (newAlerts.length > 0) {
         this.lastMatchTime = Date.now();
         if (this.soundEnabled) SoundUtils.playGameFoundSound();
@@ -415,14 +416,20 @@ export class LobbyDiscoveryUI {
     else if (seeAllOnly) this.openSeeAllView(queue);
   }
 
-  private startBoardAlert(key: string, gameID: string): void {
-    this.boardAlerts.alert(key, gameID);
+  /** A match that arrives while the window has focus needs no badge: the player sees the board. */
+  private badgeNewMatch(key: string, gameID: string): void {
+    if (BrowserNotificationUtils.isBackgrounded()) this.boardAlerts.alert(key, gameID);
   }
 
-  private handleCardSeen(gameID: string): void {
-    this.boardAlerts.markSeen(gameID);
+  /** Every "New" badge goes when the window loses focus. */
+  private readonly handleFocusLost = (): void => {
+    this.boardAlerts.clear();
     this.updateLobbyBoard(this.lastLobbies);
-  }
+  };
+
+  private readonly handleVisibilityChange = (): void => {
+    if (document.visibilityState === 'hidden') this.handleFocusLost();
+  };
 
   /** Switches between the Lobby Board and OpenFront's original lobby area. The alerts do not change. */
   private setBoardMode(mode: BoardMode): void {
@@ -457,7 +464,7 @@ export class LobbyDiscoveryUI {
       clockOffsetMs: this.clockOffsetMs,
       criteria: isActive ? this.criteriaList : [],
       // An open join or host window hides the alerts, not the board.
-      alerts: this.isDiscoveryFeedbackAllowed() ? this.boardAlerts.getStates() : new Map(),
+      newGameIds: this.isDiscoveryFeedbackAllowed() ? this.boardAlerts.getNewGameIds() : new Set(),
     });
     this.placeSurfaces();
   }
@@ -764,6 +771,8 @@ export class LobbyDiscoveryUI {
 
   cleanup(): void {
     this.isDisposed = true;
+    window.removeEventListener('blur', this.handleFocusLost);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
     this.stopTimer();
     this.stopGameInfoUpdates();
     if (this.pulseSyncTimeout) {

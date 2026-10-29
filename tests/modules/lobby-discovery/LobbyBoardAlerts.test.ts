@@ -184,22 +184,106 @@ describe('Lobby Board alerts', () => {
       expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
     });
 
-    it('removes the badge when the pointer passes over the card', () => {
-      bigFfaSettings();
+    describe('window focus', () => {
+      /** The window gets or loses focus: the mock answers, then the event fires. */
+      const setFocus = (focused: boolean): void => {
+        vi.mocked(BrowserNotificationUtils.isBackgrounded).mockReturnValue(!focused);
+        window.dispatchEvent(new Event(focused ? 'focus' : 'blur'));
+      };
+      const setVisibility = (state: 'visible' | 'hidden'): void => {
+        Object.defineProperty(document, 'visibilityState', { configurable: true, get: () => state });
+        document.dispatchEvent(new Event('visibilitychange'));
+      };
 
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
-      card('ffa-3')!.dispatchEvent(new Event('pointerenter'));
-      expect(newBadge('ffa-4')).toBeTruthy();
+      afterEach(() => {
+        delete (document as any).visibilityState;
+      });
 
-      card('ffa-4')!.dispatchEvent(new Event('pointerenter'));
-      expect(newBadge('ffa-4')).toBeNull();
+      it('gives no badge to a match that arrives while the window has focus, but still plays the sound', () => {
+        bigFfaSettings();
+        vi.mocked(BrowserNotificationUtils.isBackgrounded).mockReturnValue(false);
 
-      ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
-      expect(newBadge('ffa-4')).toBeNull();
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+        expect(card('ffa-4')).toBeTruthy();
+        expect(newBadge('ffa-4')).toBeNull();
+        expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
+        expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(1);
+      });
+
+      it('keeps the badge when the window gets focus, and removes it when the window loses focus again', () => {
+        bigFfaSettings();
+
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+        expect(newBadge('ffa-4')).toBeTruthy();
+
+        setFocus(true);
+        expect(newBadge('ffa-4')).toBeTruthy();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+        expect(newBadge('ffa-4')).toBeTruthy();
+
+        setFocus(false);
+        expect(newBadge('ffa-4')).toBeNull();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+        expect(newBadge('ffa-4')).toBeNull();
+      });
+
+      it('removes the badge when the tab becomes hidden, and not when it becomes visible', () => {
+        bigFfaSettings();
+
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+        setVisibility('visible');
+        expect(newBadge('ffa-4')).toBeTruthy();
+
+        setVisibility('hidden');
+        expect(newBadge('ffa-4')).toBeNull();
+      });
+
+      it('does not remove the badge when the pointer passes over the card', () => {
+        bigFfaSettings();
+
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+        card('ffa-4')!.dispatchEvent(new Event('pointerenter'));
+        card('ffa-4')!.dispatchEvent(new Event('mouseover', { bubbles: true }));
+
+        expect(newBadge('ffa-4')).toBeTruthy();
+      });
+
+      it('plays no second sound when the window loses focus while the lobby keeps matching', () => {
+        bigFfaSettings();
+
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+        setFocus(true);
+        setFocus(false);
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+        expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
+        expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(1);
+      });
+
+      it('stops listening to the window when the notifier is cleaned up', () => {
+        bigFfaSettings();
+        const removed = vi.spyOn(window, 'removeEventListener');
+        const removedDocument = vi.spyOn(document, 'removeEventListener');
+
+        ui = new LobbyDiscoveryUI();
+        ui.cleanup();
+        ui = null;
+
+        expect(removed.mock.calls.map(([type]) => type)).toContain('blur');
+        expect(removedDocument.mock.calls.map(([type]) => type)).toContain('visibilitychange');
+        removed.mockRestore();
+        removedDocument.mockRestore();
+      });
     });
 
-    it('never pulses a card, and keeps the badge after 10 seconds', () => {
+    it('never pulses a card, and keeps the badge while the window stays out of focus', () => {
       bigFfaSettings();
 
       ui = new LobbyDiscoveryUI();
@@ -216,8 +300,7 @@ describe('Lobby Board alerts', () => {
 
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
-      card('ffa-4')!.dispatchEvent(new Event('pointerenter'));
-      vi.advanceTimersByTime(10_000);
+      window.dispatchEvent(new Event('blur'));
       expect(newBadge('ffa-4')).toBeNull();
 
       ui.receiveLobbyUpdate(ffaQueue(false) as any, NOW);

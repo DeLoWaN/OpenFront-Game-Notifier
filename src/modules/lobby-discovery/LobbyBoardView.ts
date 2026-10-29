@@ -7,7 +7,6 @@
 
 import type { Lobby } from '@/types/game';
 import type { DiscoveryCriteria, QueueSource } from './LobbyDiscoveryTypes';
-import type { CardAlertState } from './LobbyBoardAlerts';
 import {
   BOARD_QUEUES,
   buildBoardCardModel,
@@ -29,8 +28,6 @@ export interface LobbyBoardAssets {
 export interface LobbyBoardOptions {
   /** Called from a card's click handler only. */
   onJoin: (gameID: string) => void;
-  /** Called when the pointer passes over a card. */
-  onCardSeen: (gameID: string) => void;
   getAssets: () => LobbyBoardAssets;
 }
 
@@ -51,8 +48,8 @@ export interface LobbyBoardState {
   clockOffsetMs: number;
   /** The active Criteria. They tell which Modifiers a card shows as required or blocked. */
   criteria?: DiscoveryCriteria[];
-  /** The alert state of every card that has one, by `gameID`. */
-  alerts: Map<string, CardAlertState>;
+  /** The `gameID` of every card that shows the "New" badge. */
+  newGameIds: Set<string>;
 }
 
 const BOARD_ID = 'of-lobby-board';
@@ -140,7 +137,7 @@ export class LobbyBoardView {
         const model = buildBoardCardModel(lobby, queue, row, manifest, cdnBase, state.criteria);
         const card = this.cards.get(lobby.gameID) ?? this.createCard(lobby.gameID);
         this.updateCard(card, model);
-        this.applyAlertState(card, state.alerts.get(lobby.gameID));
+        this.applyNewBadge(card, state.newGameIds.has(lobby.gameID));
         card.classList.toggle('of-board-card-match', matchedIds?.has(lobby.gameID) === true);
         card.classList.toggle('of-board-card-dim', matchedIds !== null && !matchedIds.has(lobby.gameID));
         if (card.parentElement !== cell) cell.replaceChildren(card);
@@ -402,7 +399,6 @@ export class LobbyBoardView {
     card.dataset.gameId = gameID;
     // Navigation happens only from this real click, never from a feed update or a timer.
     card.addEventListener('click', () => this.options.onJoin(gameID));
-    card.addEventListener('pointerenter', () => this.options.onCardSeen(gameID));
 
     const thumb = this.createSpan('of-board-thumb');
     const badge = this.createSpan('of-board-badge');
@@ -434,9 +430,9 @@ export class LobbyBoardView {
   }
 
   /** Shows the "New" badge of a card. The badge is a child that updateCard never touches. */
-  private applyAlertState(card: HTMLButtonElement, alert: CardAlertState | undefined): void {
+  private applyNewBadge(card: HTMLButtonElement, isNew: boolean): void {
     const badge = Array.from(card.children).find((child) => child.classList.contains('of-board-new'));
-    if (alert?.isNew) {
+    if (isNew) {
       if (badge) return;
       const newBadge = document.createElement('span');
       newBadge.className = 'of-board-new';
