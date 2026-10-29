@@ -8,13 +8,14 @@ export function getBoardStyles(): string {
   return `
     /* ===================== Lobby Board ===================== */
     /* The board is a child of OpenFront's page grid. It spans every column, and
-       it breaks out of the page column to the full width of the screen. */
+       it breaks out of the page column to the width of the viewport minus a gutter.
+       The view measures both variables in px. */
     .of-board {
       grid-column: 1 / -1;
       grid-row: 2;
       box-sizing: border-box;
-      width: calc(100vw - 32px);
-      margin-left: calc(50% - 50vw + 16px);
+      width: var(--of-board-width);
+      margin-left: var(--of-board-left);
       border: 1px solid var(--of-hud-line-2);
       border-radius: ${RADIUS.xl};
       background: ${BOARD_COLORS.surface};

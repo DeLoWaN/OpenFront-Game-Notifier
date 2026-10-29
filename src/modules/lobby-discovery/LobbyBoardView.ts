@@ -57,6 +57,7 @@ export interface LobbyBoardState {
 
 const BOARD_ID = 'of-lobby-board';
 const FLASH_DURATION_MS = 2_000;
+const GUTTER_PX = 16;
 
 /** The nodes of a card that change with its model. They are built once and then updated in place. */
 interface CardParts {
@@ -93,6 +94,8 @@ export class LobbyBoardView {
   private cardParts = new WeakMap<HTMLButtonElement, CardParts>();
   private signatures = new Map<string, string>();
   private flashTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  private resizeObserver: ResizeObserver | null = null;
+  private readonly onWindowResize = (): void => this.measureLayout();
 
   constructor(private readonly options: LobbyBoardOptions) {}
 
@@ -102,6 +105,7 @@ export class LobbyBoardView {
     if (!root || !this.grid) return;
     root.style.display = '';
     this.takeOverPage();
+    this.startMeasuringLayout();
     this.clockOffsetMs = state.clockOffsetMs;
 
     const queues = groupLobbiesByQueue(state.lobbies);
@@ -191,12 +195,14 @@ export class LobbyBoardView {
   /** Hides the board and gives OpenFront's lobby area back as it was. */
   hide(): void {
     this.stopTicking();
+    this.stopMeasuringLayout();
     if (this.root) this.root.style.display = 'none';
     this.restorePage();
   }
 
   dispose(): void {
     this.stopTicking();
+    this.stopMeasuringLayout();
     for (const timer of this.flashTimers.values()) clearTimeout(timer);
     this.flashTimers.clear();
     this.restorePage();
@@ -234,6 +240,32 @@ export class LobbyBoardView {
         this.setStyle(ancestor, 'overflow-x', 'visible');
       }
     }
+  }
+
+  /** Sets the board's left offset and width, so its edges sit one gutter from the viewport edges. */
+  private measureLayout(): void {
+    if (!this.root || !this.pageGrid) return;
+    // clientWidth excludes the vertical scrollbar, which 100vw includes.
+    const width = document.documentElement.clientWidth - 2 * GUTTER_PX;
+    const left = GUTTER_PX - this.pageGrid.getBoundingClientRect().left;
+    this.root.style.setProperty('--of-board-left', `${left}px`);
+    this.root.style.setProperty('--of-board-width', `${width}px`);
+  }
+
+  private startMeasuringLayout(): void {
+    this.measureLayout();
+    if (this.resizeObserver || !this.pageGrid) return;
+    window.addEventListener('resize', this.onWindowResize);
+    if (typeof ResizeObserver === 'undefined') return;
+    this.resizeObserver = new ResizeObserver(() => this.measureLayout());
+    this.resizeObserver.observe(document.documentElement);
+    this.resizeObserver.observe(this.pageGrid);
+  }
+
+  private stopMeasuringLayout(): void {
+    window.removeEventListener('resize', this.onWindowResize);
+    this.resizeObserver?.disconnect();
+    this.resizeObserver = null;
   }
 
   private setStyle(element: HTMLElement, property: string, value: string): void {

@@ -2,6 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LobbyDiscoveryUI } from '@/modules/lobby-discovery/LobbyDiscoveryUI';
 import { STORAGE_KEYS } from '@/config/constants';
 import { LobbyUtils } from '@/utils/LobbyUtils';
+import { getBoardStyles } from '@/styles/boardStyles';
 
 vi.mock('@/utils/LobbyUtils', () => ({
   LobbyUtils: {
@@ -337,6 +338,102 @@ describe('Lobby Board', () => {
       expect(board()).toBeNull();
       expect(isHidden('ffa-cell')).toBe(false);
       expect(isHidden('side-section')).toBe(false);
+    });
+
+    describe('gutter', () => {
+      class FakeResizeObserver {
+        static instances: FakeResizeObserver[] = [];
+        observed: Element[] = [];
+        disconnected = false;
+        constructor(public callback: () => void) {
+          FakeResizeObserver.instances.push(this);
+        }
+        observe(element: Element): void {
+          this.observed.push(element);
+        }
+        disconnect(): void {
+          this.disconnected = true;
+        }
+      }
+      let gridLeft: number;
+      let viewportWidth: number;
+
+      const pageGrid = () => document.getElementById('lobby-grid') as HTMLElement;
+      const variable = (name: string) => board()!.style.getPropertyValue(name);
+
+      beforeEach(() => {
+        gridLeft = 50;
+        viewportWidth = 1903;
+        FakeResizeObserver.instances = [];
+        (globalThis as any).ResizeObserver = FakeResizeObserver;
+        pageGrid().getBoundingClientRect = () => ({ left: gridLeft }) as DOMRect;
+        Object.defineProperty(document.documentElement, 'clientWidth', {
+          configurable: true,
+          get: () => viewportWidth,
+        });
+      });
+
+      afterEach(() => {
+        delete (globalThis as any).ResizeObserver;
+        delete (document.documentElement as any).clientWidth;
+      });
+
+      it('puts the board 16 px from the left edge and 16 px from the right edge of the viewport', () => {
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+        const left = parseFloat(variable('--of-board-left'));
+        const width = parseFloat(variable('--of-board-width'));
+        expect(gridLeft + left).toBe(16);
+        expect(gridLeft + left + width).toBe(viewportWidth - 16);
+      });
+
+      it('measures again when the window resizes', () => {
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+        gridLeft = 10;
+        viewportWidth = 1600;
+        window.dispatchEvent(new Event('resize'));
+
+        expect(variable('--of-board-left')).toBe('6px');
+        expect(variable('--of-board-width')).toBe('1568px');
+      });
+
+      it('measures again when the viewport or the page grid changes size', () => {
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+        const [observer] = FakeResizeObserver.instances;
+        expect(observer!.observed).toEqual([document.documentElement, pageGrid()]);
+
+        viewportWidth = 1500;
+        observer!.callback();
+        expect(variable('--of-board-width')).toBe('1468px');
+      });
+
+      it('stops measuring when the board is hidden or removed', () => {
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+        const [observer] = FakeResizeObserver.instances;
+
+        ui.cleanup();
+        ui = null;
+
+        expect(observer!.disconnected).toBe(true);
+        viewportWidth = 1000;
+        window.dispatchEvent(new Event('resize'));
+        expect(board()).toBeNull();
+      });
+
+      it('does not use the viewport unit, which counts the scrollbar', () => {
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+        expect(getBoardStyles()).not.toContain('vw');
+        expect(getBoardStyles()).toContain('width: var(--of-board-width)');
+        expect(getBoardStyles()).toContain('margin-left: var(--of-board-left)');
+      });
     });
 
     it('leaves OpenFront\'s page untouched off the lobby page and during a game', () => {
