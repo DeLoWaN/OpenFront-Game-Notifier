@@ -65,6 +65,14 @@ describe('Lobby Board styles', () => {
     expect(css).toMatch(/\.of-board-card-dim:hover \{[^}]*opacity: 0\.[5-9]/);
   });
 
+  it('shows the hover state at once and fades it out when the pointer leaves', () => {
+    // The hover rules set a zero duration, so only the way back uses the base transitions.
+    expect(ruleBody('.of-board-card:hover')).toContain('transition-duration: 0s;');
+    expect(ruleBody('.of-board-card:hover::after')).toContain('transition-duration: 0s;');
+    expect(ruleBody('.of-board-card:hover .of-board-text')).toContain('transition-duration: 0s;');
+    expect(ruleBody('.of-board-card')).toMatch(new RegExp(`transition: opacity ${TIMING.normal}`));
+  });
+
   it('marks the card under the pointer with a 2 px inner frame and a lighter text column', () => {
     expect(ruleBody('.of-board-card::after')).toMatch(new RegExp(`transition: box-shadow ${TIMING.fast}`));
     expect(ruleBody('.of-board-card:hover::after')).toContain('box-shadow: inset 0 0 0 2px var(--of-hud-text-3);');
