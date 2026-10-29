@@ -111,7 +111,7 @@ npm run type-check  # tsc --noEmit
 - `LobbyDiscoveryFilters.ts` — the filter sections. Any container can mount them.
 - `LobbyDiscoveryControls.ts` — the discovery switch, the search timer, the sound and desktop toggles and the Original page switch. Any container can mount them.
 - `LobbyBoardView.ts` — builds the Lobby Board in OpenFront's `game-mode-selector` grid and updates its cards in place
-- `LobbyBoardHelpers.ts` — pure functions: board columns, card model, time badge, format text
+- `LobbyBoardHelpers.ts` — pure functions: board columns, card model, countdown, format text, players text
 - `LobbyBoardAlerts.ts` — in-memory "New" badges of the Lobby Board cards
 - `LobbyBoardMotion.ts` — the slide of a card that changes row and the fade-in of a new card (`Element.animate`, off with `prefers-reduced-motion`)
 - `LobbyBoardSidebar.ts` — the collapsible sidebar that holds the filters
