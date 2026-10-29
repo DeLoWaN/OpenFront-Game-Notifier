@@ -39,6 +39,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - The Lobby Board **header** holds the discovery switch with its status, the search timer, the sound toggle and the desktop notification toggle
 - Every filter section (Modes, Modifiers, Maps, Lobbies) collapses, and the sidebar remembers which ones across reloads
 - If the Lobby Board cannot show on the OpenFront page, the filters and the controls fall back to a floating panel
+- The **Original page** switch, in the Lobby Board header, hides the Lobby Board and brings back OpenFront's own lobby area. The filters and the controls then move to a floating panel, and the same switch in its header brings the Lobby Board back. In this mode the notifier highlights matches on OpenFront's page: the queue cards and the "See all" button pulse, and the matching cards in the See All View get a highlight. A click on a desktop notification opens the See All View when the home page does not show the lobby. The alerts (sound and desktop notification) follow the same rules in both modes. The notifier remembers the mode across reloads, and the Lobby Board is the default
 - Discovery feedback automatically pauses while you're already inside a joined lobby flow
 
 ### Modifier filters
