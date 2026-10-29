@@ -33,6 +33,13 @@ describe('Lobby Board styles', () => {
     return getBoardStyles().match(new RegExp(`(?<!,)\\n\\s*${escaped} \\{([^}]*)\\}`))?.[1] ?? '';
   };
 
+  /** The body of the `@container` block with this exact condition, or '' when there is none. */
+  const containerBlock = (condition: string): string => {
+    const css = getBoardStyles();
+    const start = css.indexOf(`@container ${condition} {`);
+    return start < 0 ? '' : css.slice(start, css.indexOf('\n    }\n', start));
+  };
+
   const zIndexOf = (selector: string): number => Number(ruleBody(selector).match(/z-index: (\d+);/)?.[1] ?? 0);
 
   it('frames a matching card in orange with an overlay above the thumbnail, the text and the gauge', () => {
@@ -111,6 +118,40 @@ describe('Lobby Board styles', () => {
     expect(thumb).toContain('width: var(--of-board-thumb-width);');
     expect(thumb).toContain('flex: none;');
     expect(ruleBody('.of-board-thumb img')).not.toContain('opacity');
+  });
+
+  it('sizes the thumbnail column by the card width: 112 px, then 64 px under 300 px, then 48 px under 200 px', () => {
+    expect(BOARD_SIZES).toMatchObject({
+      thumbWidthPx: 112,
+      thumbWidthNarrowPx: 64,
+      thumbWidthNarrowestPx: 48,
+      narrowCardBelowPx: 300,
+      narrowestCardBelowPx: 200,
+    });
+    // The cell is the container, so the card width decides.
+    expect(ruleBody('.of-board-cell')).toContain('container-type: inline-size;');
+    const narrow = `(width < ${BOARD_SIZES.narrowCardBelowPx}px)`;
+    const narrowest = `(width < ${BOARD_SIZES.narrowestCardBelowPx}px)`;
+    expect(containerBlock(narrow)).toContain(`--of-board-thumb-width: ${BOARD_SIZES.thumbWidthNarrowPx}px;`);
+    expect(containerBlock(narrowest)).toContain(`--of-board-thumb-width: ${BOARD_SIZES.thumbWidthNarrowestPx}px;`);
+    // Both blocks have the same selector, so the later one wins on a card that matches both.
+    const css = getBoardStyles();
+    expect(css.indexOf(`@container ${narrowest}`)).toBeGreaterThan(css.indexOf(`@container ${narrow}`));
+  });
+
+  it('fills the full card height above the gauge with a centred slice of the map', () => {
+    expect(ruleBody('.of-board-card')).toContain('align-items: stretch;');
+    const thumb = ruleBody('.of-board-thumb');
+    expect(thumb).not.toMatch(/(^|[^-])height:|aspect-ratio/);
+    const img = ruleBody('.of-board-thumb img');
+    expect(img).toContain('inset: 0;');
+    expect(img).toContain('height: 100%;');
+    expect(img).toContain('object-fit: cover;');
+    expect(img).toContain('object-position: center;');
+  });
+
+  it('starts the text column at the top of a card that is taller than its text', () => {
+    expect(ruleBody('.of-board-text')).toContain('justify-content: flex-start;');
   });
 
   it('puts the text column on the solid dark background of the card', () => {

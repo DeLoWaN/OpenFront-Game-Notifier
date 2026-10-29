@@ -79,7 +79,9 @@ export function getBoardStyles(): string {
       color: ${BOARD_COLORS.live};
       text-transform: uppercase;
     }
+    /* The cell is the size container, so the card width drives the thumbnail and text rules below. */
     .of-board-cell {
+      container-type: inline-size;
       min-width: 0;
       display: flex;
     }
@@ -129,6 +131,7 @@ export function getBoardStyles(): string {
       width: 100%;
       height: 100%;
       object-fit: cover;
+      object-position: center;
     }
     .of-board-countdown {
       flex: none;
@@ -144,7 +147,7 @@ export function getBoardStyles(): string {
       min-width: 0;
       display: flex;
       flex-direction: column;
-      justify-content: center;
+      justify-content: flex-start;
       gap: 5px;
       padding: 10px 10px 11px;
       background: var(--of-hud-bg-1);
@@ -260,6 +263,17 @@ export function getBoardStyles(): string {
       text-transform: uppercase;
       white-space: nowrap;
       pointer-events: none;
+    }
+    /* A narrower card gets a thinner thumbnail, so the text column stays readable. */
+    @container (width < ${BOARD_SIZES.narrowCardBelowPx}px) {
+      .of-board-card {
+        --of-board-thumb-width: ${BOARD_SIZES.thumbWidthNarrowPx}px;
+      }
+    }
+    @container (width < ${BOARD_SIZES.narrowestCardBelowPx}px) {
+      .of-board-card {
+        --of-board-thumb-width: ${BOARD_SIZES.thumbWidthNarrowestPx}px;
+      }
     }
     .of-board-mods {
       display: flex;

@@ -83,6 +83,14 @@ export const BOARD_COLORS = {
 export const BOARD_SIZES = {
   /** The width of the map thumbnail on the left of a card. */
   thumbWidthPx: 112,
+  /** The thumbnail width of a card narrower than `narrowCardBelowPx`. */
+  thumbWidthNarrowPx: 64,
+  /** The thumbnail width of a card narrower than `narrowestCardBelowPx`. */
+  thumbWidthNarrowestPx: 48,
+  /** A card narrower than this gets the narrow thumbnail. */
+  narrowCardBelowPx: 300,
+  /** A card narrower than this gets the narrowest thumbnail. */
+  narrowestCardBelowPx: 200,
   /** The height of the players gauge along the bottom of a card. */
   gaugeHeightPx: 18,
   /** The width of the "Join ›" slot at the right end of the gauge band. */
