@@ -13,18 +13,23 @@ export interface LobbyDiscoveryControlsOptions {
   discoveryEnabled: boolean;
   soundEnabled: boolean;
   desktopNotificationsEnabled: boolean;
+  /** True while OpenFront's original lobby area shows in place of the Lobby Board. */
+  originalPage: boolean;
   /** Called when the player clicks the status to pause or resume discovery. */
   onToggleDiscovery: () => void;
   /** Called with the new value when the player changes the sound toggle. */
   onSoundChange: (enabled: boolean) => void;
   /** Called with the requested value when the player changes the desktop toggle. */
   onDesktopChange: (enabled: boolean) => void;
+  /** Called with the new value when the player changes the "Original page" switch. */
+  onOriginalPageChange: (enabled: boolean) => void;
 }
 
 export class LobbyDiscoveryControls {
   private discoveryEnabled: boolean;
   private soundEnabled: boolean;
   private desktopEnabled: boolean;
+  private originalPage: boolean;
   private searchActive = false;
   private timerText: string | null = null;
   private root: HTMLElement | null = null;
@@ -33,6 +38,7 @@ export class LobbyDiscoveryControls {
     this.discoveryEnabled = options.discoveryEnabled;
     this.soundEnabled = options.soundEnabled;
     this.desktopEnabled = options.desktopNotificationsEnabled;
+    this.originalPage = options.originalPage;
   }
 
   /** Renders the controls into the container. A second call moves them to the new container. */
@@ -52,6 +58,11 @@ export class LobbyDiscoveryControls {
         ${this.renderIconButton('discovery-sound-toggle', 'Sound alert', ICON_SOUND)}
         ${this.renderIconButton('discovery-desktop-toggle', 'Desktop notification', ICON_BELL)}
       </div>
+      <label class="ld-original-switch" title="Show OpenFront's original lobby area">
+        <input type="checkbox" id="discovery-original-toggle">
+        <span class="ld-original-track" aria-hidden="true"></span>
+        <span>Original page</span>
+      </label>
     `;
     container.appendChild(root);
     this.root = root;
@@ -65,8 +76,14 @@ export class LobbyDiscoveryControls {
     this.$('discovery-desktop-toggle')?.addEventListener('change', (event) => {
       this.options.onDesktopChange((event.target as HTMLInputElement).checked);
     });
+    this.$('discovery-original-toggle')?.addEventListener('change', (event) => {
+      const checked = (event.target as HTMLInputElement).checked;
+      this.originalPage = checked;
+      this.options.onOriginalPageChange(checked);
+    });
 
     this.setSoundOn(this.soundEnabled);
+    this.setOriginalPageOn(this.originalPage);
     this.setDesktopOn(this.desktopEnabled);
     this.setDiscoveryEnabled(this.discoveryEnabled);
     this.setSearchActive(this.searchActive);
@@ -108,6 +125,11 @@ export class LobbyDiscoveryControls {
   setDesktopOn(enabled: boolean): void {
     this.desktopEnabled = enabled;
     this.syncToggle('discovery-desktop-toggle', enabled);
+  }
+
+  setOriginalPageOn(enabled: boolean): void {
+    this.originalPage = enabled;
+    this.syncToggle('discovery-original-toggle', enabled);
   }
 
   private syncToggle(id: string, on: boolean): void {

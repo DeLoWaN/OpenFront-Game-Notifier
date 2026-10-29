@@ -88,7 +88,8 @@ describe('LobbyDiscoveryUI', () => {
 
   beforeEach(() => {
     vi.useFakeTimers();
-    store = new Map();
+    // These tests drive OpenFront's original lobby area, where the highlighting runs.
+    store = new Map([[STORAGE_KEYS.lobbyBoardMode, 'original']]);
     ui = null;
 
     (globalThis as any).GM_getValue = vi.fn((key: string, defaultValue?: unknown) => {
@@ -451,6 +452,7 @@ describe('LobbyDiscoveryUI', () => {
   });
 
   it('renders without the old player-list discovery slot and exposes FFA and 2x controls', () => {
+    store.set(STORAGE_KEYS.lobbyBoardMode, 'board');
     store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
       criteria: [],
       discoveryEnabled: true,
@@ -644,6 +646,7 @@ describe('LobbyDiscoveryUI', () => {
   });
 
   it('notifies on a match at Queue Position 1 without pulsing the live (featured) card', () => {
+    store.set(STORAGE_KEYS.lobbyBoardMode, 'board');
     store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
       criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: 30, maxPlayers: null }],
       discoveryEnabled: true,
@@ -999,6 +1002,7 @@ describe('LobbyDiscoveryUI', () => {
 
   describe('board card map thumbnail asset resolution', () => {
     beforeEach(() => {
+      store.set(STORAGE_KEYS.lobbyBoardMode, 'board');
       store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
         criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null }],
         discoveryEnabled: true,

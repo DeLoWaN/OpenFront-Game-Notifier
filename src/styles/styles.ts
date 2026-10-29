@@ -156,6 +156,39 @@ export function getStyles(): string {
       stroke-linejoin: round;
     }
     .ld-icon-btn input { display: none; }
+    .ld-original-switch {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      flex-shrink: 0;
+      font-size: 11px;
+      color: var(--of-hud-text-3);
+      cursor: pointer;
+      user-select: none;
+    }
+    .ld-original-switch:hover { color: var(--of-hud-text-1); }
+    .ld-original-switch input { display: none; }
+    .ld-original-track {
+      position: relative;
+      width: 24px;
+      height: 14px;
+      border-radius: 7px;
+      background: var(--of-hud-bg-3);
+      transition: background ${TIMING.fast};
+    }
+    .ld-original-track::after {
+      content: '';
+      position: absolute;
+      top: 2px;
+      left: 2px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--of-hud-text-2);
+      transition: transform ${TIMING.fast};
+    }
+    .ld-original-switch input:checked + .ld-original-track { background: var(--of-hud-accent); }
+    .ld-original-switch input:checked + .ld-original-track::after { transform: translateX(10px); }
     .ld-mode-btn input { display: none; }
     .ld-chip input { display: none; }
 

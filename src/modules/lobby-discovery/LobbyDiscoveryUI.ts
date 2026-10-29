@@ -9,6 +9,7 @@ import { SoundUtils } from '@/utils/SoundUtils';
 import { URLObserver } from '@/utils/URLObserver';
 import type { Lobby } from '@/types/game';
 import type {
+  BoardMode,
   DiscoveryCriteria,
   LobbyDiscoverySettings,
   MapFilter,
@@ -94,6 +95,7 @@ export class LobbyDiscoveryUI {
   private seenLobbies: Set<string> = new Set();
   private desktopNotifiedLobbies: Set<string> = new Set();
   private sleeping = false;
+  private boardMode: BoardMode = 'board';
   private isDisposed = false;
 
   private lastLobbies: Lobby[] = [];
@@ -166,16 +168,20 @@ export class LobbyDiscoveryUI {
     this.soundEnabled = settings.soundEnabled;
     this.desktopNotificationsEnabled = settings.desktopNotificationsEnabled;
     this.discoveryEnabled = settings.discoveryEnabled;
+    this.boardMode =
+      GM_getValue<string>(STORAGE_KEYS.lobbyBoardMode, 'board') === 'original' ? 'original' : 'board';
     this.controls = new LobbyDiscoveryControls({
       discoveryEnabled: settings.discoveryEnabled,
       soundEnabled: settings.soundEnabled,
       desktopNotificationsEnabled: settings.desktopNotificationsEnabled,
+      originalPage: this.boardMode === 'original',
       onToggleDiscovery: () => this.setDiscoveryEnabled(!this.discoveryEnabled, { resetTimer: true }),
       onSoundChange: (enabled) => {
         this.soundEnabled = enabled;
         this.saveSettings();
       },
       onDesktopChange: (enabled) => void this.handleDesktopNotificationChange(enabled),
+      onOriginalPageChange: (enabled) => this.setBoardMode(enabled ? 'original' : 'board'),
     });
     this.filters = new LobbyDiscoveryFilters({
       initial: {
@@ -335,8 +341,10 @@ export class LobbyDiscoveryUI {
         queueLobbies.forEach((lobby, index) => evaluate(lobby, queue, index));
       }
 
-      this.updateQueueCardPulses(liveMatchSources);
-      this.updateSeeAllSignals(hasSeeAllOnlyMatch, seeAllMatchIds);
+      // The Lobby Board shows the matches itself: only the original page needs these signals.
+      const highlight = this.boardMode === 'original';
+      this.updateQueueCardPulses(highlight ? liveMatchSources : new Set());
+      this.updateSeeAllSignals(highlight && hasSeeAllOnlyMatch, highlight ? seeAllMatchIds : new Set());
       this.boardAlerts.retain(matchedKeys);
       for (const { key, gameID } of newAlerts) this.startBoardAlert(key, gameID);
       if (newAlerts.length > 0) {
@@ -404,8 +412,17 @@ export class LobbyDiscoveryUI {
     this.updateLobbyBoard(this.lastLobbies);
   }
 
+  /** Switches between the Lobby Board and OpenFront's original lobby area. The alerts do not change. */
+  private setBoardMode(mode: BoardMode): void {
+    if (mode === this.boardMode) return;
+    this.boardMode = mode;
+    GM_setValue(STORAGE_KEYS.lobbyBoardMode, mode);
+    this.controls.setOriginalPageOn(mode === 'original');
+    this.processLobbies(this.lastLobbies);
+  }
+
   private updateLobbyBoard(lobbies: Lobby[]): void {
-    if (this.sleeping || !this.isDiscoveryFeedbackAllowed()) {
+    if (this.sleeping || this.boardMode === 'original' || !this.isDiscoveryFeedbackAllowed()) {
       this.lobbyBoard.hide();
       this.placeSurfaces();
       return;
@@ -699,11 +716,12 @@ export class LobbyDiscoveryUI {
 
   /**
    * The filters and the controls live in the Lobby Board while it is on the
-   * page. When it cannot show, they move to the floating panel. A container
+   * page. When it cannot show, or in original page mode, they move to the
+   * floating panel. A container
    * that Lit removed from the page is replaced by the new one.
    */
   private placeSurfaces(): void {
-    const hosts = this.lobbyBoard.getHosts();
+    const hosts = this.boardMode === 'board' ? this.lobbyBoard.getHosts() : null;
     if (hosts) {
       this.detachPanel();
       this.mountSurfaces(hosts.controls, hosts.sidebarBody);
