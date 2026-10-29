@@ -156,27 +156,23 @@ describe('Lobby Board alerts', () => {
     });
   });
 
-  describe('"New" badge and pulse', () => {
+  describe('"New" badge', () => {
     const card = (gameID: string): HTMLElement | null =>
       document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
     const newBadge = (gameID: string): Element | null | undefined =>
       card(gameID)?.querySelector('.of-board-new');
-    const pulsing = (gameID: string): boolean | undefined =>
-      card(gameID)?.classList.contains('of-board-card-pulse');
 
-    it('gives the card that alerted a "New" badge and a pulse, and no other card', () => {
+    it('gives the card that alerted a "New" badge, and no other card', () => {
       bigFfaSettings();
 
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
 
       expect(newBadge('ffa-4')?.textContent).toBe('New');
-      expect(pulsing('ffa-4')).toBe(true);
       expect(newBadge('ffa-3')).toBeNull();
-      expect(pulsing('ffa-3')).toBe(false);
     });
 
-    it('keeps the badge and the pulse across feed updates, without a second alert', () => {
+    it('keeps the badge across feed updates, without a second alert', () => {
       bigFfaSettings();
 
       ui = new LobbyDiscoveryUI();
@@ -185,7 +181,6 @@ describe('Lobby Board alerts', () => {
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW + 3_000);
 
       expect(newBadge('ffa-4')).toBeTruthy();
-      expect(pulsing('ffa-4')).toBe(true);
       expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
     });
 
@@ -204,21 +199,19 @@ describe('Lobby Board alerts', () => {
       expect(newBadge('ffa-4')).toBeNull();
     });
 
-    it('stops the pulse after 10 seconds without a feed update, and keeps the badge until the pointer passes', () => {
+    it('never pulses a card, and keeps the badge after 10 seconds', () => {
       bigFfaSettings();
 
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+      expect(document.querySelector('.of-board-card-pulse')).toBeNull();
 
-      vi.advanceTimersByTime(9_999);
-      expect(pulsing('ffa-4')).toBe(true);
-
-      vi.advanceTimersByTime(1);
-      expect(pulsing('ffa-4')).toBe(false);
+      vi.advanceTimersByTime(10_000);
       expect(newBadge('ffa-4')).toBeTruthy();
+      expect(document.querySelector('.of-board-card-pulse')).toBeNull();
     });
 
-    it('badges and pulses the card again when the lobby stops matching and matches again', () => {
+    it('badges the card again when the lobby stops matching and matches again', () => {
       bigFfaSettings();
 
       ui = new LobbyDiscoveryUI();
@@ -231,17 +224,15 @@ describe('Lobby Board alerts', () => {
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
 
       expect(newBadge('ffa-4')).toBeTruthy();
-      expect(pulsing('ffa-4')).toBe(true);
     });
 
-    it('shows no badge and no pulse when the lobby matches but discovery is paused', () => {
+    it('shows no badge when the lobby matches but discovery is paused', () => {
       bigFfaSettings({ discoveryEnabled: false });
 
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
 
       expect(newBadge('ffa-4')).toBeNull();
-      expect(pulsing('ffa-4')).toBe(false);
     });
   });
 
@@ -276,7 +267,7 @@ describe('Lobby Board alerts', () => {
     ];
 
     it.each(gates)(
-      'keeps the board visible but raises no alert and no pulse while %s',
+      'keeps the board visible but raises no alert while %s',
       (_name, open) => {
         bigFfaSettings();
         open();
@@ -289,7 +280,6 @@ describe('Lobby Board alerts', () => {
         expect(SoundUtils.playGameFoundSound).not.toHaveBeenCalled();
         expect(BrowserNotificationUtils.show).not.toHaveBeenCalled();
         expect(card('ffa-4')?.querySelector('.of-board-new')).toBeNull();
-        expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(false);
         expect(document.querySelector('.of-discovery-card-active')).toBeNull();
       }
     );
@@ -340,7 +330,7 @@ describe('Lobby Board alerts', () => {
       expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(2);
     });
 
-    it('shows the badge and the pulse of an earlier alert again when the window closes', () => {
+    it('shows the badge of an earlier alert again when the window closes', () => {
       bigFfaSettings();
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
@@ -359,21 +349,19 @@ describe('Lobby Board alerts', () => {
     const card = (gameID: string): HTMLElement | null =>
       document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
 
-    it('drops the badge and the pulse of a card that no longer matches', () => {
+    it('drops the badge of a card that no longer matches', () => {
       bigFfaSettings();
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
       expect(card('ffa-4')?.querySelector('.of-board-new')).toBeTruthy();
-      expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(true);
 
       // One click makes Compact a required Modifier. The lobby is not compact.
       (document.getElementById('modifier-isCompact') as HTMLButtonElement).click();
 
       expect(card('ffa-4')?.querySelector('.of-board-new')).toBeNull();
-      expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(false);
     });
 
-    it('keeps the badge and the pulse of a card that still matches', () => {
+    it('keeps the badge of a card that still matches', () => {
       bigFfaSettings();
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
@@ -384,7 +372,6 @@ describe('Lobby Board alerts', () => {
       hostedToggle.dispatchEvent(new Event('change'));
 
       expect(card('ffa-4')?.querySelector('.of-board-new')).toBeTruthy();
-      expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(true);
     });
   });
 

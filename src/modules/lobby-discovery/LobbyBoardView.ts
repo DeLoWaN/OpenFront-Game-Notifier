@@ -433,9 +433,8 @@ export class LobbyBoardView {
     return span;
   }
 
-  /** Shows the "New" badge and the pulse of a card. The badge is a child that updateCard never touches. */
+  /** Shows the "New" badge of a card. The badge is a child that updateCard never touches. */
   private applyAlertState(card: HTMLButtonElement, alert: CardAlertState | undefined): void {
-    card.classList.toggle('of-board-card-pulse', alert?.isPulsing === true);
     const badge = Array.from(card.children).find((child) => child.classList.contains('of-board-new'));
     if (alert?.isNew) {
       if (badge) return;

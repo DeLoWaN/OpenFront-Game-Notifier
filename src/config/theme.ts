@@ -46,6 +46,8 @@ export const BOARD_COLORS = {
   surface: 'rgba(16, 10, 24, 0.92)',
   /** The orange of the Live row, the countdown badge and a nearly full bar. */
   live: '#e8600c',
+  /** The soft inner glow of the flash after a desktop notification click. */
+  liveGlow: 'rgba(232, 96, 12, 0.45)',
   text: '#fff',
   textSoft: '#ddd',
   /** The text on the accent tag. */

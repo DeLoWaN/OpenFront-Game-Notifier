@@ -240,15 +240,18 @@ export function getBoardStyles(): string {
       font-style: italic;
       color: var(--of-hud-text-4);
     }
+    /* The frame stays inside the card, so it never touches a neighbour. */
     .of-board-card-match {
-      border-color: ${COLORS.accentLine};
-      box-shadow: inset 0 0 0 1px ${COLORS.accentLine};
+      border-color: ${BOARD_COLORS.live};
+      box-shadow: inset 0 0 0 1px ${BOARD_COLORS.live};
     }
     .of-board-card-dim {
-      opacity: 0.42;
+      opacity: 0.3;
+      filter: grayscale(0.7);
     }
     .of-board-card-dim:hover {
       opacity: 0.8;
+      filter: none;
     }
     .of-board-new {
       position: absolute;
@@ -264,12 +267,17 @@ export function getBoardStyles(): string {
       text-transform: uppercase;
       color: ${BOARD_COLORS.onNew};
     }
-    .of-board-card-pulse {
-      animation: discoveryCardActiveBeacon 1.45s ease-in-out infinite;
+    /* The flash follows a click on a notification. Its glow is inset, so it stays in the card. */
+    @keyframes ofBoardFlash {
+      0%, 100% {
+        box-shadow: inset 0 0 0 1px ${BOARD_COLORS.live};
+      }
+      50% {
+        box-shadow: inset 0 0 0 4px ${BOARD_COLORS.live}, inset 0 0 28px ${BOARD_COLORS.liveGlow};
+      }
     }
-    /* The flash follows a click on a notification. It wins over the pulse. */
     .of-board-card.of-board-card-flash {
-      animation: discoveryCardActiveBeacon 0.5s ease-in-out 4;
+      animation: ofBoardFlash 0.5s ease-in-out 4;
     }
   `;
 }

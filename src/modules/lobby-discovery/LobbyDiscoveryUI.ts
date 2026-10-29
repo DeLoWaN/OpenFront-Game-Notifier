@@ -27,7 +27,7 @@ import {
 import { LobbyDiscoveryFilters, type FilterChange } from './LobbyDiscoveryFilters';
 import { LobbyBoardView } from './LobbyBoardView';
 import { BOARD_QUEUES, groupLobbiesByQueue } from './LobbyBoardHelpers';
-import { LobbyBoardAlerts, PULSE_DURATION_MS } from './LobbyBoardAlerts';
+import { LobbyBoardAlerts } from './LobbyBoardAlerts';
 import { formatFilterSummary } from './LobbyBoardSidebarHelpers';
 import { LobbyDiscoveryControls } from './LobbyDiscoveryControls';
 
@@ -125,8 +125,6 @@ export class LobbyDiscoveryUI {
   private engine: LobbyDiscoveryEngine;
   private lobbyBoard: LobbyBoardView;
   private boardAlerts = new LobbyBoardAlerts();
-  // One timer per alert: it redraws the board when the pulse ends.
-  private pulseEndTimers = new Set<ReturnType<typeof setTimeout>>();
   // Offset to add to the local clock to get the feed's clock.
   private clockOffsetMs = 0;
 
@@ -211,7 +209,7 @@ export class LobbyDiscoveryUI {
     if (change !== 'criteria') this.processLobbies(this.lastLobbies);
   }
 
-  /** A card that no longer matches loses its "New" badge and its pulse at once, without a feed update. */
+  /** A card that no longer matches loses its "New" badge at once, without a feed update. */
   private dropAlertsOfNonMatches(): void {
     const matchedKeys = new Set<string>();
     for (const { lobby, matched } of this.evaluateLobbies(this.lastLobbies)) {
@@ -418,12 +416,7 @@ export class LobbyDiscoveryUI {
   }
 
   private startBoardAlert(key: string, gameID: string): void {
-    this.boardAlerts.alert(key, gameID, Date.now());
-    const timer = setTimeout(() => {
-      this.pulseEndTimers.delete(timer);
-      this.updateLobbyBoard(this.lastLobbies);
-    }, PULSE_DURATION_MS);
-    this.pulseEndTimers.add(timer);
+    this.boardAlerts.alert(key, gameID);
   }
 
   private handleCardSeen(gameID: string): void {
@@ -464,7 +457,7 @@ export class LobbyDiscoveryUI {
       clockOffsetMs: this.clockOffsetMs,
       criteria: isActive ? this.criteriaList : [],
       // An open join or host window hides the alerts, not the board.
-      alerts: this.isDiscoveryFeedbackAllowed() ? this.boardAlerts.getStates(Date.now()) : new Map(),
+      alerts: this.isDiscoveryFeedbackAllowed() ? this.boardAlerts.getStates() : new Map(),
     });
     this.placeSurfaces();
   }
@@ -783,8 +776,6 @@ export class LobbyDiscoveryUI {
     this.seeAllObserver?.disconnect();
     this.seeAllObserver = null;
     this.observedSeeAllView = null;
-    for (const timer of this.pulseEndTimers) clearTimeout(timer);
-    this.pulseEndTimers.clear();
     this.boardAlerts.clear();
     this.lobbyBoard.dispose();
     this.filters.cleanup();
