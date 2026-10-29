@@ -109,6 +109,19 @@ export function getBoardChromeStyles(): string {
       display: none;
     }
 
+    /* The sidebar is too narrow for the label and both steppers on one line. */
+    .of-board-sidebar .ld-slider-label {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 6px;
+    }
+    .of-board-sidebar .ld-slider-label .val {
+      display: flex;
+      align-items: center;
+      flex-wrap: nowrap;
+      white-space: nowrap;
+    }
+
     /* The floating panel's slots take no box of their own. */
     .ld-panel-slot {
       display: contents;
