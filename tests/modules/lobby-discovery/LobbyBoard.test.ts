@@ -102,12 +102,12 @@ function hosted(gameID: string, extra: Record<string, unknown> = {}) {
   };
 }
 
-function special(gameID: string, extra: Record<string, unknown> = {}) {
+function special(gameID: string, extra: Record<string, unknown> = {}, config: Record<string, unknown> = {}) {
   return {
     gameID,
     publicGameType: 'special',
     numClients: 1,
-    gameConfig: { gameMode: 'Free For All', gameMap: 'Africa', maxPlayers: 50 },
+    gameConfig: { gameMode: 'Free For All', gameMap: 'Africa', maxPlayers: 50, ...config },
     ...extra,
   };
 }
@@ -840,14 +840,14 @@ describe('Lobby Board', () => {
       expect(modifiers(cardIn('ffa', 0))).toEqual([['Random Spawn', 'required']]);
     });
 
-    it('tags a Custom Lobby "Custom" on its format line, and no other lobby', () => {
+    it('tags a Custom Lobby of the Special Queue "Custom" as the first item of its Modifier chips row', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(
         [
           ffa('ffa-0'),
           special('special-0'),
-          special('special-1', { custom: true }),
-          hosted('hosted-0'),
+          special('special-1', { custom: true }, { gameMapSize: 'Compact' }),
+          hosted('hosted-0', { custom: true }),
         ] as any,
         NOW
       );
@@ -857,8 +857,40 @@ describe('Lobby Board', () => {
       expect(tags(cardIn('ffa', 0))).toEqual([]);
       expect(tags(cardIn('special', 0))).toEqual([]);
       expect(tags(cardIn('special', 1))).toEqual(['Custom']);
-      expect(cardIn('special', 1)?.querySelector('.of-board-formatline .of-board-tag')).toBeTruthy();
+      const chipsRow = cardIn('special', 1)!.querySelector('.of-board-mods')!;
+      expect(Array.from(chipsRow.children).map((el) => el.className)).toEqual(['of-board-tag', 'of-board-mod']);
+      expect(chipsRow.firstElementChild?.textContent).toBe('Custom');
+      expect(cardIn('special', 1)!.querySelector('.of-board-formatline .of-board-tag')).toBeNull();
+      // Every Hosted Lobby is custom, so the tag tells nothing there.
       expect(tags(cardIn('hosted', 0))).toEqual([]);
+    });
+
+    it('adds and removes the Custom tag in place and keeps the Modifier chip nodes', () => {
+      const lobbies = (custom: boolean) =>
+        [
+          ffa('ffa-0'),
+          // A Custom Lobby takes its Modifiers from the host's settings.
+          special(
+            'special-0',
+            { custom },
+            { gameMapSize: 'Compact', randomSpawn: true, publicGameModifiers: { isCompact: true, isRandomSpawn: true } }
+          ),
+        ] as any;
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(lobbies(false), NOW);
+      const chipsRow = cardIn('special', 0)!.querySelector('.of-board-mods')!;
+      const rowTexts = () => Array.from(chipsRow.children).map((el) => `${el.className}:${el.textContent}`);
+      const nodesBefore = Array.from(chipsRow.children);
+      expect(rowTexts()).toEqual(['of-board-mod:Compact', 'of-board-mod:Random Spawn']);
+
+      ui.receiveLobbyUpdate(lobbies(true), NOW);
+      expect(cardIn('special', 0)!.querySelector('.of-board-mods')).toBe(chipsRow);
+      expect(rowTexts()).toEqual(['of-board-tag:Custom', 'of-board-mod:Compact', 'of-board-mod:Random Spawn']);
+      // The existing chip nodes are reused, so only one node is new.
+      expect(nodesBefore.every((node) => node.isConnected)).toBe(true);
+
+      ui.receiveLobbyUpdate(lobbies(false), NOW);
+      expect(rowTexts()).toEqual(['of-board-mod:Compact', 'of-board-mod:Random Spawn']);
     });
 
     it('shows a countdown on a Hosted Lobby that has autoStartAt', () => {

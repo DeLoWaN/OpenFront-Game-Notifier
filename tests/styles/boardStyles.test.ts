@@ -279,6 +279,18 @@ describe('Lobby Board styles', () => {
     expect(greys).not.toContain(colorOf(BOARD_COLORS.live));
   });
 
+  it('gives the Custom tag the height of a Modifier chip, so it sits in the chips row without a gap', () => {
+    const chip = ruleBody('.of-board-mod');
+    expect(chip).toContain('padding: 1px 6px;');
+    expect(chip).toContain('font-size: 10.5px;');
+    expect(chip).toContain('line-height: 1.5;');
+    const tag = ruleBody('.of-board-tag');
+    expect(tag).toContain('padding: 1px 5px;');
+    // 10.5 px × 1.5, the line box of a chip.
+    expect(tag).toContain('line-height: 15.75px;');
+    expect(tag).toContain('border-radius: 4px;');
+  });
+
   it('shows the thumbnail without a bottom gradient', () => {
     const css = getBoardStyles();
     expect(css).not.toContain('of-board-thumb::after');

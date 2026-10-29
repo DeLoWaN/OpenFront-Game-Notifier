@@ -42,7 +42,8 @@ export interface BoardCardModel {
   /** The share of the capacity that the players fill, from 0 to 100. */
   fillPercent: number;
   modifiers: BoardModifier[];
-  isCustom: boolean;
+  /** True for a Custom Lobby of the Special Queue. Every Hosted Lobby is custom, so a Hosted card has no tag. */
+  hasCustomTag: boolean;
 }
 
 /** Groups the lobbies by Queue and keeps the feed order inside each Queue. */
@@ -107,7 +108,7 @@ export function buildBoardCardModel(
     fillPercent:
       players !== null && capacity ? Math.min(100, Math.round((players / capacity) * 100)) : 0,
     modifiers: getBoardModifiers(lobby, criteria),
-    isCustom: lobby.custom === true,
+    hasCustomTag: queue === 'special' && lobby.custom === true,
   };
 }
 

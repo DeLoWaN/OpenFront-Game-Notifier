@@ -184,16 +184,16 @@ export function getBoardStyles(): string {
       line-height: 1.25;
       color: var(--of-hud-text-1);
     }
+    /* The Custom tag leads the chips row, so it takes the line box of a chip. */
     .of-board-tag {
-      flex: none;
-      padding: 0 5px;
-      border-radius: 3px;
+      padding: 1px 5px;
+      border-radius: 4px;
       background: var(--of-hud-accent);
       font-size: 9px;
       font-weight: 800;
       letter-spacing: 0.5px;
       text-transform: uppercase;
-      line-height: 1.5;
+      line-height: 15.75px;
       white-space: nowrap;
       color: ${BOARD_COLORS.onAccent};
     }

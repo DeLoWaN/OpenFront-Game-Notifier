@@ -74,7 +74,6 @@ interface CardParts {
   thumb: HTMLElement;
   nameLine: HTMLElement;
   name: HTMLElement;
-  formatLine: HTMLElement;
   format: HTMLElement;
   modifiers: HTMLElement;
   gauge: HTMLElement;
@@ -489,7 +488,7 @@ export class LobbyBoardView {
     join.setAttribute('aria-hidden', 'true');
     card.append(thumb, text, gauge, join);
 
-    this.cardParts.set(card, { thumb, nameLine, name, formatLine, format, modifiers, gauge, fill, players, percent });
+    this.cardParts.set(card, { thumb, nameLine, name, format, modifiers, gauge, fill, players, percent });
     this.cards.set(gameID, card);
     return card;
   }
@@ -543,27 +542,22 @@ export class LobbyBoardView {
 
     this.setText(parts.name, toUnbreakableHyphens(model.mapName));
     this.setText(parts.format, model.formatText);
-    this.reconcileChildren(
-      parts.formatLine,
-      1,
-      model.isCustom ? [{ className: 'of-board-tag', text: 'Custom' }] : []
-    );
 
     parts.gauge.classList.toggle('of-board-gauge-hot', model.fillPercent >= NEARLY_FULL_PERCENT);
     parts.fill.style.width = `${model.fillPercent}%`;
     this.setText(parts.players, getBoardPlayersText(model.players, model.capacity));
     this.setText(parts.percent, model.capacity === null ? '' : `· ${model.fillPercent}%`);
 
-    this.reconcileChildren(
-      parts.modifiers,
-      0,
-      model.modifiers.length === 0
+    // The Custom tag is the first item of the chips row.
+    this.reconcileChildren(parts.modifiers, 0, [
+      ...(model.hasCustomTag ? [{ className: 'of-board-tag', text: 'Custom' }] : []),
+      ...(model.modifiers.length === 0
         ? [{ className: 'of-board-nomods', text: 'No modifiers' }]
         : model.modifiers.map((modifier) => ({
             className: `of-board-mod${modifier.state === 'neutral' ? '' : ` of-board-mod-${modifier.state}`}`,
             text: modifier.name,
-          }))
-    );
+          }))),
+    ]);
 
     card.setAttribute('aria-label', `Open ${model.mapName} in OpenFront's join modal`);
   }
