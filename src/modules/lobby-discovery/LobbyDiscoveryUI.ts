@@ -422,7 +422,7 @@ export class LobbyDiscoveryUI {
   }
 
   private updateLobbyBoard(lobbies: Lobby[]): void {
-    if (this.sleeping || this.boardMode === 'original' || !this.isDiscoveryFeedbackAllowed()) {
+    if (this.sleeping || this.boardMode === 'original' || !LobbyUtils.isOnLobbyPage()) {
       this.lobbyBoard.hide();
       this.placeSurfaces();
       return;
@@ -442,7 +442,8 @@ export class LobbyDiscoveryUI {
       matchedIds: isActive ? matchedIds : null,
       clockOffsetMs: this.clockOffsetMs,
       criteria: isActive ? this.criteriaList : [],
-      alerts: this.boardAlerts.getStates(Date.now()),
+      // An open join or host window hides the alerts, not the board.
+      alerts: this.isDiscoveryFeedbackAllowed() ? this.boardAlerts.getStates(Date.now()) : new Map(),
     });
     this.placeSurfaces();
   }

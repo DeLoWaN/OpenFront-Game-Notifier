@@ -245,6 +245,56 @@ describe('Lobby Board alerts', () => {
     });
   });
 
+  describe('open join or host window', () => {
+    const card = (gameID: string): HTMLElement | null =>
+      document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
+    const board = (): HTMLElement | null => document.getElementById('of-lobby-board');
+    const setJoinLobby = (value: string): void => {
+      (document.querySelector('join-lobby-modal') as any).currentLobbyId = value;
+    };
+
+    const gates: Array<[string, () => void, () => void]> = [
+      [
+        'the join window is open',
+        () => setJoinLobby('joined-lobby'),
+        () => setJoinLobby(''),
+      ],
+      [
+        'the host window is open',
+        () => ((document.querySelector('host-lobby-modal') as any).lobbyId = 'hosted-lobby'),
+        () => ((document.querySelector('host-lobby-modal') as any).lobbyId = ''),
+      ],
+      [
+        'a public lobby is highlighted',
+        () => {
+          const publicLobby = document.createElement('public-lobby') as any;
+          publicLobby.isLobbyHighlighted = true;
+          document.body.append(publicLobby);
+        },
+        () => document.querySelector('public-lobby')?.remove(),
+      ],
+    ];
+
+    it.each(gates)(
+      'keeps the board visible but raises no alert and no pulse while %s',
+      (_name, open) => {
+        bigFfaSettings();
+        open();
+
+        ui = new LobbyDiscoveryUI();
+        ui.receiveLobbyUpdate(ffaQueue(true) as any, NOW);
+
+        expect(board()?.style.display).not.toBe('none');
+        expect(card('ffa-4')).toBeTruthy();
+        expect(SoundUtils.playGameFoundSound).not.toHaveBeenCalled();
+        expect(BrowserNotificationUtils.show).not.toHaveBeenCalled();
+        expect(card('ffa-4')?.querySelector('.of-board-new')).toBeNull();
+        expect(card('ffa-4')?.classList.contains('of-board-card-pulse')).toBe(false);
+        expect(document.querySelector('.of-discovery-card-active')).toBeNull();
+      }
+    );
+  });
+
   describe('desktop notification click', () => {
     const card = (gameID: string): HTMLElement | null =>
       document.querySelector(`.of-board-card[data-game-id="${gameID}"]`);
