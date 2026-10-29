@@ -1,0 +1,172 @@
+/**
+ * CSS of the Lobby Board.
+ */
+
+import { COLORS, FONTS, RADIUS, TIMING } from '@/config/theme';
+
+export function getBoardStyles(): string {
+  return `
+    /* ===================== Lobby Board ===================== */
+    /* The board is a child of OpenFront's page grid. It spans every column, and
+       it breaks out of the page column to the full width of the screen. */
+    .of-board {
+      grid-column: 1 / -1;
+      grid-row: 2;
+      box-sizing: border-box;
+      width: calc(100vw - 32px);
+      margin-left: calc(50% - 50vw + 16px);
+      border: 1px solid var(--of-hud-line-2);
+      border-radius: ${RADIUS.xl};
+      background: rgba(16, 10, 24, 0.92);
+      color: var(--of-hud-text-1);
+      font-family: ${FONTS.body};
+      overflow: hidden;
+    }
+    .of-board-head {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 10px 16px;
+      border-bottom: 1px solid var(--of-hud-line-1);
+    }
+    .of-board-title {
+      font-weight: 800;
+      letter-spacing: 0.3px;
+    }
+    .of-board-totals {
+      font-size: 12px;
+      color: var(--of-hud-text-2);
+    }
+    .of-board-grid {
+      display: grid;
+      grid-template-columns: 54px repeat(4, minmax(0, 1fr));
+      gap: 8px 10px;
+      align-items: stretch;
+      padding: 14px 16px 16px;
+    }
+    .of-board-colhead {
+      display: flex;
+      align-items: baseline;
+      gap: 8px;
+      padding: 2px 4px 4px;
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      color: var(--of-hud-text-3);
+    }
+    .of-board-colhead b {
+      font-size: 13px;
+      letter-spacing: 0.6px;
+      color: var(--of-hud-text-1);
+    }
+    .of-board-colhead em {
+      font-style: normal;
+      color: var(--of-hud-accent);
+    }
+    .of-board-rowlabel {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-right: 1px solid var(--of-hud-line-1);
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      color: var(--of-hud-text-4);
+    }
+    .of-board-rowlabel-live {
+      color: #e8600c;
+      text-transform: uppercase;
+    }
+    .of-board-cell {
+      min-width: 0;
+      display: flex;
+    }
+    .of-board-empty {
+      flex: 1;
+      min-height: 84px;
+      border: 1px dashed var(--of-hud-line-1);
+      border-radius: ${RADIUS.lg};
+    }
+
+    .of-board-card {
+      position: relative;
+      flex: 1;
+      min-width: 0;
+      min-height: 84px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 8px;
+      overflow: hidden;
+      border: 1px solid var(--of-hud-line-2);
+      border-radius: ${RADIUS.lg};
+      background: var(--of-hud-bg-1);
+      color: #fff;
+      text-align: left;
+      cursor: pointer;
+      transition: opacity ${TIMING.normal}, border-color ${TIMING.fast};
+    }
+    .of-board-thumb {
+      position: absolute;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+    }
+    .of-board-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      opacity: 0.55;
+    }
+    .of-board-thumb::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(10, 6, 16, 0) 30%, rgba(10, 6, 16, 0.85) 100%);
+    }
+    .of-board-badge,
+    .of-board-map {
+      position: relative;
+      z-index: 1;
+    }
+    .of-board-badge {
+      padding: 2px 6px;
+      border: 1px solid var(--of-hud-line-3);
+      border-radius: 4px;
+      background: rgba(0, 0, 0, 0.6);
+      font-size: 10px;
+      font-weight: 800;
+      letter-spacing: 0.5px;
+      text-transform: uppercase;
+      line-height: 1.3;
+      white-space: nowrap;
+      color: #ddd;
+    }
+    .of-board-badge[data-countdown-to] {
+      border-color: transparent;
+      background: #e8600c;
+      color: #fff;
+      font-family: ${FONTS.mono};
+    }
+    .of-board-map {
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      font-weight: 800;
+      letter-spacing: 0.2px;
+    }
+    .of-board-card-match {
+      border-color: ${COLORS.accentLine};
+      box-shadow: inset 0 0 0 1px ${COLORS.accentLine};
+    }
+    .of-board-card-dim {
+      opacity: 0.42;
+    }
+    .of-board-card-dim:hover {
+      opacity: 0.8;
+    }
+  `;
+}

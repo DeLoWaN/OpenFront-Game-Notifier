@@ -5,6 +5,7 @@
 
 import { COLORS, RADIUS, SHADOWS, TIMING, FONTS } from '@/config/theme';
 import { Z_INDEX } from '@/config/constants';
+import { getBoardStyles } from './boardStyles';
 
 export function getStyles(): string {
   return `
@@ -1127,5 +1128,7 @@ export function getStyles(): string {
     .of-upcoming-card-match .of-upcoming-name {
       color: #fff;
     }
+
+    ${getBoardStyles()}
   `;
 }

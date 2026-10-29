@@ -273,4 +273,202 @@ describe('Lobby Board', () => {
       expect(document.querySelector('.of-board-totals')?.textContent).toBe('0 matches · 2 lobbies');
     });
   });
+
+  describe('joining', () => {
+    it('opens the join window through /game/<gameID> on a card click, and never on a feed update', () => {
+      const navSpy = vi
+        .spyOn(LobbyDiscoveryUI.prototype as any, 'navigateToGame')
+        .mockImplementation(() => {});
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), team('team-0')] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), team('team-0')] as any, NOW);
+      vi.advanceTimersByTime(5_000);
+      expect(navSpy).not.toHaveBeenCalled();
+
+      cardIn('ffa', 1)!.click();
+
+      expect(navSpy).toHaveBeenCalledTimes(1);
+      expect(navSpy).toHaveBeenCalledWith('/game/ffa-1');
+      navSpy.mockRestore();
+    });
+
+    it('opens the join window of a lobby that is far down a Queue', () => {
+      const navSpy = vi
+        .spyOn(LobbyDiscoveryUI.prototype as any, 'navigateToGame')
+        .mockImplementation(() => {});
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([hosted('hosted-0'), hosted('hosted-1')] as any, NOW);
+      cardIn('hosted', 1)!.click();
+
+      expect(navSpy).toHaveBeenCalledWith('/game/hosted-1');
+      navSpy.mockRestore();
+    });
+  });
+
+  describe('page layout', () => {
+    const pageColumn = () => document.getElementById('page-column') as HTMLElement;
+    const isHidden = (id: string) => (document.getElementById(id) as HTMLElement).style.display === 'none';
+
+    it('hides the lobby cells, keeps the other buttons and puts the board before them', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+      expect(isHidden('ffa-cell')).toBe(true);
+      expect(isHidden('side-section')).toBe(true);
+      expect(isHidden('solo-row')).toBe(false);
+
+      const grid = document.getElementById('lobby-grid')!;
+      expect(grid.firstElementChild).toBe(board());
+    });
+
+    it('lifts the clipping of the page column while the board shows and restores it on cleanup', () => {
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('clip');
+
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('visible');
+
+      ui.cleanup();
+      ui = null;
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('clip');
+      expect(pageColumn().getAttribute('style')).toBe('overflow-x: clip;');
+      expect(board()).toBeNull();
+      expect(isHidden('ffa-cell')).toBe(false);
+      expect(isHidden('side-section')).toBe(false);
+    });
+
+    it('leaves OpenFront\'s page untouched off the lobby page and during a game', () => {
+      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(false);
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+      expect(board()?.style.display ?? 'none').toBe('none');
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('clip');
+      expect(isHidden('ffa-cell')).toBe(false);
+      expect(isHidden('side-section')).toBe(false);
+    });
+
+    it('sleeps when a game starts, and shows the board again on the lobby page', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+      expect(board()?.style.display).not.toBe('none');
+
+      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(false);
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+      expect(board()?.style.display).toBe('none');
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('clip');
+      expect(isHidden('ffa-cell')).toBe(false);
+
+      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(true);
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+      expect(board()?.style.display).not.toBe('none');
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('visible');
+      expect(isHidden('ffa-cell')).toBe(true);
+    });
+
+    it('hides the board again as soon as the URL changes to a game, without a feed update', async () => {
+      const { URLObserver } = await import('@/utils/URLObserver');
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+      const onUrlChange = vi.mocked(URLObserver.subscribe).mock.calls.at(-1)![0] as (url: string) => void;
+
+      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(false);
+      onUrlChange('https://openfront.io/?live');
+
+      expect(board()?.style.display).toBe('none');
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('clip');
+    });
+
+    it('does nothing when OpenFront has no lobby grid to hold the board', () => {
+      document.getElementById('lobby-grid')!.className = 'unknown-layout';
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+      expect(board()).toBeNull();
+      expect(isHidden('ffa-cell')).toBe(false);
+      expect(getComputedStyle(pageColumn()).overflowX).toBe('clip');
+    });
+  });
+
+  describe('countdowns and in-place updates', () => {
+    const badgeOf = (queue: string, row: number) =>
+      cardIn(queue, row)?.querySelector('.of-board-badge') as HTMLElement;
+
+    it('corrects the countdown with the feed clock, so a wrong local clock does not shift it', () => {
+      ui = new LobbyDiscoveryUI();
+      // The local clock is 100 s behind the feed.
+      ui.receiveLobbyUpdate([ffa('ffa-0', { startsAt: NOW + 100_000 + 65_000 })] as any, NOW + 100_000);
+
+      expect(badgeOf('ffa', 0).textContent).toBe('1:05');
+    });
+
+    it('ticks each second without rebuilding the card, and stops at 0:00', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', { startsAt: NOW + 3_000 })] as any, NOW);
+      const card = cardIn('ffa', 0);
+      const badge = badgeOf('ffa', 0);
+      expect(badge.textContent).toBe('0:03');
+
+      vi.advanceTimersByTime(1_000);
+      expect(badgeOf('ffa', 0)).toBe(badge);
+      expect(badge.textContent).toBe('0:02');
+
+      vi.advanceTimersByTime(5_000);
+      expect(badge.textContent).toBe('0:00');
+      expect(cardIn('ffa', 0)).toBe(card);
+    });
+
+    it('does not tick while the board is hidden', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', { startsAt: NOW + 60_000 })] as any, NOW);
+      const badge = badgeOf('ffa', 0);
+
+      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(false);
+      ui.receiveLobbyUpdate([ffa('ffa-0', { startsAt: NOW + 60_000 })] as any, NOW);
+      vi.advanceTimersByTime(10_000);
+
+      expect(badge.textContent).toBe('1:00');
+    });
+
+    it('keeps the same card node across an unchanged update', () => {
+      ui = new LobbyDiscoveryUI();
+      const lobbies = () => [ffa('ffa-0'), ffa('ffa-1'), team('team-0')] as any;
+      ui.receiveLobbyUpdate(lobbies(), NOW);
+      const before = cardIn('ffa', 1);
+      const childBefore = before?.firstElementChild;
+
+      ui.receiveLobbyUpdate(lobbies(), NOW);
+      vi.advanceTimersByTime(32);
+
+      expect(cardIn('ffa', 1)).toBe(before);
+      expect(before?.firstElementChild).toBe(childBefore);
+    });
+
+    it('moves a card to its new row when the Queue advances, and drops a lobby that left the feed', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), ffa('ffa-2')] as any, NOW);
+      const second = cardIn('ffa', 1);
+
+      // The Live Lobby starts and leaves; a new lobby joins at the end.
+      ui.receiveLobbyUpdate([ffa('ffa-1'), ffa('ffa-2'), ffa('ffa-3')] as any, NOW);
+
+      expect(cardIn('ffa', 0)).toBe(second);
+      expect(cardIn('ffa', 0)?.dataset.gameId).toBe('ffa-1');
+      expect(cardIn('ffa', 2)?.dataset.gameId).toBe('ffa-3');
+      expect(document.querySelector('.of-board-card[data-game-id="ffa-0"]')).toBeNull();
+      expect(cardIn('ffa', 0)?.querySelector('.of-board-badge')?.textContent).toBe('Live');
+      expect(cardIn('ffa', 1)?.querySelector('.of-board-badge')?.textContent).toBe('Queue 1');
+    });
+
+    it('shrinks the board when the longest Queue gets shorter', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), ffa('ffa-2')] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+      expect(board()?.querySelectorAll('.of-board-rowlabel')).toHaveLength(1);
+      expect(board()?.querySelectorAll('.of-board-card')).toHaveLength(1);
+    });
+  });
 });

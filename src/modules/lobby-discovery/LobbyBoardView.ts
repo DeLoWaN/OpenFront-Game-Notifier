@@ -43,8 +43,19 @@ export interface LobbyBoardState {
 const BOARD_ID = 'of-lobby-board';
 const GRID_CLASS_MARKER = 'sm:grid-cols-[2fr_1fr]';
 
+interface SavedStyle {
+  element: HTMLElement;
+  property: string;
+  value: string;
+}
+
 export class LobbyBoardView {
   private root: HTMLDivElement | null = null;
+  private pageGrid: HTMLElement | null = null;
+  // Inline styles of OpenFront's own elements, saved before the board changes them.
+  private savedStyles: SavedStyle[] = [];
+  private clockOffsetMs = 0;
+  private tickInterval: ReturnType<typeof setInterval> | null = null;
   private totals: HTMLElement | null = null;
   private grid: HTMLDivElement | null = null;
   private rowCount = -1;
@@ -53,9 +64,13 @@ export class LobbyBoardView {
 
   constructor(private readonly options: LobbyBoardOptions) {}
 
+  /** Shows the board in place of OpenFront's lobby cells and fills it. Safe to call on every update. */
   render(state: LobbyBoardState): void {
     const root = this.ensureMounted();
     if (!root || !this.grid) return;
+    root.style.display = '';
+    this.takeOverPage();
+    this.clockOffsetMs = state.clockOffsetMs;
 
     const queues = groupLobbiesByQueue(state.lobbies);
     const rowCount = Math.max(0, ...BOARD_QUEUES.map(({ queue }) => queues[queue].length));
@@ -102,16 +117,96 @@ export class LobbyBoardView {
         this.signatures.delete(gameID);
       }
     }
+
+    this.tickCountdowns();
+    if (!this.tickInterval) {
+      this.tickInterval = setInterval(() => this.tickCountdowns(), 1000);
+    }
+  }
+
+  /** Hides the board and gives OpenFront's lobby area back as it was. */
+  hide(): void {
+    this.stopTicking();
+    if (this.root) this.root.style.display = 'none';
+    this.restorePage();
   }
 
   dispose(): void {
+    this.stopTicking();
+    this.restorePage();
     this.root?.remove();
     this.root = null;
+    this.pageGrid = null;
     this.totals = null;
     this.grid = null;
     this.rowCount = -1;
     this.cards.clear();
     this.signatures.clear();
+  }
+
+  /**
+   * Hides the lobby cells, lets the board take its own height and lifts the
+   * `overflow-x: clip` of the page column so the board can use the full width.
+   */
+  private takeOverPage(): void {
+    const pageGrid = this.pageGrid;
+    if (!pageGrid) return;
+
+    for (const child of Array.from(pageGrid.children) as HTMLElement[]) {
+      if (child !== this.root && this.isLobbyCell(child)) this.setStyle(child, 'display', 'none');
+    }
+    // OpenFront gives the lobby row a fixed height.
+    this.setStyle(pageGrid, 'grid-template-rows', 'auto');
+
+    for (
+      let ancestor = pageGrid.parentElement;
+      ancestor && ancestor !== document.documentElement;
+      ancestor = ancestor.parentElement
+    ) {
+      if (getComputedStyle(ancestor).overflowX === 'clip') {
+        this.setStyle(ancestor, 'overflow-x', 'visible');
+      }
+    }
+  }
+
+  /** The FFA cell, and the section with the Team card, the Special card and the "See all" heading. */
+  private isLobbyCell(element: HTMLElement): boolean {
+    return (
+      element.tagName === 'SECTION' ||
+      (element.className.includes('sm:col-start-1') && element.className.includes('sm:row-start-2'))
+    );
+  }
+
+  private setStyle(element: HTMLElement, property: string, value: string): void {
+    if (!this.savedStyles.some((saved) => saved.element === element && saved.property === property)) {
+      this.savedStyles.push({ element, property, value: element.style.getPropertyValue(property) });
+    }
+    element.style.setProperty(property, value);
+  }
+
+  private restorePage(): void {
+    for (const { element, property, value } of this.savedStyles) {
+      if (value) element.style.setProperty(property, value);
+      else element.style.removeProperty(property);
+      if (element.getAttribute('style') === '') element.removeAttribute('style');
+    }
+    this.savedStyles = [];
+  }
+
+  private stopTicking(): void {
+    if (this.tickInterval) clearInterval(this.tickInterval);
+    this.tickInterval = null;
+  }
+
+  /** Updates the text of every countdown badge. It does not rebuild any card. */
+  private tickCountdowns(): void {
+    const now = Date.now() + this.clockOffsetMs;
+    for (const badge of Array.from(
+      this.grid?.querySelectorAll<HTMLElement>('.of-board-badge[data-countdown-to]') ?? []
+    )) {
+      const text = formatCountdown(Number(badge.dataset.countdownTo) - now);
+      if (badge.textContent !== text) badge.textContent = text;
+    }
   }
 
   private getCell(queue: QueueSource, row: number): HTMLElement | null {
@@ -149,6 +244,7 @@ export class LobbyBoardView {
     pageGrid.insertBefore(root, pageGrid.firstChild);
 
     this.root = root;
+    this.pageGrid = pageGrid;
     this.totals = totals;
     this.grid = grid;
     this.rowCount = -1;
@@ -230,8 +326,8 @@ export class LobbyBoardView {
     const badge = document.createElement('span');
     badge.className = 'of-board-badge';
     if (model.badge.kind === 'countdown') {
+      // The text is set by tickCountdowns, which knows the clock offset.
       badge.dataset.countdownTo = String(model.badge.targetMs);
-      badge.textContent = formatCountdown(model.badge.targetMs - Date.now());
     } else {
       badge.textContent = model.badge.text;
     }

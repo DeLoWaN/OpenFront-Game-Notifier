@@ -464,6 +464,10 @@ export class LobbyDiscoveryUI {
   }
 
   private updateLobbyBoard(lobbies: Lobby[]): void {
+    if (this.sleeping || !this.isDiscoveryFeedbackAllowed()) {
+      this.lobbyBoard.hide();
+      return;
+    }
     const isActive = this.discoveryEnabled && this.criteriaList.length > 0;
     const matchedIds = new Set<string>();
     if (isActive) {
@@ -1760,10 +1764,12 @@ export class LobbyDiscoveryUI {
       this.updateQueueCardPulses(new Set());
       this.updateSeeAllSignals(false, new Set());
       this.hideUpcomingStrip();
+      this.lobbyBoard.hide();
     } else {
       this.panel.classList.remove('hidden');
       this.syncSearchTimer();
       this.startGameInfoUpdates();
+      this.updateLobbyBoard(this.lastLobbies);
     }
   }
 
