@@ -628,5 +628,23 @@ describe('LobbyDiscoveryHelpers', () => {
         'https://cdn.ofedge.io/_assets/maps/faroeislandstest/thumbnail.abc.webp'
       );
     });
+
+    it.each([
+      ['Bab el-Mandeb Strait', 'babelmandebstrait'],
+      ['Tourney 2 Teams', 'tourney1'],
+      ['Tourney 3 Teams', 'tourney2'],
+      ['Tourney 4 Teams', 'tourney3'],
+      ['Tourney 8 Teams', 'tourney4'],
+      ['Mars', 'mars'],
+    ])('looks up the OpenFront asset key of %s (%s)', (gameMap, assetKey) => {
+      const lobby = { gameID: 'g', gameConfig: { gameMode: 'Free For All', gameMap } } as any;
+      const manifest = {
+        [`maps/${assetKey}/thumbnail.webp`]: `/_assets/maps/${assetKey}/thumbnail.abc.webp`,
+      };
+      expect(getLobbyMapThumbnailUrl(lobby, manifest, 'https://cdn.ofedge.io')).toBe(
+        `https://cdn.ofedge.io/_assets/maps/${assetKey}/thumbnail.abc.webp`
+      );
+      expect(getLobbyMapThumbnailUrl(lobby, null, null)).toBe(`/maps/${assetKey}/thumbnail.webp`);
+    });
   });
 });

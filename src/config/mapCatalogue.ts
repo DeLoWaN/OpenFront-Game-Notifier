@@ -8,6 +8,11 @@ export interface MapCatalogueEntry {
   gameMap: string;
   name: string;
   categories: readonly MapCategory[];
+  /**
+   * Mirrors OpenFront's map id, lowercased: the name of the map asset directory.
+   * Set only when it differs from the name without spaces, dots and parentheses.
+   */
+  assetKey?: string;
 }
 
 export type MapCategory =
@@ -74,7 +79,12 @@ export const MAP_CATALOGUE: readonly MapCatalogueEntry[] = [
   { gameMap: 'Arctic', name: 'Arctic', categories: ['europe', 'asia', 'north_america'] },
   { gameMap: 'Asia', name: 'Asia', categories: ['continental', 'asia'] },
   { gameMap: 'Australia', name: 'Australia', categories: ['oceania'] },
-  { gameMap: 'Bab el-Mandeb Strait', name: 'Bab el-Mandeb Strait', categories: ['asia', 'africa'] },
+  {
+    gameMap: 'Bab el-Mandeb Strait',
+    name: 'Bab el-Mandeb Strait',
+    categories: ['asia', 'africa'],
+    assetKey: 'babelmandebstrait',
+  },
   { gameMap: 'Baikal', name: 'Baikal', categories: ['asia'] },
   { gameMap: 'Baikal Nuke Wars', name: 'Baikal (Nuke Wars)', categories: ['fictional'] },
   { gameMap: 'Baja California', name: 'Baja California', categories: ['north_america'] },
@@ -183,10 +193,10 @@ export const MAP_CATALOGUE: readonly MapCatalogueEntry[] = [
   { gameMap: 'The Box', name: 'The Box', categories: ['arcade'] },
   { gameMap: 'Tierra Del Fuego', name: 'Tierra Del Fuego', categories: ['south_america'] },
   { gameMap: 'Titan', name: 'Titan', categories: ['cosmic'] },
-  { gameMap: 'Tourney 2 Teams', name: 'Tourney 2 Teams', categories: ['tournament'] },
-  { gameMap: 'Tourney 3 Teams', name: 'Tourney 3 Teams', categories: ['tournament'] },
-  { gameMap: 'Tourney 4 Teams', name: 'Tourney 4 Teams', categories: ['tournament'] },
-  { gameMap: 'Tourney 8 Teams', name: 'Tourney 8 Teams', categories: ['tournament'] },
+  { gameMap: 'Tourney 2 Teams', name: 'Tourney 2 Teams', categories: ['tournament'], assetKey: 'tourney1' },
+  { gameMap: 'Tourney 3 Teams', name: 'Tourney 3 Teams', categories: ['tournament'], assetKey: 'tourney2' },
+  { gameMap: 'Tourney 4 Teams', name: 'Tourney 4 Teams', categories: ['tournament'], assetKey: 'tourney3' },
+  { gameMap: 'Tourney 8 Teams', name: 'Tourney 8 Teams', categories: ['tournament'], assetKey: 'tourney4' },
   { gameMap: 'Traders Dream', name: 'Traders Dream', categories: ['fictional'] },
   { gameMap: 'Two Lakes', name: 'Two Lakes', categories: ['europe'] },
   { gameMap: 'United States', name: 'United States', categories: ['north_america', 'countries'] },

@@ -40,6 +40,9 @@ export function normalizeGameMode(
 }
 
 const MAP_NAMES = new Map(MAP_CATALOGUE.map((entry) => [entry.gameMap, entry.name]));
+const MAP_ASSET_KEYS = new Map(
+  MAP_CATALOGUE.flatMap((entry) => (entry.assetKey ? [[entry.gameMap, entry.assetKey] as const] : []))
+);
 
 /** OpenFront's English name for a `gameMap` value, or the value itself for an unknown map. */
 export function getMapDisplayName(gameMap: string): string {
@@ -556,10 +559,9 @@ export function getLobbyMapThumbnailUrl(
   const mapName = lobby.gameConfig?.gameMap?.trim();
   if (!mapName) return null;
 
-  // Mirror OpenFront's normalization (src/core/AssetUrls.ts + GamePreviewBuilder):
-  // strip whitespace, dots, AND parentheses so parenthesized map names resolve to
-  // the same manifest key OpenFront uses.
-  const normalizedMap = mapName.toLowerCase().replace(/[\s.()]+/g, '');
+  // Mirrors OpenFront's normaliseMapKey: the map id when it differs, else the slugged name.
+  const normalizedMap =
+    MAP_ASSET_KEYS.get(mapName) ?? mapName.toLowerCase().replace(/[\s.()]+/g, '');
   if (!normalizedMap) return null;
 
   const path = `maps/${encodeURIComponent(normalizedMap)}/thumbnail.webp`;
