@@ -33,14 +33,14 @@ export const SoundUtils: SoundUtilsSingleton = {
     try {
       // Game found notification sound
       this.gameFoundAudio = new Audio(
-        'https://github.com/DeLoWaN/openfront-autojoin-lobby/raw/refs/heads/main/notification_sounds/new-notification-014-363678.mp3'
+        'https://github.com/DeLoWaN/openfront-game-notifier/raw/refs/heads/main/notification_sounds/new-notification-014-363678.mp3'
       );
       this.gameFoundAudio.volume = 0.5;
       this.gameFoundAudio.preload = 'auto';
 
       // Game start notification sound
       this.gameStartAudio = new Audio(
-        'https://github.com/DeLoWaN/openfront-autojoin-lobby/raw/refs/heads/main/notification_sounds/opening-bell-421471.mp3'
+        'https://github.com/DeLoWaN/openfront-game-notifier/raw/refs/heads/main/notification_sounds/opening-bell-421471.mp3'
       );
       this.gameStartAudio.volume = 0.5;
       this.gameStartAudio.preload = 'auto';

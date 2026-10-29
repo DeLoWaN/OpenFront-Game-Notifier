@@ -16,9 +16,9 @@ const userscriptHeader = `// ==UserScript==
 // @namespace    https://openfront.io/
 // @version      ${version}
 // @description  Notifies you when a public OpenFront lobby matches your filters (mode, team format, capacity, modifiers) via in-page highlight, sound, and optional desktop notifications. Never auto-joins.
-// @homepageURL  https://github.com/DeLoWaN/openfront-autojoin-lobby
-// @downloadURL  https://raw.githubusercontent.com/DeLoWaN/openfront-autojoin-lobby/main/dist/bundle.user.js
-// @updateURL    https://raw.githubusercontent.com/DeLoWaN/openfront-autojoin-lobby/main/dist/bundle.user.js
+// @homepageURL  https://github.com/DeLoWaN/openfront-game-notifier
+// @downloadURL  https://raw.githubusercontent.com/DeLoWaN/openfront-game-notifier/main/dist/bundle.user.js
+// @updateURL    https://raw.githubusercontent.com/DeLoWaN/openfront-game-notifier/main/dist/bundle.user.js
 // @author       DeLoVaN + SyntaxMenace + DeepSeek + Claude
 // @match        https://openfront.io/
 // @match        https://openfront.io/*

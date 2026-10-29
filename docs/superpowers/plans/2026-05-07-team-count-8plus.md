@@ -71,7 +71,7 @@ Check that `parseTeamCount` and `normalizeSettings` are already imported at the 
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryHelpers.test.ts 2>&1 | tail -30
+cd /Users/damien/git_perso/openfront-game-notifier && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryHelpers.test.ts 2>&1 | tail -30
 ```
 
 Expected: FAIL — `parseTeamCount('8+')` returns `null`, not `'8+'`.
@@ -128,7 +128,7 @@ export function parseTeamCount(
 - [ ] **Step 5: Run tests to verify they pass**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryHelpers.test.ts 2>&1 | tail -30
+cd /Users/damien/git_perso/openfront-game-notifier && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryHelpers.test.ts 2>&1 | tail -30
 ```
 
 Expected: all tests in the file PASS, including the new `8+` describe blocks.
@@ -136,7 +136,7 @@ Expected: all tests in the file PASS, including the new `8+` describe blocks.
 - [ ] **Step 6: Type-check**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm run type-check 2>&1 | tail -20
+cd /Users/damien/git_perso/openfront-game-notifier && npm run type-check 2>&1 | tail -20
 ```
 
 Expected: no errors.
@@ -144,7 +144,7 @@ Expected: no errors.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && git add src/modules/lobby-discovery/LobbyDiscoveryTypes.ts src/modules/lobby-discovery/LobbyDiscoveryHelpers.ts tests/modules/lobby-discovery/LobbyDiscoveryHelpers.test.ts && git commit -m "feat(team-count): add 8+ as valid TeamCount literal with parse/sanitize support"
+cd /Users/damien/git_perso/openfront-game-notifier && git add src/modules/lobby-discovery/LobbyDiscoveryTypes.ts src/modules/lobby-discovery/LobbyDiscoveryHelpers.ts tests/modules/lobby-discovery/LobbyDiscoveryHelpers.test.ts && git commit -m "feat(team-count): add 8+ as valid TeamCount literal with parse/sanitize support"
 ```
 
 ---
@@ -248,7 +248,7 @@ Append to `tests/modules/lobby-discovery/LobbyDiscoveryEngine.test.ts`, inside t
 - [ ] **Step 2: Run tests to verify they fail**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryEngine.test.ts 2>&1 | tail -30
+cd /Users/damien/git_perso/openfront-game-notifier && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryEngine.test.ts 2>&1 | tail -30
 ```
 
 Expected: FAIL — the `8+` criteria hits the exact-match check and skips all 8+ lobbies.
@@ -296,7 +296,7 @@ with:
 - [ ] **Step 4: Run tests to verify they pass**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryEngine.test.ts 2>&1 | tail -30
+cd /Users/damien/git_perso/openfront-game-notifier && npm test -- --reporter=verbose tests/modules/lobby-discovery/LobbyDiscoveryEngine.test.ts 2>&1 | tail -30
 ```
 
 Expected: all tests in the file PASS.
@@ -304,7 +304,7 @@ Expected: all tests in the file PASS.
 - [ ] **Step 5: Run full test suite**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm test 2>&1 | tail -20
+cd /Users/damien/git_perso/openfront-game-notifier && npm test 2>&1 | tail -20
 ```
 
 Expected: all tests PASS.
@@ -312,7 +312,7 @@ Expected: all tests PASS.
 - [ ] **Step 6: Type-check**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm run type-check 2>&1 | tail -20
+cd /Users/damien/git_perso/openfront-game-notifier && npm run type-check 2>&1 | tail -20
 ```
 
 Expected: no errors.
@@ -320,7 +320,7 @@ Expected: no errors.
 - [ ] **Step 7: Commit**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && git add src/modules/lobby-discovery/LobbyDiscoveryEngine.ts tests/modules/lobby-discovery/LobbyDiscoveryEngine.test.ts && git commit -m "feat(engine): match 8+ team count as range ≥ 8"
+cd /Users/damien/git_perso/openfront-game-notifier && git add src/modules/lobby-discovery/LobbyDiscoveryEngine.ts tests/modules/lobby-discovery/LobbyDiscoveryEngine.test.ts && git commit -m "feat(engine): match 8+ team count as range ≥ 8"
 ```
 
 ---
@@ -436,7 +436,7 @@ with:
 - [ ] **Step 5: Type-check**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm run type-check 2>&1 | tail -20
+cd /Users/damien/git_perso/openfront-game-notifier && npm run type-check 2>&1 | tail -20
 ```
 
 Expected: no errors.
@@ -444,7 +444,7 @@ Expected: no errors.
 - [ ] **Step 6: Full test suite**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm test 2>&1 | tail -20
+cd /Users/damien/git_perso/openfront-game-notifier && npm test 2>&1 | tail -20
 ```
 
 Expected: all tests PASS.
@@ -452,19 +452,19 @@ Expected: all tests PASS.
 - [ ] **Step 7: Build and verify**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm run build:prod 2>&1 | tail -10
+cd /Users/damien/git_perso/openfront-game-notifier && npm run build:prod 2>&1 | tail -10
 ```
 
 Expected: build succeeds; check `dist/bundle.user.js` contains `discovery-team-8plus` and `8+`.
 
 ```bash
-grep "discovery-team-8plus\|teamCount.*8" /Users/damien/git_perso/openfront-autojoin-lobby/dist/bundle.user.js | head -5
+grep "discovery-team-8plus\|teamCount.*8" /Users/damien/git_perso/openfront-game-notifier/dist/bundle.user.js | head -5
 ```
 
 - [ ] **Step 8: Commit**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && git add src/modules/lobby-discovery/LobbyDiscoveryUI.ts dist/bundle.user.js && git commit -m "feat(ui): add 8+ team count chip to number-of-teams selector"
+cd /Users/damien/git_perso/openfront-game-notifier && git add src/modules/lobby-discovery/LobbyDiscoveryUI.ts dist/bundle.user.js && git commit -m "feat(ui): add 8+ team count chip to number-of-teams selector"
 ```
 
 ---
@@ -474,19 +474,19 @@ cd /Users/damien/git_perso/openfront-autojoin-lobby && git add src/modules/lobby
 - [ ] **Step 1: Bump patch version**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm version patch
+cd /Users/damien/git_perso/openfront-game-notifier && npm version patch
 ```
 
 - [ ] **Step 2: Rebuild**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && npm run build:prod 2>&1 | tail -10
+cd /Users/damien/git_perso/openfront-game-notifier && npm run build:prod 2>&1 | tail -10
 ```
 
 - [ ] **Step 3: Verify version consistency**
 
 ```bash
-grep '"version"' /Users/damien/git_perso/openfront-autojoin-lobby/package.json && grep '@version' /Users/damien/git_perso/openfront-autojoin-lobby/dist/bundle.user.js | head -2
+grep '"version"' /Users/damien/git_perso/openfront-game-notifier/package.json && grep '@version' /Users/damien/git_perso/openfront-game-notifier/dist/bundle.user.js | head -2
 ```
 
 Expected: both lines show the same version number.
@@ -494,5 +494,5 @@ Expected: both lines show the same version number.
 - [ ] **Step 4: Commit**
 
 ```bash
-cd /Users/damien/git_perso/openfront-autojoin-lobby && git add package.json package-lock.json dist/bundle.user.js && git commit -m "chore(release): bump version for 8+ team count filter"
+cd /Users/damien/git_perso/openfront-game-notifier && git add package.json package-lock.json dist/bundle.user.js && git commit -m "chore(release): bump version for 8+ team count filter"
 ```
