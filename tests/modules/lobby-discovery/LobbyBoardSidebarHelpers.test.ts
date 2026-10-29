@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { formatFilterSummary } from '@/modules/lobby-discovery/LobbyBoardSidebarHelpers';
-import type { FilterSettings } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
+import type { FilterSettings } from '@/modules/lobby-discovery/LobbyDiscoveryTypes';
 
 const settings = (overrides: Partial<FilterSettings> = {}): FilterSettings => ({
   criteria: [],

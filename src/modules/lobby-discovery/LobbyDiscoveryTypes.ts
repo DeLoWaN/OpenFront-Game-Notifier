@@ -50,3 +50,11 @@ export interface LobbyDiscoverySettings {
   includeHostedAndCustomLobbies?: boolean;
   mapFilter?: MapFilter;
 }
+
+/** The filter values that the player edits in the filter sections. */
+export interface FilterSettings {
+  criteria: DiscoveryCriteria[];
+  isTeamTwoTimesMinEnabled: boolean;
+  includeHostedAndCustomLobbies: boolean;
+  mapFilter: MapFilter;
+}

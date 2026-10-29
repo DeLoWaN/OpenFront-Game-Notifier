@@ -23,19 +23,12 @@ import { escapeHtml } from '@/utils/HtmlUtils';
 import { RangeSlider } from '@/modules/lobby-discovery/RangeSlider';
 import type {
   DiscoveryCriteria,
+  FilterSettings,
   MapFilter,
   ModifierFilters,
   ModifierFilterState,
   TeamCount,
 } from './LobbyDiscoveryTypes';
-
-/** The filter values that the player edits in the sections. */
-export interface FilterSettings {
-  criteria: DiscoveryCriteria[];
-  isTeamTwoTimesMinEnabled: boolean;
-  includeHostedAndCustomLobbies: boolean;
-  mapFilter: MapFilter;
-}
 
 /** What changed: the Criteria, the Map Filter or the "Lobbies" option. */
 export type FilterChange = 'criteria' | 'maps' | 'lobbies';

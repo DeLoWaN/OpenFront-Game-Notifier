@@ -2,8 +2,8 @@
  * Pure helpers for the Lobby Board sidebar.
  */
 
-import type { FilterSettings } from './LobbyDiscoveryFilters';
 import type {
+  FilterSettings,
   ModifierFilters,
   ModifierFilterState,
   NumericModifierState,

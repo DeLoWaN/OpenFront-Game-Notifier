@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LobbyDiscoveryFilters } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
-import type { FilterChange, FilterSettings } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
+import type { FilterChange } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
+import type { FilterSettings } from '@/modules/lobby-discovery/LobbyDiscoveryTypes';
 import { STORAGE_KEYS } from '@/config/constants';
 import type { Lobby } from '@/types/game';
 
