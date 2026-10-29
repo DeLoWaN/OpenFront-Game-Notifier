@@ -5,6 +5,8 @@ import {
 } from '@/modules/lobby-discovery/RangeSliderHelpers';
 
 export interface RangeSliderConfig {
+  /** Where the elements are looked up. Defaults to the whole document. */
+  root?: ParentNode;
   containerId: string;     // <div class="ld-slider-row"> outer container; scope for stepper buttons
   rangeRootId: string;     // <div class="ld-range"> element receiving --lo/--hi CSS vars
   minSliderId: string;     // <input type="range"> 0..1000 for min position
@@ -29,6 +31,7 @@ export class RangeSlider {
   private readonly rangeRoot: HTMLElement | null;
   private readonly container: HTMLElement | null;
   private readonly stops: readonly number[];
+  private readonly root: ParentNode;
   private readonly cfg: RangeSliderConfig;
   private lastMin: number;
   private lastMax: number;
@@ -36,12 +39,13 @@ export class RangeSlider {
   constructor(cfg: RangeSliderConfig) {
     this.cfg = cfg;
     this.stops = cfg.stops ?? [cfg.bounds.min, cfg.bounds.max];
-    this.minSlider = document.getElementById(cfg.minSliderId) as HTMLInputElement;
-    this.maxSlider = document.getElementById(cfg.maxSliderId) as HTMLInputElement;
-    this.minInput = document.getElementById(cfg.minInputId) as HTMLInputElement;
-    this.maxInput = document.getElementById(cfg.maxInputId) as HTMLInputElement;
-    this.rangeRoot = document.getElementById(cfg.rangeRootId);
-    this.container = document.getElementById(cfg.containerId);
+    this.root = cfg.root ?? document;
+    this.minSlider = this.find(cfg.minSliderId) as HTMLInputElement;
+    this.maxSlider = this.find(cfg.maxSliderId) as HTMLInputElement;
+    this.minInput = this.find(cfg.minInputId) as HTMLInputElement;
+    this.maxInput = this.find(cfg.maxInputId) as HTMLInputElement;
+    this.rangeRoot = this.find(cfg.rangeRootId);
+    this.container = this.find(cfg.containerId);
 
     if (!this.minSlider || !this.maxSlider || !this.minInput || !this.maxInput) {
       throw new Error(`RangeSlider: missing required element in ${cfg.rangeRootId}`);
@@ -65,6 +69,11 @@ export class RangeSlider {
     this.renderTicks();
     this.wireSteppers();
     this.applyLockState();
+  }
+
+  private find(id: string): HTMLElement | null {
+    // An attribute selector: an id selector wrongly misses the element when the id exists twice in the document.
+    return this.root.querySelector<HTMLElement>(`[id="${id}"]`);
   }
 
   /** Toggle the disabled appearance + behavior on max-side controls. */
@@ -183,7 +192,7 @@ export class RangeSlider {
 
   private renderTicks(): void {
     if (!this.cfg.ticksContainerId || !this.cfg.stops) return;
-    const container = document.getElementById(this.cfg.ticksContainerId);
+    const container = this.find(this.cfg.ticksContainerId);
     if (!container) return;
 
     container.innerHTML = '';
