@@ -263,11 +263,12 @@ export function getBoardStyles(): string {
       text-transform: uppercase;
       color: #0a0610;
     }
-    .of-board-card-flash {
-      animation: discoveryCardActiveBeacon 0.5s ease-in-out 4;
-    }
     .of-board-card-pulse {
       animation: discoveryCardActiveBeacon 1.45s ease-in-out infinite;
+    }
+    /* The flash follows a click on a notification. It wins over the pulse. */
+    .of-board-card.of-board-card-flash {
+      animation: discoveryCardActiveBeacon 0.5s ease-in-out 4;
     }
   `;
 }
