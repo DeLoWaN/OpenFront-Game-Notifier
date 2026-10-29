@@ -17,6 +17,13 @@ import {
   groupLobbiesByQueue,
   type BoardCardModel,
 } from './LobbyBoardHelpers';
+import {
+  appearCard,
+  canAnimate,
+  readPlacement,
+  slideCard,
+  type CardPlacement,
+} from './LobbyBoardMotion';
 import { LobbyBoardSidebar } from './LobbyBoardSidebar';
 import { findHomeGrid, isLobbyCell } from '@/utils/HomePageUtils';
 
@@ -91,6 +98,8 @@ export class LobbyBoardView {
   private cardParts = new WeakMap<HTMLButtonElement, CardParts>();
   private signatures = new Map<string, string>();
   private flashTimers = new Map<string, ReturnType<typeof setTimeout>>();
+  // False until a render shows a lobby: that render shows every card without motion.
+  private hasShownCards = false;
   private resizeObserver: ResizeObserver | null = null;
   private readonly onWindowResize = (): void => this.measureLayout();
 
@@ -98,8 +107,12 @@ export class LobbyBoardView {
 
   /** Shows the board in place of OpenFront's lobby cells and fills it. Safe to call on every update. */
   render(state: LobbyBoardState): void {
+    const wasShowing = this.isShowing();
     const root = this.ensureMounted();
     if (!root || !this.grid) return;
+    const animate = canAnimate();
+    const placementsBefore = animate && wasShowing ? this.readPlacements() : new Map<string, CardPlacement>();
+    const createdCards: HTMLButtonElement[] = [];
     root.style.display = '';
     this.takeOverPage();
     this.startMeasuringLayout();
@@ -135,7 +148,11 @@ export class LobbyBoardView {
         }
         liveIds.add(lobby.gameID);
         const model = buildBoardCardModel(lobby, queue, row, manifest, cdnBase, state.criteria);
-        const card = this.cards.get(lobby.gameID) ?? this.createCard(lobby.gameID);
+        let card = this.cards.get(lobby.gameID);
+        if (!card) {
+          card = this.createCard(lobby.gameID);
+          createdCards.push(card);
+        }
         this.updateCard(card, model);
         this.applyNewBadge(card, state.newGameIds.has(lobby.gameID));
         card.classList.toggle('of-board-card-match', matchedIds?.has(lobby.gameID) === true);
@@ -151,6 +168,9 @@ export class LobbyBoardView {
         this.signatures.delete(gameID);
       }
     }
+
+    if (animate) this.playMotion(placementsBefore, createdCards);
+    if (liveIds.size > 0) this.hasShownCards = true;
 
     this.tickCountdowns();
     if (!this.tickInterval) {
@@ -191,6 +211,7 @@ export class LobbyBoardView {
 
   /** Hides the board and gives OpenFront's lobby area back as it was. */
   hide(): void {
+    this.hasShownCards = false;
     this.stopTicking();
     this.stopMeasuringLayout();
     if (this.root) this.root.style.display = 'none';
@@ -210,8 +231,29 @@ export class LobbyBoardView {
     this.totals = null;
     this.grid = null;
     this.rowCount = -1;
+    this.hasShownCards = false;
     this.cards.clear();
     this.signatures.clear();
+  }
+
+  private readPlacements(): Map<string, CardPlacement> {
+    const placements = new Map<string, CardPlacement>();
+    for (const [gameID, card] of this.cards) {
+      const placement = readPlacement(card);
+      if (placement) placements.set(gameID, placement);
+    }
+    return placements;
+  }
+
+  /** Slides the cards that changed cell and fades in the new ones. The first render with cards has no motion. */
+  private playMotion(placementsBefore: Map<string, CardPlacement>, createdCards: HTMLButtonElement[]): void {
+    for (const [gameID, from] of placementsBefore) {
+      const card = this.cards.get(gameID);
+      const to = card ? readPlacement(card) : null;
+      if (card && to) slideCard(card, from, to);
+    }
+    if (!this.hasShownCards) return;
+    for (const card of createdCards) appearCard(card);
   }
 
   /**

@@ -787,4 +787,171 @@ describe('Lobby Board', () => {
       expect(after).toBe(chip);
     });
   });
+
+  describe('animations', () => {
+    interface AnimateCall {
+      card: HTMLElement;
+      keyframes: Array<Record<string, string>>;
+      options: { duration: number; easing: string };
+    }
+    let calls: AnimateCall[];
+    const QUEUE_ORDER = ['ffa', 'team', 'special', 'hosted'];
+
+    const animated = (gameID: string): AnimateCall[] =>
+      calls.filter(({ card }) => card.dataset.gameId === gameID);
+    const slides = (): AnimateCall[] => calls.filter(({ keyframes }) => 'transform' in keyframes[0]! && !('opacity' in keyframes[0]!));
+    const appears = (): AnimateCall[] => calls.filter(({ keyframes }) => 'opacity' in keyframes[0]!);
+
+    beforeEach(() => {
+      calls = [];
+      // jsdom has no Element.animate.
+      (HTMLElement.prototype as any).animate = function (
+        this: HTMLElement,
+        keyframes: Array<Record<string, string>>,
+        options: { duration: number; easing: string }
+      ) {
+        calls.push({ card: this, keyframes, options });
+        return {};
+      };
+      // jsdom has no layout: a card sits where its cell is, 100 px per row and 300 px per column.
+      (HTMLElement.prototype as any).getBoundingClientRect = function (this: HTMLElement) {
+        const cell = this.parentElement;
+        const row = Number(cell?.dataset.row ?? 0);
+        const column = QUEUE_ORDER.indexOf(cell?.dataset.queue ?? 'ffa');
+        return { top: row * 100, left: column * 300, width: 300, height: 100 };
+      };
+    });
+
+    afterEach(() => {
+      delete (HTMLElement.prototype as any).animate;
+      delete (HTMLElement.prototype as any).getBoundingClientRect;
+      delete (window as any).matchMedia;
+    });
+
+    it('does not animate any card on the first render', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), team('team-0')] as any, NOW);
+
+      expect(calls).toEqual([]);
+    });
+
+    it('does not animate the cards of an unchanged update', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 9 }), ffa('ffa-1')] as any, NOW);
+
+      expect(calls).toEqual([]);
+    });
+
+    it('slides the remaining cards of a Queue up one row for 250 ms, and no card of another Queue', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate(
+        [ffa('ffa-0'), ffa('ffa-1'), ffa('ffa-2'), team('team-0'), team('team-1')] as any,
+        NOW
+      );
+
+      // The Live Lobby of the FFA Queue starts. The Team Queue does not change.
+      ui.receiveLobbyUpdate([ffa('ffa-1'), ffa('ffa-2'), team('team-0'), team('team-1')] as any, NOW);
+
+      expect(slides().map(({ card }) => card.dataset.gameId)).toEqual(['ffa-1', 'ffa-2']);
+      const [first] = animated('ffa-1');
+      // The card starts where it was (one row, 100 px, lower) and ends at its new place.
+      expect(first!.keyframes).toEqual([
+        { transform: 'translate(0px, 100px)' },
+        { transform: 'translate(0px, 0px)' },
+      ]);
+      expect(first!.options).toMatchObject({ duration: 250, easing: 'ease-out' });
+      expect(animated('team-0')).toEqual([]);
+      expect(animated('team-1')).toEqual([]);
+      expect(appears()).toEqual([]);
+    });
+
+    it('keeps the same card nodes while it animates', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+      const moving = cardIn('ffa', 1);
+
+      ui.receiveLobbyUpdate([ffa('ffa-1')] as any, NOW);
+
+      expect(cardIn('ffa', 0)).toBe(moving);
+    });
+
+    it('fades in a card whose lobby was not in the previous render, for 300 ms', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), team('team-0')] as any, NOW);
+
+      expect(appears().map(({ card }) => card.dataset.gameId).sort()).toEqual(['ffa-1', 'team-0']);
+      const [call] = animated('ffa-1');
+      expect(call!.options).toMatchObject({ duration: 300, easing: 'ease-out' });
+      expect(call!.keyframes[0]).toMatchObject({ opacity: '0' });
+      expect(call!.keyframes[0]!.transform).toMatch(/^translateY\(/);
+      expect(animated('ffa-0')).toEqual([]);
+    });
+
+    it('counts a lobby that leaves the feed and comes back as new', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0')] as any, NOW);
+      expect(appears()).toEqual([]);
+
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+
+      expect(appears().map(({ card }) => card.dataset.gameId)).toEqual(['ffa-1']);
+    });
+
+    it('treats the first render that has a lobby as the initial render, even after an empty feed', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([], NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+
+      expect(calls).toEqual([]);
+
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), ffa('ffa-2')] as any, NOW);
+      expect(appears().map(({ card }) => card.dataset.gameId)).toEqual(['ffa-2']);
+    });
+
+    it('does not animate when the user prefers reduced motion', () => {
+      (window as any).matchMedia = (query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+      });
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-1'), ffa('ffa-2')] as any, NOW);
+
+      expect(calls).toEqual([]);
+      expect(cardIn('ffa', 0)?.dataset.gameId).toBe('ffa-1');
+    });
+
+    it('does nothing when the browser has no Element.animate', () => {
+      delete (HTMLElement.prototype as any).animate;
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+
+      expect(() => ui!.receiveLobbyUpdate([ffa('ffa-1'), ffa('ffa-2')] as any, NOW)).not.toThrow();
+      expect(cardIn('ffa', 1)?.dataset.gameId).toBe('ffa-2');
+    });
+
+    it('does not animate in original page mode, which has no board', () => {
+      store.set(STORAGE_KEYS.lobbyBoardMode, 'original');
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+      ui.receiveLobbyUpdate([ffa('ffa-1'), ffa('ffa-2')] as any, NOW);
+
+      expect(board()?.style.display ?? 'none').toBe('none');
+      expect(calls).toEqual([]);
+    });
+
+    it('does not fade in the cards again when the board shows again after the original page', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1')] as any, NOW);
+      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(false);
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), ffa('ffa-2')] as any, NOW);
+      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(true);
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), ffa('ffa-2')] as any, NOW);
+
+      expect(calls).toEqual([]);
+    });
+  });
 });
