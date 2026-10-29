@@ -57,6 +57,7 @@ The userscript is built from modular TypeScript source in `src/` and compiled to
 │   │       ├── LobbyBoardView.ts          # Lobby Board DOM
 │   │       ├── LobbyBoardHelpers.ts
 │   │       ├── LobbyBoardAlerts.ts
+│   │       ├── LobbyBoardMotion.ts
 │   │       ├── LobbyBoardSidebar.ts
 │   │       ├── LobbyBoardSidebarHelpers.ts
 │   │       ├── RangeSlider.ts
@@ -111,7 +112,8 @@ npm run type-check  # tsc --noEmit
 - `LobbyDiscoveryControls.ts` — the discovery switch, the search timer, the sound and desktop toggles and the Original page switch. Any container can mount them.
 - `LobbyBoardView.ts` — builds the Lobby Board in OpenFront's `game-mode-selector` grid and updates its cards in place
 - `LobbyBoardHelpers.ts` — pure functions: board columns, card model, time badge, format text
-- `LobbyBoardAlerts.ts` — in-memory alert state of the Lobby Board cards ("New" badge, 10-second pulse)
+- `LobbyBoardAlerts.ts` — in-memory "New" badges of the Lobby Board cards
+- `LobbyBoardMotion.ts` — the slide of a card that changes row and the fade-in of a new card (`Element.animate`, off with `prefers-reduced-motion`)
 - `LobbyBoardSidebar.ts` — the collapsible sidebar that holds the filters
 - `LobbyBoardSidebarHelpers.ts` — pure function: the one-line filter summary of the collapsed sidebar
 - `RangeSlider.ts` and `RangeSliderHelpers.ts` — the dual-thumb player range slider and its pure value mapping
@@ -136,7 +138,7 @@ npm run type-check  # tsc --noEmit
 - **Criteria-based matching**: filter by game mode (FFA / Team), player count range, team format (Duos / Trios / Quads / Humans Vs Nations / 2–7 teams), and lobby modifiers (compact, random spawn, crowded, hard nations, alliances/nukes/SAMs disabled, peace time, water nukes, Doomsday Clock, Trusted, starting gold, gold multiplier).
 - **Map Filter**: one global tri-state list of maps that applies to every Criterion (see `docs/adr/0001-global-map-filter.md`).
 - **Every advertised lobby**: all lobbies of every Queue are evaluated, Hosted and Custom Lobbies included (a global option excludes them). See `GLOSSARY.md` for Live Lobby and Upcoming Lobby.
-- **Three notification channels**: in-page highlight (the Lobby Board card, with a "New" badge until the pointer passes over it and a 10-second pulse), sound alert, and (optional) browser desktop notification. A lobby alerts once when it starts to match, at any Queue Position. Clicking the desktop notification flashes the card on the Lobby Board; without the board, it opens the See All View for a lobby that the home page does not show. Outside the board, the queue card of a Live Lobby, the "See all" button and the See All View card keep their highlight.
+- **Three notification channels**: in-page highlight (the Lobby Board card: a thin orange frame while it matches, and a "New" badge when the match arrives while the window has no focus; the badge goes when the window loses focus again), sound alert, and (optional) browser desktop notification. A lobby alerts once when it starts to match, at any Queue Position. Clicking the desktop notification flashes the card on the Lobby Board; without the board, it opens the See All View for a lobby that the home page does not show. Outside the board, the queue card of a Live Lobby, the "See all" button and the See All View card keep their highlight.
 - **Search timer**: shows how long the current search has been running.
 - **Sleep when in-game**: panel hides while a game is live (`body.in-game`, or the URL has `?live`).
 

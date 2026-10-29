@@ -22,12 +22,12 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 **Lobby Board**
 - Shows every advertised lobby of every queue (`FFA`, `Team`, `Special`, `Hosted`) at once: one column per queue, one row per queue position
 - Each card shows the map, the team format, the players and the active modifiers
-- A card that matches your filters is in full colour; the other cards are greyed but stay visible
+- A card that matches your filters is in full colour with a thin orange frame; the other cards are dimmed but stay readable when you point at them
 - Clicking a card navigates to OpenFront's own join modal — manual quick-join only, you still confirm entry there
 
 **Alerts**
 - A lobby alerts once when it starts to match, at any queue position. It alerts again if it stops matching and then matches again
-- The card of a new match shows a "New" badge until your pointer passes over it, and pulses for 10 seconds
+- A match that arrives while the OpenFront window has no focus gets a "New" badge on its card. The badge goes when the window loses focus again
 - Optional sound alert on new matches
 - Optional desktop notification when the OpenFront tab is in the background; clicking it brings the tab to the front and flashes the card on the board
 - Sound on game start, triggered by OpenFront's own `?live` URL transition or its `in-game` page state (streamer mode)
@@ -76,7 +76,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 2. In the Lobby Board sidebar, enable `FFA`, `Team`, or both.
 3. For `Team`, optionally toggle `Humans Vs Nations` and pick allowed team counts (`2`–`7`).
 4. Set capacity bounds; click modifier chips to require or exclude them.
-5. When a card on the Lobby Board gets a "New" badge and pulses, click it yourself to open OpenFront's join modal for that lobby.
+5. When a card on the Lobby Board gets a "New" badge, click it yourself to open OpenFront's join modal for that lobby.
 
 ### What this doesn't do
 
