@@ -4,7 +4,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 
 ## For Players
 
-<img width="300" alt="OpenFront Game Notifier panel" src="docs/images/notifier-panel-v2.12.png" />
+<img alt="Lobby Board with the filter sidebar open and the pointer on a matching card" src="docs/images/lobby-board-v3.0.png" />
 
 ### Features
 
@@ -46,6 +46,8 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 - The **Original page** switch, in the Lobby Board header, hides the Lobby Board and brings back OpenFront's own lobby area. The filters and the controls then move to a floating panel, and the same switch in its header brings the Lobby Board back. In this mode the notifier highlights matches on OpenFront's page: the queue cards and the "See all" button pulse, and the matching cards in the See All View get a highlight. A click on a desktop notification opens the See All View when the home page does not show the lobby. The alerts (sound and desktop notification) follow the same rules in both modes. The notifier remembers the mode across reloads, and the Lobby Board is the default
 - Discovery feedback automatically pauses while you're already inside a joined lobby flow
 
+<img alt="Lobby Board with the filter sidebar collapsed to its rail" src="docs/images/lobby-board-collapsed-v3.0.png" />
+
 ### Modifier filters
 
 - Compact
@@ -80,7 +82,7 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 2. In the Lobby Board sidebar, enable `FFA`, `Team`, or both.
 3. For `Team`, optionally toggle `Humans Vs Nations` and pick allowed team counts (`2`–`7`).
 4. Set capacity bounds; click modifier chips to require or exclude them.
-5. When a card on the Lobby Board gets a "New" badge, click it yourself to open OpenFront's join modal for that lobby.
+5. When a card on the Lobby Board gets an orange frame, it matches your filters. Click it yourself to open OpenFront's join modal for that lobby.
 
 ### What this doesn't do
 
@@ -101,16 +103,26 @@ A TypeScript userscript for OpenFront `v0.31+` that watches public lobbies and n
 │   ├── modules/
 │   │   └── lobby-discovery/
 │   │       ├── CurrentPlayerHighlighter.ts     # additive native-modal enhancer
+│   │       ├── LobbyBoardAlerts.ts             # "New" badge and flash state of the cards
+│   │       ├── LobbyBoardHelpers.ts            # pure card model: format text, modifiers, gauge
+│   │       ├── LobbyBoardMotion.ts             # card slide and fade-in
+│   │       ├── LobbyBoardSidebar.ts            # collapsible filter sidebar
+│   │       ├── LobbyBoardSidebarHelpers.ts     # pure filter summary of the collapsed rail
+│   │       ├── LobbyBoardView.ts               # the Lobby Board in place of the lobby area
+│   │       ├── LobbyDiscoveryControls.ts       # discovery, sound, desktop and Original page switches
 │   │       ├── LobbyDiscoveryEngine.ts         # criteria matching
+│   │       ├── LobbyDiscoveryFilters.ts        # filter sections component (sidebar or panel)
 │   │       ├── LobbyDiscoveryHelpers.ts        # pure helpers
 │   │       ├── LobbyDiscoveryTypes.ts
-│   │       ├── LobbyDiscoveryUI.ts             # panel UI
+│   │       ├── LobbyDiscoveryUI.ts             # wires matching, alerts, board and panel
 │   │       ├── RangeSlider.ts                  # per-team log-scaled slider component
 │   │       └── RangeSliderHelpers.ts           # pure stop/position helpers
-│   ├── styles/
+│   ├── styles/                                 # panel, board and board chrome styles
 │   ├── types/
 │   ├── utils/
 │   │   ├── BrowserNotificationUtils.ts
+│   │   ├── HomePageUtils.ts                    # finds OpenFront's home page grid and lobby cells
+│   │   ├── HtmlUtils.ts
 │   │   ├── LobbyUtils.ts
 │   │   ├── SoundUtils.ts
 │   │   └── URLObserver.ts
@@ -143,11 +155,14 @@ npm run type-check   # tsc --noEmit
 
 ### Storage keys
 
-- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, map filter, sound/desktop preferences, hosted option, `2×` toggle
+- `OF_LOBBY_DISCOVERY_SETTINGS` — criteria, map filter, sound/desktop preferences, `2×` toggle
+- `OF_LOBBY_DISCOVERY_COLLAPSED_SECTIONS` — which filter sections are collapsed
+- `OF_LOBBY_BOARD_SIDEBAR_COLLAPSED` — whether the Lobby Board sidebar is collapsed
+- `OF_LOBBY_BOARD_MODE` — Lobby Board or Original page
 
 ### Testing
 
-Vitest with JSDOM. The suite covers the matching engine, helpers, panel UI, the native-modal highlighter, and the `LobbyDataManager` feed parsing.
+Vitest with JSDOM. The suite covers the matching engine, helpers, the Lobby Board and its sidebar, the floating panel, the native-modal highlighter, and the `LobbyDataManager` feed parsing.
 
 ```bash
 npm run test
