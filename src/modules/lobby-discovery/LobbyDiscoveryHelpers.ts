@@ -572,36 +572,6 @@ export function getLobbyMapThumbnailUrl(
   return `/${path}`;
 }
 
-export interface UpcomingCardModel {
-  gameID: string;
-  mapName: string;
-  modeText: string;
-  capacityLabel: string;
-  modifierLabels: string[];
-  thumbnailUrl: string | null;
-}
-
-/**
- * Display model for an upcoming ("Up Next") card. Pure — DOM building lives in
- * LobbyDiscoveryUI. Capacity is rendered as total slots ("N slots") because an
- * upcoming game has no current player count until it is promoted to live.
- */
-export function buildUpcomingCardModel(
-  lobby: Lobby,
-  assetManifest?: Record<string, string> | null,
-  cdnBase?: string | null
-): UpcomingCardModel {
-  const capacity = getLobbyCapacity(lobby);
-  return {
-    gameID: lobby.gameID,
-    mapName: getMapDisplayName(lobby.gameConfig?.gameMap?.trim() || 'Unknown map'),
-    modeText: getLobbyModeText(lobby),
-    capacityLabel: capacity !== null ? `${capacity} slots` : '',
-    modifierLabels: getActiveModifierLabels(lobby),
-    thumbnailUrl: getLobbyMapThumbnailUrl(lobby, assetManifest, cdnBase),
-  };
-}
-
 // Stores only required and blocked maps, so an unset map and 'any' read the same.
 export function sanitizeMapFilter(value: unknown): MapFilter {
   if (!value || typeof value !== 'object' || Array.isArray(value)) {
@@ -633,10 +603,6 @@ export function normalizeSettings(
       typeof current?.isTeamTwoTimesMinEnabled === 'boolean'
         ? current.isTeamTwoTimesMinEnabled
         : !!current?.isTeamThreeTimesMinEnabled,
-    notifyUpcomingEnabled:
-      typeof current?.notifyUpcomingEnabled === 'boolean'
-        ? current.notifyUpcomingEnabled
-        : true,
     includeHostedAndCustomLobbies:
       typeof current?.includeHostedAndCustomLobbies === 'boolean'
         ? current.includeHostedAndCustomLobbies

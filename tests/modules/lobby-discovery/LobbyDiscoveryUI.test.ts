@@ -495,7 +495,6 @@ describe('LobbyDiscoveryUI', () => {
       soundEnabled: false,
       desktopNotificationsEnabled: false,
       isTeamTwoTimesMinEnabled: false,
-      notifyUpcomingEnabled: true,
       includeHostedAndCustomLobbies: true,
       mapFilter: {},
     });
@@ -524,7 +523,6 @@ describe('LobbyDiscoveryUI', () => {
         soundEnabled: true,
         desktopNotificationsEnabled: false,
         isTeamTwoTimesMinEnabled: false,
-        notifyUpcomingEnabled: true,
         includeHostedAndCustomLobbies: true,
         mapFilter: {},
       });
@@ -570,7 +568,6 @@ describe('LobbyDiscoveryUI', () => {
         soundEnabled: true,
         desktopNotificationsEnabled: false,
         isTeamTwoTimesMinEnabled: false,
-        notifyUpcomingEnabled: true,
         includeHostedAndCustomLobbies: true,
         mapFilter: {},
       });
@@ -644,21 +641,20 @@ describe('LobbyDiscoveryUI', () => {
     expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(2);
   });
 
-  it('notifies on an upcoming [1] match without pulsing the live (featured) card', () => {
+  it('notifies on a match at Queue Position 1 without pulsing the live (featured) card', () => {
     store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
       criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: 30, maxPlayers: null }],
       discoveryEnabled: true,
       soundEnabled: true,
       desktopNotificationsEnabled: true,
       isTeamTwoTimesMinEnabled: false,
-      notifyUpcomingEnabled: true,
     });
 
     ui = new LobbyDiscoveryUI();
 
-    // games.ffa[0] is the live lobby (too small → no match); games.ffa[1] is the
-    // upcoming lobby (matches). The upcoming match notifies, but the *live* queue
-    // card never pulses for an upcoming-only match.
+    // games.ffa[0] is the live lobby (too small → no match); games.ffa[1] is an
+    // Upcoming Lobby (matches). It notifies, but the *live* queue card never
+    // pulses for an upcoming-only match.
     const lobbies = [
       {
         gameID: 'ffa-visible-too-small',
@@ -679,9 +675,10 @@ describe('LobbyDiscoveryUI', () => {
     );
     expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(1);
     expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
-    // The upcoming card itself carries the match highlight.
-    const ffaSlot = document.querySelector('.of-upcoming-slot[data-source="ffa"]');
-    expect(ffaSlot?.querySelector('.of-upcoming-card-match')).toBeTruthy();
+    // The Lobby Board card carries the match highlight.
+    expect(
+      document.querySelector('.of-board-card[data-game-id="ffa-upcoming-match"]')?.classList
+    ).toContain('of-board-card-match');
   });
 
   it('pulses the queue card when the featured (first) lobby matches', () => {
@@ -996,210 +993,7 @@ describe('LobbyDiscoveryUI', () => {
     });
   });
 
-  describe('Up Next strip', () => {
-    function ffaLiveAndUpcoming(): any[] {
-      return [
-        // games.ffa[0] — live, too small to match minPlayers:30
-        {
-          gameID: 'ffa-live-small',
-          publicGameType: 'ffa',
-          gameConfig: { gameMode: 'Free For All', gameMap: 'Bering Sea', maxPlayers: 25 },
-        },
-        // games.ffa[1] — upcoming, matches minPlayers:30
-        {
-          gameID: 'ffa-upcoming-big',
-          publicGameType: 'ffa',
-          gameConfig: { gameMode: 'Free For All', gameMap: 'Europe', maxPlayers: 40 },
-        },
-      ];
-    }
-
-    it('notifies on an upcoming match when the toggle is on, and stays silent when off', () => {
-      store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
-        criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: 30, maxPlayers: null }],
-        discoveryEnabled: true,
-        soundEnabled: true,
-        desktopNotificationsEnabled: true,
-        isTeamTwoTimesMinEnabled: false,
-        notifyUpcomingEnabled: true,
-      });
-
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-
-      // Upcoming match → sound + desktop notification, live card not pulsed.
-      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
-      expect(BrowserNotificationUtils.show).toHaveBeenCalledTimes(1);
-      expect(
-        document.getElementById('ffa-card')?.classList.contains('of-discovery-card-active')
-      ).toBe(false);
-
-      // Toggle off via the strip control → no new notification on the next update.
-      vi.clearAllMocks();
-      const toggle = document.getElementById('of-upcoming-toggle') as HTMLInputElement;
-      expect(toggle.checked).toBe(true);
-      toggle.checked = false;
-      toggle.dispatchEvent(new Event('change'));
-
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-      expect(SoundUtils.playGameFoundSound).not.toHaveBeenCalled();
-      expect(BrowserNotificationUtils.show).not.toHaveBeenCalled();
-      const ffaSlot = document.querySelector('.of-upcoming-slot[data-source="ffa"]');
-      expect(ffaSlot?.querySelector('.of-upcoming-card-match')).toBeFalsy();
-      // Display is independent of notify: the upcoming card still renders.
-      expect(ffaSlot?.querySelector('.of-upcoming-card')).toBeTruthy();
-    });
-
-    it('does not change live-only matching behavior', () => {
-      store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
-        criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null }],
-        discoveryEnabled: true,
-        soundEnabled: true,
-        desktopNotificationsEnabled: false,
-        isTeamTwoTimesMinEnabled: false,
-        notifyUpcomingEnabled: true,
-      });
-
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate([
-        {
-          gameID: 'ffa-live-match',
-          publicGameType: 'ffa',
-          gameConfig: { gameMode: 'Free For All', gameMap: 'Bering Sea', maxPlayers: 25 },
-        },
-      ] as any);
-
-      expect(
-        document.getElementById('ffa-card')?.classList.contains('of-discovery-card-active')
-      ).toBe(true);
-      expect(SoundUtils.playGameFoundSound).toHaveBeenCalledTimes(1);
-    });
-
-    it('renders an upcoming card with config and no countdown/timer', () => {
-      Object.assign(globalThis as Record<string, unknown>, {
-        GM_getValue: () => undefined,
-        GM_setValue: () => undefined,
-      });
-
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-
-      const card = document.querySelector(
-        '.of-upcoming-slot[data-source="ffa"] .of-upcoming-card'
-      ) as HTMLElement;
-      expect(card).toBeTruthy();
-      expect(card.querySelector('.of-upcoming-name')?.textContent).toBe('Europe');
-      expect(card.querySelector('.of-upcoming-mode')?.textContent).toBe('Free For All');
-      expect(card.querySelector('.of-upcoming-count')?.textContent).toContain('40 slots');
-      expect(card.querySelector('.of-upcoming-chip')?.textContent?.trim()).toBe('Up next');
-      // No countdown / timer is ever shown.
-      expect(card.querySelector('.timer')).toBeNull();
-      expect(card.textContent ?? '').not.toMatch(/\d+\s*(min|sec|s\b)/i);
-    });
-
-    it('renders a "No upcoming game" placeholder when a slot has no [1]', () => {
-      Object.assign(globalThis as Record<string, unknown>, {
-        GM_getValue: () => undefined,
-        GM_setValue: () => undefined,
-      });
-
-      ui = new LobbyDiscoveryUI();
-      // Only a live lobby for FFA — no upcoming entry.
-      ui.receiveLobbyUpdate([
-        {
-          gameID: 'ffa-live-only',
-          publicGameType: 'ffa',
-          gameConfig: { gameMode: 'Free For All', gameMap: 'Bering Sea', maxPlayers: 25 },
-        },
-      ] as any);
-
-      const ffaSlot = document.querySelector('.of-upcoming-slot[data-source="ffa"]');
-      expect(ffaSlot?.querySelector('.of-upcoming-card')).toBeFalsy();
-      expect(ffaSlot?.querySelector('.of-upcoming-empty')?.textContent).toBe('No upcoming game');
-    });
-
-    it('navigates to the game URL only on a real click, never from processing', () => {
-      Object.assign(globalThis as Record<string, unknown>, {
-        GM_getValue: () => undefined,
-        GM_setValue: () => undefined,
-      });
-      // jsdom's window.location.assign is non-configurable, so spy on the
-      // class seam that wraps it. This still proves the click → navigate wiring
-      // and that processing never navigates.
-      const navSpy = vi
-        .spyOn(LobbyDiscoveryUI.prototype as any, 'navigateToGame')
-        .mockImplementation(() => {});
-
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-
-      // Matching/processing alone must never navigate.
-      expect(navSpy).not.toHaveBeenCalled();
-
-      const card = document.querySelector(
-        '.of-upcoming-slot[data-source="ffa"] .of-upcoming-card'
-      ) as HTMLButtonElement;
-      card.click();
-
-      expect(navSpy).toHaveBeenCalledTimes(1);
-      expect(navSpy).toHaveBeenCalledWith('/game/ffa-upcoming-big');
-      navSpy.mockRestore();
-    });
-
-    it('reuses the same card DOM node across an unchanged refresh (no hover flicker)', () => {
-      Object.assign(globalThis as Record<string, unknown>, {
-        GM_getValue: () => undefined,
-        GM_setValue: () => undefined,
-      });
-
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-
-      const cardBefore = document.querySelector(
-        '.of-upcoming-slot[data-source="ffa"] .of-upcoming-card'
-      );
-      expect(cardBefore).toBeTruthy();
-
-      // A second identical update (and the 16ms pulse-sync re-apply) must not
-      // rebuild the card — rebuilding swaps the node under the cursor and
-      // restarts the hover animation, which reads as flicker.
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-      vi.advanceTimersByTime(32);
-
-      const cardAfter = document.querySelector(
-        '.of-upcoming-slot[data-source="ffa"] .of-upcoming-card'
-      );
-      expect(cardAfter).toBe(cardBefore);
-    });
-
-    it('hides the strip off the lobby page / during a live game and shows it on the lobby page', async () => {
-      const { LobbyUtils } = await import('@/utils/LobbyUtils');
-
-      Object.assign(globalThis as Record<string, unknown>, {
-        GM_getValue: () => undefined,
-        GM_setValue: () => undefined,
-      });
-
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-
-      const strip = document.getElementById('of-upcoming-strip') as HTMLElement;
-      expect(strip).toBeTruthy();
-      expect(strip.style.display).not.toBe('none');
-
-      // Simulate leaving the lobby page (live game) — the strip hides.
-      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(false);
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-      expect(strip.style.display).toBe('none');
-
-      // Back on the lobby page — the strip shows again.
-      vi.mocked(LobbyUtils.isOnLobbyPage).mockReturnValue(true);
-      ui.receiveLobbyUpdate(ffaLiveAndUpcoming());
-      expect(strip.style.display).not.toBe('none');
-    });
-  });
-
-  describe('upcoming card map thumbnail asset resolution', () => {
+  describe('board card map thumbnail asset resolution', () => {
     beforeEach(() => {
       store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
         criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null }],
@@ -1207,7 +1001,6 @@ describe('LobbyDiscoveryUI', () => {
         soundEnabled: false,
         desktopNotificationsEnabled: false,
         isTeamTwoTimesMinEnabled: false,
-        notifyUpcomingEnabled: true,
       });
     });
 
@@ -1230,7 +1023,7 @@ describe('LobbyDiscoveryUI', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(ffaUpcoming());
       const img = document.querySelector(
-        '.of-upcoming-slot[data-source="ffa"] .of-upcoming-art img'
+        '.of-board-card[data-game-id="ffa-next"] .of-board-thumb img'
       ) as HTMLImageElement | null;
       // getAttribute, not .src — jsdom resolves the property to an absolute URL.
       return img?.getAttribute('src') ?? null;
@@ -1306,7 +1099,6 @@ describe('LobbyDiscoveryUI', () => {
         soundEnabled: true,
         desktopNotificationsEnabled: true,
         isTeamTwoTimesMinEnabled: false,
-        notifyUpcomingEnabled: true,
         ...extra,
       });
     }
@@ -1329,7 +1121,6 @@ describe('LobbyDiscoveryUI', () => {
       expect(slotHighlighted('ffa-3')).toBe(true);
       expect(slotHighlighted('ffa-2')).toBe(false);
       expect(document.getElementById('ffa-card')?.classList.contains('of-discovery-card-active')).toBe(false);
-      expect(document.querySelector('.of-upcoming-card-match')).toBeNull();
     });
 
     it('stops pulsing "See all" and clears the highlight when the match leaves the feed', () => {
@@ -1382,18 +1173,6 @@ describe('LobbyDiscoveryUI', () => {
       ui.receiveLobbyUpdate([{ ...ffaLobby('custom-0', 40), publicGameType: 'special', custom: true }] as any);
 
       expect(document.getElementById('special-card')?.classList.contains('of-discovery-card-active')).toBe(false);
-      expect(SoundUtils.playGameFoundSound).not.toHaveBeenCalled();
-    });
-
-    it('covers every Upcoming Lobby with the "notify upcoming" option', () => {
-      mountSeeAll(['ffa-0', 'ffa-1', 'ffa-2', 'ffa-3']);
-      bigFfaSettings({ notifyUpcomingEnabled: false });
-
-      ui = new LobbyDiscoveryUI();
-      ui.receiveLobbyUpdate(ffaQueueWithFourthMatch());
-
-      expect(seeAllPulsing()).toBe(false);
-      expect(slotHighlighted('ffa-3')).toBe(false);
       expect(SoundUtils.playGameFoundSound).not.toHaveBeenCalled();
     });
 

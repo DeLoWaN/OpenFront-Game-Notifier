@@ -16,7 +16,7 @@ import {
   getActiveModifierLabels,
   getLobbyModeText,
   getLobbyMapThumbnailUrl,
-  buildUpcomingCardModel,
+  getMapDisplayName,
 } from '@/modules/lobby-discovery/LobbyDiscoveryHelpers';
 
 describe('LobbyDiscoveryHelpers', () => {
@@ -56,7 +56,6 @@ describe('LobbyDiscoveryHelpers', () => {
       soundEnabled: true,
       desktopNotificationsEnabled: false,
       isTeamTwoTimesMinEnabled: false,
-      notifyUpcomingEnabled: true,
       includeHostedAndCustomLobbies: true,
       mapFilter: {},
     });
@@ -367,12 +366,9 @@ describe('LobbyDiscoveryHelpers', () => {
     expect(getBrowserNotificationContent(lobby).title).toBe('Archipelago Sea • FFA • Special');
   });
 
-  it('uses the OpenFront map name on the Up Next card and keeps an unknown map as is', () => {
-    const lobby = (gameMap: string) =>
-      ({ gameID: 'up', publicGameType: 'ffa', gameConfig: { gameMode: 'Free For All', maxPlayers: 40, gameMap } }) as any;
-
-    expect(buildUpcomingCardModel(lobby('Baikal Nuke Wars')).mapName).toBe('Baikal (Nuke Wars)');
-    expect(buildUpcomingCardModel(lobby('Brand New Map')).mapName).toBe('Brand New Map');
+  it('uses the OpenFront map name and keeps an unknown map as is', () => {
+    expect(getMapDisplayName('Baikal Nuke Wars')).toBe('Baikal (Nuke Wars)');
+    expect(getMapDisplayName('Brand New Map')).toBe('Brand New Map');
   });
 
   it('names a Custom Lobby in the notification title', () => {
@@ -523,32 +519,31 @@ describe('LobbyDiscoveryHelpers', () => {
     });
   });
 
-  describe('normalizeSettings — notifyUpcomingEnabled', () => {
-    it('defaults notifyUpcomingEnabled to true for legacy settings missing the field', () => {
-      const settings = normalizeSettings({
-        criteria: [],
-        discoveryEnabled: true,
-        soundEnabled: true,
-        desktopNotificationsEnabled: false,
-        isTeamTwoTimesMinEnabled: false,
-      } as any);
-      expect(settings.notifyUpcomingEnabled).toBe(true);
-    });
-
-    it('defaults to true when no settings exist at all', () => {
-      expect(normalizeSettings(null).notifyUpcomingEnabled).toBe(true);
-    });
-
-    it('preserves an explicit false', () => {
-      const settings = normalizeSettings({
-        criteria: [],
-        discoveryEnabled: true,
-        soundEnabled: true,
-        desktopNotificationsEnabled: false,
-        isTeamTwoTimesMinEnabled: false,
+  describe('normalizeSettings — saved notifyUpcomingEnabled', () => {
+    it('drops the removed notifyUpcomingEnabled value and keeps every other saved value', () => {
+      const saved = {
+        criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: 5, maxPlayers: 25 }],
+        discoveryEnabled: false,
+        soundEnabled: false,
+        desktopNotificationsEnabled: true,
+        isTeamTwoTimesMinEnabled: true,
         notifyUpcomingEnabled: false,
+        includeHostedAndCustomLobbies: false,
+        mapFilter: { Europe: 'blocked' },
+      };
+
+      const settings = normalizeSettings(saved as any);
+
+      expect(settings).not.toHaveProperty('notifyUpcomingEnabled');
+      expect(settings).toEqual({
+        criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: 5, maxPlayers: 25 }],
+        discoveryEnabled: false,
+        soundEnabled: false,
+        desktopNotificationsEnabled: true,
+        isTeamTwoTimesMinEnabled: true,
+        includeHostedAndCustomLobbies: false,
+        mapFilter: { Europe: 'blocked' },
       });
-      expect(settings.notifyUpcomingEnabled).toBe(false);
     });
   });
 
@@ -632,26 +627,6 @@ describe('LobbyDiscoveryHelpers', () => {
       expect(getLobbyMapThumbnailUrl(lobby, manifest, 'https://cdn.ofedge.io')).toBe(
         'https://cdn.ofedge.io/_assets/maps/faroeislandstest/thumbnail.abc.webp'
       );
-    });
-  });
-
-  describe('buildUpcomingCardModel', () => {
-    it('describes capacity as total slots and never exposes a start time', () => {
-      const model = buildUpcomingCardModel({
-        gameID: 'up-1',
-        gameConfig: {
-          gameMode: 'Free For All',
-          gameMap: 'Europe',
-          maxPlayers: 21,
-          publicGameModifiers: { isCompact: true },
-        },
-      } as any);
-      expect(model.gameID).toBe('up-1');
-      expect(model.mapName).toBe('Europe');
-      expect(model.modeText).toBe('Free For All');
-      expect(model.capacityLabel).toBe('21 slots');
-      expect(model.modifierLabels).toContain('Compact');
-      expect(model).not.toHaveProperty('startsAt');
     });
   });
 });
