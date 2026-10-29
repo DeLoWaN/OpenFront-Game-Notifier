@@ -248,6 +248,19 @@ describe('Original page switch', () => {
       expect(slotHighlighted('ffa-3')).toBe(false);
     });
 
+    it('highlights OpenFront\'s page while the panel stands in for a board that cannot mount', () => {
+      bigFfaSettings();
+      // OpenFront changed its grid, so the board finds no place to mount.
+      document.getElementById('lobby-grid')!.className = 'flex';
+      start().receiveLobbyUpdate(matchingFeed(), NOW);
+      vi.advanceTimersByTime(50);
+
+      expect(boardVisible()).toBe(false);
+      expect(panel()).not.toBeNull();
+      expect(seeAllPulsing()).toBe(true);
+      expect(slotHighlighted('ffa-3')).toBe(true);
+    });
+
     it('starts the highlighting when the switch turns on, and stops it when the switch turns off', () => {
       bigFfaSettings();
       start().receiveLobbyUpdate(matchingFeed(), NOW);

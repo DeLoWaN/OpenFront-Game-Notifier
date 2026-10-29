@@ -363,8 +363,8 @@ export class LobbyDiscoveryUI {
         return;
       }
 
-      // The Lobby Board shows the matches itself: only the original page needs these signals.
-      const highlight = this.boardMode === 'original';
+      // The Lobby Board shows the matches itself: only OpenFront's own page needs these signals.
+      const highlight = !this.canShowBoard();
       this.updateQueueCardPulses(highlight ? liveMatchSources : new Set());
       this.updateSeeAllSignals(highlight && hasSeeAllOnlyMatch, highlight ? seeAllMatchIds : new Set());
       this.boardAlerts.retain(matchedKeys);
@@ -437,6 +437,11 @@ export class LobbyDiscoveryUI {
     GM_setValue(STORAGE_KEYS.lobbyBoardMode, mode);
     this.controls.setOriginalPageOn(mode === 'original');
     this.processLobbies(this.lastLobbies);
+  }
+
+  /** False in original page mode, and when the page has no place for the board. */
+  private canShowBoard(): boolean {
+    return this.boardMode === 'board' && this.lobbyBoard.canMount();
   }
 
   private updateLobbyBoard(lobbies: Lobby[]): void {

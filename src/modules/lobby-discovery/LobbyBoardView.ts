@@ -282,16 +282,24 @@ export class LobbyBoardView {
     );
   }
 
+  /** True while the board is on the page, or when OpenFront's page has a grid that can hold it. */
+  canMount(): boolean {
+    return !!this.root?.isConnected || this.findPageGrid() !== null;
+  }
+
+  private findPageGrid(): HTMLElement | null {
+    const selector = document.querySelector('game-mode-selector');
+    const grid = selector
+      ? Array.from(selector.querySelectorAll('div')).find((el) => el.className.includes(GRID_CLASS_MARKER))
+      : null;
+    return grid ?? null;
+  }
+
   /** Finds the grid of OpenFront's home page and puts the board before its first child. */
   private ensureMounted(): HTMLDivElement | null {
     if (this.root?.isConnected) return this.root;
 
-    const selector = document.querySelector('game-mode-selector');
-    const pageGrid = selector
-      ? Array.from(selector.querySelectorAll('div')).find((el) =>
-          el.className.includes(GRID_CLASS_MARKER)
-        )
-      : null;
+    const pageGrid = this.findPageGrid();
     if (!pageGrid) return null;
 
     const root = document.createElement('div');
