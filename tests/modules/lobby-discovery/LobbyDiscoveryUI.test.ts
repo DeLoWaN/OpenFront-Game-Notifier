@@ -461,7 +461,9 @@ describe('LobbyDiscoveryUI', () => {
 
     ui = new LobbyDiscoveryUI();
 
-    expect(document.getElementById('openfront-discovery-panel')).toBeTruthy();
+    // The Lobby Board holds the controls, so the floating panel does not show.
+    expect(document.getElementById('openfront-discovery-panel')).toBeNull();
+    expect(document.querySelector('.of-board-sidebar #discovery-ffa')).toBeTruthy();
     expect(document.getElementById('discovery-ffa')).toBeTruthy();
     expect(document.getElementById('discovery-team-hvn')).toBeTruthy();
     expect(document.getElementById('discovery-team-two-times')).toBeTruthy();
@@ -812,6 +814,8 @@ describe('LobbyDiscoveryUI', () => {
       soundEnabled: true,
       isTeamTwoTimesMinEnabled: false,
     });
+    // The floating panel shows only when the Lobby Board cannot.
+    document.body.innerHTML = '';
 
     ui = new LobbyDiscoveryUI();
 

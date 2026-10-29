@@ -17,6 +17,7 @@ import {
   groupLobbiesByQueue,
   type BoardCardModel,
 } from './LobbyBoardHelpers';
+import { LobbyBoardSidebar } from './LobbyBoardSidebar';
 
 export interface LobbyBoardAssets {
   manifest: Record<string, string> | null;
@@ -27,6 +28,12 @@ export interface LobbyBoardOptions {
   /** Called from a card's click handler only. */
   onJoin: (gameID: string) => void;
   getAssets: () => LobbyBoardAssets;
+}
+
+/** The places where the board hosts the filter component and the header controls. */
+export interface LobbyBoardHosts {
+  sidebarBody: HTMLElement;
+  controls: HTMLElement;
 }
 
 export interface LobbyBoardState {
@@ -51,6 +58,8 @@ interface SavedStyle {
 
 export class LobbyBoardView {
   private root: HTMLDivElement | null = null;
+  private hosts: LobbyBoardHosts | null = null;
+  private readonly sidebar = new LobbyBoardSidebar();
   private pageGrid: HTMLElement | null = null;
   // Inline styles of OpenFront's own elements, saved before the board changes them.
   private savedStyles: SavedStyle[] = [];
@@ -124,6 +133,16 @@ export class LobbyBoardView {
     }
   }
 
+  /** The containers of the sidebar and the header, or null while the board is not on the page. */
+  getHosts(): LobbyBoardHosts | null {
+    return this.root?.isConnected ? this.hosts : null;
+  }
+
+  /** Sets the line that the collapsed sidebar rail shows. */
+  setFilterSummary(text: string): void {
+    this.sidebar.setSummary(text);
+  }
+
   /** Hides the board and gives OpenFront's lobby area back as it was. */
   hide(): void {
     this.stopTicking();
@@ -136,6 +155,7 @@ export class LobbyBoardView {
     this.restorePage();
     this.root?.remove();
     this.root = null;
+    this.hosts = null;
     this.pageGrid = null;
     this.totals = null;
     this.grid = null;
@@ -237,13 +257,20 @@ export class LobbyBoardView {
     title.textContent = 'Lobby Board';
     const totals = document.createElement('span');
     totals.className = 'of-board-totals';
-    head.append(title, totals);
+    const controls = document.createElement('div');
+    controls.className = 'of-board-controls';
+    head.append(title, totals, controls);
+    const { element: sidebar, body: sidebarBody } = this.sidebar.build();
     const grid = document.createElement('div');
     grid.className = 'of-board-grid';
-    root.append(head, grid);
+    const main = document.createElement('div');
+    main.className = 'of-board-main';
+    main.append(sidebar, grid);
+    root.append(head, main);
     pageGrid.insertBefore(root, pageGrid.firstChild);
 
     this.root = root;
+    this.hosts = { sidebarBody, controls };
     this.pageGrid = pageGrid;
     this.totals = totals;
     this.grid = grid;

@@ -28,6 +28,8 @@ import {
 } from './LobbyDiscoveryHelpers';
 import { LobbyDiscoveryFilters, type FilterChange } from './LobbyDiscoveryFilters';
 import { LobbyBoardView } from './LobbyBoardView';
+import { formatFilterSummary } from './LobbyBoardSidebarHelpers';
+import { LobbyDiscoveryControls } from './LobbyDiscoveryControls';
 
 function isDebugEnabled(): boolean {
   try {
@@ -90,8 +92,6 @@ const UPCOMING_SOURCE_ORDER: QueueSource[] = ['ffa', 'special', 'team'];
 
 const ICON_PLAYERS = `<svg viewBox="0 0 20 20" fill="currentColor"><path d="M13 6a3 3 0 11-6 0 3 3 0 016 0zM18 8a2 2 0 11-4 0 2 2 0 014 0zM14 15a4 4 0 00-8 0v3h8v-3zM6 8a2 2 0 11-4 0 2 2 0 014 0zM16 18v-3a5.972 5.972 0 00-.75-2.906A3.005 3.005 0 0119 15v3h-3zM4.75 12.094A5.973 5.973 0 004 15v3H1v-3a3 3 0 013.75-2.906z"/></svg>`;
 
-const ICON_SOUND = `<svg viewBox="0 0 24 24"><path d="M11 5L6 9H2v6h4l5 4V5z"/><path d="M15.5 8.5a5 5 0 010 7"/><path d="M19 5a9 9 0 010 14"/></svg>`;
-const ICON_BELL = `<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 1112 0c0 7 3 9 3 9H3s3-2 3-9z"/><path d="M10.3 21a1.94 1.94 0 003.4 0"/></svg>`;
 
 export class LobbyDiscoveryUI {
   private discoveryEnabled = true;
@@ -124,8 +124,15 @@ export class LobbyDiscoveryUI {
   private gameInfoInterval: ReturnType<typeof setInterval> | null = null;
   private pulseSyncTimeout: ReturnType<typeof setTimeout> | null = null;
 
+  // The floating panel holds the filters and the controls only when the Lobby Board cannot show.
   private panel!: HTMLDivElement;
+  private panelControlsSlot!: HTMLDivElement;
+  private panelFiltersSlot!: HTMLDivElement;
   private filters!: LobbyDiscoveryFilters;
+  private controls!: LobbyDiscoveryControls;
+  // The containers that hold the filters and the controls right now.
+  private filtersHost: HTMLElement | null = null;
+  private controlsHost: HTMLElement | null = null;
   private engine: LobbyDiscoveryEngine;
   private lobbyBoard: LobbyBoardView;
   // Offset to add to the local clock to get the feed's clock.
@@ -178,6 +185,17 @@ export class LobbyDiscoveryUI {
     this.desktopNotificationsEnabled = settings.desktopNotificationsEnabled;
     this.discoveryEnabled = settings.discoveryEnabled;
     this.notifyUpcomingEnabled = settings.notifyUpcomingEnabled ?? true;
+    this.controls = new LobbyDiscoveryControls({
+      discoveryEnabled: settings.discoveryEnabled,
+      soundEnabled: settings.soundEnabled,
+      desktopNotificationsEnabled: settings.desktopNotificationsEnabled,
+      onToggleDiscovery: () => this.setDiscoveryEnabled(!this.discoveryEnabled, { resetTimer: true }),
+      onSoundChange: (enabled) => {
+        this.soundEnabled = enabled;
+        this.saveSettings();
+      },
+      onDesktopChange: (enabled) => void this.handleDesktopNotificationChange(enabled),
+    });
     this.filters = new LobbyDiscoveryFilters({
       initial: {
         criteria: settings.criteria,
@@ -211,26 +229,21 @@ export class LobbyDiscoveryUI {
   }
 
   private updateStatusText(): void {
-    const text = document.getElementById('discovery-search-timer');
-    if (!text) return;
-
     if (
       !this.discoveryEnabled ||
       this.criteriaList.length === 0 ||
       !this.isDiscoveryFeedbackAllowed()
     ) {
-      text.textContent = '';
-      text.style.display = 'none';
+      this.controls.setTimerText(null);
       return;
     }
 
-    text.style.display = 'inline';
     if (this.lastMatchTime !== null) {
-      text.textContent = `last match ${formatElapsedSince(this.lastMatchTime)}`;
+      this.controls.setTimerText(`last match ${formatElapsedSince(this.lastMatchTime)}`);
     } else if (this.searchStartTime !== null) {
-      text.textContent = `searching · ${formatElapsedSince(this.searchStartTime)}`;
+      this.controls.setTimerText(`searching · ${formatElapsedSince(this.searchStartTime)}`);
     } else {
-      text.textContent = 'awaiting filters';
+      this.controls.setTimerText('awaiting filters');
     }
   }
 
@@ -402,6 +415,7 @@ export class LobbyDiscoveryUI {
   private updateLobbyBoard(lobbies: Lobby[]): void {
     if (this.sleeping || !this.isDiscoveryFeedbackAllowed()) {
       this.lobbyBoard.hide();
+      this.placeSurfaces();
       return;
     }
     const isActive = this.discoveryEnabled && this.criteriaList.length > 0;
@@ -419,6 +433,7 @@ export class LobbyDiscoveryUI {
       matchedIds: isActive ? matchedIds : null,
       clockOffsetMs: this.clockOffsetMs,
     });
+    this.placeSurfaces();
   }
 
   private getNotificationKey(lobby: Lobby): string {
@@ -823,138 +838,89 @@ export class LobbyDiscoveryUI {
   }
 
   private updatePulseIndicator(): void {
-    const pulse = document.querySelector('.ld-pulse') as HTMLElement | null;
-    if (!pulse) return;
-    const active = this.discoveryEnabled && this.criteriaList.length > 0;
-    pulse.classList.toggle('is-paused', !active);
+    this.controls.setSearchActive(this.discoveryEnabled && this.criteriaList.length > 0);
   }
 
   private setDiscoveryEnabled(enabled: boolean, options: { resetTimer?: boolean } = {}): void {
     this.discoveryEnabled = enabled;
     this.saveSettings();
-    this.updateStatusLabel();
+    this.controls.setDiscoveryEnabled(enabled);
     this.syncSearchTimer({ resetStart: options.resetTimer ?? false });
+    // The board greys no card while discovery is paused.
+    this.updateLobbyBoard(this.lastLobbies);
   }
 
-  private updateStatusLabel(): void {
-    const label = document.querySelector('.ld-status-text strong') as HTMLElement | null;
-    if (!label) return;
-    label.textContent = this.discoveryEnabled ? 'Discovery active' : 'Discovery paused';
-  }
-
-  private setIconButtonState(checkboxId: string, on: boolean): void {
-    const btn = document
-      .getElementById(checkboxId)
-      ?.closest('.ld-icon-btn') as HTMLElement | null;
-    if (btn) btn.classList.toggle('is-on', on);
-  }
-
-  private loadUIFromSettings(): void {
-    const soundCheckbox = document.getElementById('discovery-sound-toggle') as HTMLInputElement | null;
-    if (soundCheckbox) {
-      soundCheckbox.checked = this.soundEnabled;
-      this.setIconButtonState('discovery-sound-toggle', this.soundEnabled);
-    }
-
-    const desktopCheckbox = document.getElementById('discovery-desktop-toggle') as HTMLInputElement | null;
-    if (desktopCheckbox) {
-      desktopCheckbox.checked = this.desktopNotificationsEnabled;
-      this.setIconButtonState('discovery-desktop-toggle', this.desktopNotificationsEnabled);
-    }
-
-    this.updateStatusLabel();
-  }
-
-  private async handleDesktopNotificationToggleChange(
-    desktopToggle: HTMLInputElement
-  ): Promise<void> {
+  private async handleDesktopNotificationChange(enabled: boolean): Promise<void> {
     const requestId = ++this.desktopNotificationRequestId;
 
-    if (!desktopToggle.checked) {
+    if (!enabled) {
       this.desktopNotificationsEnabled = false;
-      this.setIconButtonState('discovery-desktop-toggle', false);
+      this.controls.setDesktopOn(false);
       this.saveSettings();
       return;
     }
 
     const granted = await BrowserNotificationUtils.ensurePermission();
-    if (
-      requestId !== this.desktopNotificationRequestId ||
-      this.isDisposed ||
-      !desktopToggle.isConnected ||
-      !desktopToggle.checked
-    ) {
-      return;
-    }
+    // A newer change of the toggle makes this answer stale.
+    if (requestId !== this.desktopNotificationRequestId || this.isDisposed) return;
 
     this.desktopNotificationsEnabled = granted;
-    desktopToggle.checked = granted;
-    desktopToggle.toggleAttribute('checked', granted);
-    this.setIconButtonState('discovery-desktop-toggle', granted);
+    this.controls.setDesktopOn(granted);
     this.saveSettings();
   }
 
-  private setupEventListeners(): void {
-    document.getElementById('discovery-status')?.addEventListener('click', () => {
-      this.setDiscoveryEnabled(!this.discoveryEnabled, { resetTimer: true });
-    });
-
-    for (const id of ['discovery-sound-toggle', 'discovery-desktop-toggle']) {
-      const element = document.getElementById(id) as HTMLInputElement | null;
-      element?.addEventListener('change', () => {
-        if (id === 'discovery-sound-toggle') {
-          this.soundEnabled = element.checked;
-          this.setIconButtonState('discovery-sound-toggle', element.checked);
-          this.saveSettings();
-          return;
-        }
-        void this.handleDesktopNotificationToggleChange(element);
-      });
-    }
-  }
-
-  private renderIconButton(id: string, title: string, svg: string): string {
-    return `
-      <label class="ld-icon-btn" title="${title}" aria-label="${title}">
-        <input type="checkbox" id="${id}">${svg}
-      </label>
-    `;
-  }
-
   private createUI(): void {
-    if (document.getElementById('openfront-discovery-panel')) return;
-
     this.panel = document.createElement('div');
     this.panel.id = 'openfront-discovery-panel';
     this.panel.className = 'of-panel discovery-panel';
     this.panel.style.width = '380px';
     this.panel.innerHTML = `
-      <div class="ld-status">
-        <span class="ld-pulse" aria-hidden="true"></span>
-        <div class="ld-status-text" id="discovery-status" role="button" tabindex="0">
-          <strong>Discovery active</strong>
-          <span class="sep">·</span>
-          <span class="meta" id="discovery-search-timer"></span>
-        </div>
-        <div class="ld-icons">
-          ${this.renderIconButton('discovery-sound-toggle', 'Sound alert', ICON_SOUND)}
-          ${this.renderIconButton('discovery-desktop-toggle', 'Desktop notification', ICON_BELL)}
-        </div>
-      </div>
+      <div class="ld-panel-slot" data-slot="controls"></div>
       <div class="ld-head">
         <div class="ld-eyebrow">Notify + quick-join · never auto-joins</div>
         <h2 class="ld-title">OpenFront Game Notifier</h2>
       </div>
+      <div class="ld-panel-slot" data-slot="filters"></div>
     `;
-
-    document.body.appendChild(this.panel);
-
-    this.filters.mount(this.panel);
-    this.setupEventListeners();
-    this.loadUIFromSettings();
+    this.panelControlsSlot = this.panel.querySelector('[data-slot="controls"]')!;
+    this.panelFiltersSlot = this.panel.querySelector('[data-slot="filters"]')!;
 
     this.syncSearchTimer();
     this.startGameInfoUpdates();
+  }
+
+  /**
+   * The filters and the controls live in the Lobby Board while it is on the
+   * page. When it cannot show, they move to the floating panel. A container
+   * that Lit removed from the page is replaced by the new one.
+   */
+  private placeSurfaces(): void {
+    const hosts = this.lobbyBoard.getHosts();
+    if (hosts) {
+      this.detachPanel();
+      this.mountSurfaces(hosts.controls, hosts.sidebarBody);
+      this.lobbyBoard.setFilterSummary(formatFilterSummary(this.filters.getSettings()));
+    } else if (this.sleeping) {
+      this.detachPanel();
+    } else {
+      if (!this.panel.isConnected) document.body.appendChild(this.panel);
+      this.mountSurfaces(this.panelControlsSlot, this.panelFiltersSlot);
+    }
+  }
+
+  private mountSurfaces(controlsHost: HTMLElement, filtersHost: HTMLElement): void {
+    if (this.controlsHost !== controlsHost || !controlsHost.isConnected) {
+      this.controls.mount(controlsHost);
+      this.controlsHost = controlsHost;
+    }
+    if (this.filtersHost !== filtersHost || !filtersHost.isConnected) {
+      this.filters.mount(filtersHost);
+      this.filtersHost = filtersHost;
+    }
+  }
+
+  private detachPanel(): void {
+    this.panel.remove();
   }
 
   private updateSleepState(): void {
@@ -962,15 +928,14 @@ export class LobbyDiscoveryUI {
     this.sleeping = !onLobby;
 
     if (this.sleeping) {
-      this.panel.classList.add('hidden');
       this.stopTimer();
       this.stopGameInfoUpdates();
       this.updateQueueCardPulses(new Set());
       this.updateSeeAllSignals(false, new Set());
       this.hideUpcomingStrip();
       this.lobbyBoard.hide();
+      this.placeSurfaces();
     } else {
-      this.panel.classList.remove('hidden');
       this.syncSearchTimer();
       this.startGameInfoUpdates();
       this.updateLobbyBoard(this.lastLobbies);
@@ -998,6 +963,7 @@ export class LobbyDiscoveryUI {
     this.upcomingSlotSignatures.clear();
     this.lobbyBoard.dispose();
     this.filters.cleanup();
-    this.panel.parentNode?.removeChild(this.panel);
+    this.controls.cleanup();
+    this.panel.remove();
   }
 }

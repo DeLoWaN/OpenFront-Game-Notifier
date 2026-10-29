@@ -6,6 +6,7 @@
 import { COLORS, RADIUS, SHADOWS, TIMING, FONTS } from '@/config/theme';
 import { Z_INDEX } from '@/config/constants';
 import { getBoardStyles } from './boardStyles';
+import { getBoardChromeStyles } from './boardChromeStyles';
 
 export function getStyles(): string {
   return `
@@ -1130,5 +1131,6 @@ export function getStyles(): string {
     }
 
     ${getBoardStyles()}
+    ${getBoardChromeStyles()}
   `;
 }

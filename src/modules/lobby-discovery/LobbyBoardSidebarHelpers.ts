@@ -3,7 +3,11 @@
  */
 
 import type { FilterSettings } from './LobbyDiscoveryFilters';
-import type { ModifierFilters, ModifierFilterState } from './LobbyDiscoveryTypes';
+import type {
+  ModifierFilters,
+  ModifierFilterState,
+  NumericModifierState,
+} from './LobbyDiscoveryTypes';
 
 const isSet = (state: ModifierFilterState | undefined): boolean =>
   state !== undefined && state !== 'any';
@@ -12,7 +16,9 @@ const isSet = (state: ModifierFilterState | undefined): boolean =>
 function countModifierFilters(modifiers: ModifierFilters | undefined): number {
   if (!modifiers) return 0;
   let count = 0;
-  for (const value of Object.values(modifiers)) {
+  for (const value of Object.values(modifiers) as Array<
+    ModifierFilterState | NumericModifierState | undefined
+  >) {
     if (typeof value === 'string') {
       if (isSet(value)) count++;
     } else if (value) {
