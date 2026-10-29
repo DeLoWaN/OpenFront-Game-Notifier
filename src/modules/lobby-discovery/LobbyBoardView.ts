@@ -14,6 +14,8 @@ import {
   formatLobbyCount,
   formatMatchCount,
   getBoardPlayersParts,
+  getLobbyCountParts,
+  getMatchCountParts,
   getRowLabel,
   groupLobbiesByQueue,
   toUnbreakableHyphens,
@@ -443,9 +445,14 @@ export class LobbyBoardView {
   ): void {
     const head = this.grid?.querySelector(`.of-board-colhead[data-queue="${queue}"]`);
     if (!head) return;
-    const [, count, matches] = Array.from(head.children);
-    count!.textContent = formatLobbyCount(lobbyCount);
-    matches!.textContent = matchCount ? `· ${formatMatchCount(matchCount)}` : '';
+    const [, count, matches] = Array.from(head.children) as HTMLElement[];
+    this.setCountAndWord(count!, getLobbyCountParts(lobbyCount));
+    if (!matchCount) {
+      if (matches!.firstChild) matches!.replaceChildren();
+      return;
+    }
+    const parts = getMatchCountParts(matchCount);
+    this.setCountAndWord(matches!, { ...parts, count: `· ${parts.count}` });
   }
 
   private buildEmpty(): HTMLElement {

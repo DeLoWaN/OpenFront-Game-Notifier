@@ -93,6 +93,12 @@ export const BOARD_SIZES = {
   narrowestCardBelowPx: 200,
   /** A card narrower than this hides the word "players" on its gauge. */
   playersWordHiddenBelowPx: 260,
+  /** A column header narrower than this hides the word "lobbies". */
+  lobbiesWordHiddenBelowPx: 240,
+  /** A column header narrower than this tightens its letter spacing. */
+  tightHeaderBelowPx: 180,
+  /** A column header narrower than this hides the word "matches". */
+  matchesWordHiddenBelowPx: 165,
   /** The height of the players gauge along the bottom of a card. */
   gaugeHeightPx: 18,
   /** The width of the "Join ›" slot at the right end of the gauge band. */

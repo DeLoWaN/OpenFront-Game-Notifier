@@ -242,6 +242,27 @@ describe('Lobby Board', () => {
       expect(document.querySelector('.of-board-totals')?.textContent).toBe('3 matches · 5 lobbies');
     });
 
+    it('puts the words "lobbies" and "matches" of a column header in their own elements, so a narrow column can hide them', () => {
+      setCriteria([ffaCriterion]);
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0'), ffa('ffa-1'), team('team-0')] as any, NOW);
+
+      const parts = (queue: string, tag: string) => {
+        const el = document.querySelector(`.of-board-colhead[data-queue="${queue}"] > ${tag}`)!;
+        return [el.firstChild?.textContent ?? null, el.querySelector('.of-board-word')?.textContent ?? null];
+      };
+      expect(parts('ffa', 'span')).toEqual(['2', ' lobbies']);
+      expect(parts('ffa', 'em')).toEqual(['· 2', ' matches']);
+      expect(parts('team', 'span')).toEqual(['1', ' lobby']);
+      expect(document.querySelector('.of-board-colhead[data-queue="team"] > em')?.childNodes).toHaveLength(0);
+
+      const word = document.querySelector('.of-board-colhead[data-queue="ffa"] > span .of-board-word');
+      // Same row count, so the grid and its headers stay.
+      ui.receiveLobbyUpdate([ffa('ffa-0'), team('team-0'), team('team-1')] as any, NOW);
+      expect(parts('ffa', 'span')).toEqual(['1', ' lobby']);
+      expect(document.querySelector('.of-board-colhead[data-queue="ffa"] > span .of-board-word')).toBe(word);
+    });
+
     it('updates the cards at once when a filter changes, without a new feed update', () => {
       setCriteria([ffaCriterion]);
       ui = new LobbyDiscoveryUI();

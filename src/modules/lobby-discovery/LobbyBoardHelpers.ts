@@ -123,14 +123,26 @@ export function toUnbreakableHyphens(text: string): string {
   return text.replace(/-/g, '\u2011');
 }
 
+/** "1" and "lobby", "3" and "lobbies". */
+export function getLobbyCountParts(count: number): CountAndWord {
+  return { count: String(count), word: count === 1 ? 'lobby' : 'lobbies' };
+}
+
+/** "1" and "match", "3" and "matches". */
+export function getMatchCountParts(count: number): CountAndWord {
+  return { count: String(count), word: count === 1 ? 'match' : 'matches' };
+}
+
 /** "1 lobby", "3 lobbies". */
 export function formatLobbyCount(count: number): string {
-  return `${count} ${count === 1 ? 'lobby' : 'lobbies'}`;
+  const { word } = getLobbyCountParts(count);
+  return `${count} ${word}`;
 }
 
 /** "1 match", "3 matches". */
 export function formatMatchCount(count: number): string {
-  return `${count} ${count === 1 ? 'match' : 'matches'}`;
+  const { word } = getMatchCountParts(count);
+  return `${count} ${word}`;
 }
 
 /**

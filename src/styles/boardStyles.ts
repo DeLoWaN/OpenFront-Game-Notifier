@@ -45,7 +45,11 @@ export function getBoardStyles(): string {
       align-items: stretch;
       padding: 14px 16px 16px;
     }
+    /* The header is its own size container and stays on one line: its words drop as it narrows. */
     .of-board-colhead {
+      container-type: inline-size;
+      white-space: nowrap;
+      overflow: hidden;
       display: flex;
       align-items: baseline;
       gap: 8px;
@@ -64,6 +68,22 @@ export function getBoardStyles(): string {
     .of-board-colhead em {
       font-style: normal;
       color: var(--of-hud-accent);
+    }
+    @container (width < ${BOARD_SIZES.lobbiesWordHiddenBelowPx}px) {
+      .of-board-colhead > span .of-board-word {
+        display: none;
+      }
+    }
+    @container (width < ${BOARD_SIZES.tightHeaderBelowPx}px) {
+      .of-board-colhead > span,
+      .of-board-colhead > em {
+        letter-spacing: 0.3px;
+      }
+    }
+    @container (width < ${BOARD_SIZES.matchesWordHiddenBelowPx}px) {
+      .of-board-colhead > em .of-board-word {
+        display: none;
+      }
     }
     .of-board-rowlabel {
       display: flex;

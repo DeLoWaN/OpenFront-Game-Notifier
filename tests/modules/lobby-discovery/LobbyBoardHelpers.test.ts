@@ -4,6 +4,8 @@ import {
   getBoardFormatText,
   getBoardModifiers,
   getBoardPlayersParts,
+  getLobbyCountParts,
+  getMatchCountParts,
   toUnbreakableHyphens,
 } from '@/modules/lobby-discovery/LobbyBoardHelpers';
 import { LobbyDiscoveryFilters } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
@@ -227,5 +229,14 @@ describe('toUnbreakableHyphens', () => {
 
   it('keeps a name without a hyphen as it is', () => {
     expect(toUnbreakableHyphens('Strait of Gibraltar')).toBe('Strait of Gibraltar');
+  });
+});
+
+describe('getLobbyCountParts and getMatchCountParts', () => {
+  it('split the count from its word, singular for one', () => {
+    expect(getLobbyCountParts(1)).toEqual({ count: '1', word: 'lobby' });
+    expect(getLobbyCountParts(6)).toEqual({ count: '6', word: 'lobbies' });
+    expect(getMatchCountParts(1)).toEqual({ count: '1', word: 'match' });
+    expect(getMatchCountParts(0)).toEqual({ count: '0', word: 'matches' });
   });
 });

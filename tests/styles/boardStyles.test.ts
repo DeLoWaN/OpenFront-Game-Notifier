@@ -154,6 +154,26 @@ describe('Lobby Board styles', () => {
     expect(ruleBody('.of-board-text')).toContain('justify-content: flex-start;');
   });
 
+  it('keeps each column header on one line and drops its words as the column narrows', () => {
+    expect(BOARD_SIZES).toMatchObject({
+      lobbiesWordHiddenBelowPx: 240,
+      tightHeaderBelowPx: 180,
+      matchesWordHiddenBelowPx: 165,
+    });
+    const head = ruleBody('.of-board-colhead');
+    expect(head).toContain('container-type: inline-size;');
+    expect(head).toContain('white-space: nowrap;');
+    expect(head).toContain('overflow: hidden;');
+    // "SPECIAL 6 · 6 MATCHES" under 240 px, then "SPECIAL 6 · 6" under 165 px.
+    expect(containerBlock(`(width < ${BOARD_SIZES.lobbiesWordHiddenBelowPx}px)`)).toMatch(
+      /\.of-board-colhead > span \.of-board-word \{\s*display: none;/
+    );
+    expect(containerBlock(`(width < ${BOARD_SIZES.tightHeaderBelowPx}px)`)).toContain('letter-spacing: 0.3px;');
+    expect(containerBlock(`(width < ${BOARD_SIZES.matchesWordHiddenBelowPx}px)`)).toMatch(
+      /\.of-board-colhead > em \.of-board-word \{\s*display: none;/
+    );
+  });
+
   it('puts the text column on the solid dark background of the card', () => {
     expect(ruleBody('.of-board-card')).toContain('background: var(--of-hud-bg-1);');
     const text = ruleBody('.of-board-text');
