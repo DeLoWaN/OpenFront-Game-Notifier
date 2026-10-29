@@ -13,11 +13,12 @@ import {
   formatCountdown,
   formatLobbyCount,
   formatMatchCount,
-  getBoardPlayersText,
+  getBoardPlayersParts,
   getRowLabel,
   groupLobbiesByQueue,
   toUnbreakableHyphens,
   type BoardCardModel,
+  type CountAndWord,
 } from './LobbyBoardHelpers';
 import {
   appearCard,
@@ -545,7 +546,7 @@ export class LobbyBoardView {
 
     parts.gauge.classList.toggle('of-board-gauge-hot', model.fillPercent >= NEARLY_FULL_PERCENT);
     parts.fill.style.width = `${model.fillPercent}%`;
-    this.setText(parts.players, getBoardPlayersText(model.players, model.capacity));
+    this.setCountAndWord(parts.players, getBoardPlayersParts(model.players, model.capacity));
     this.setText(parts.percent, model.capacity === null ? '' : `· ${model.fillPercent}%`);
 
     // The Custom tag is the first item of the chips row.
@@ -616,6 +617,18 @@ export class LobbyBoardView {
       this.setText(node, text);
     });
     for (const extra of existing.slice(wanted.length)) extra.remove();
+  }
+
+  /** Writes "<count> <word>" with the word in its own `.of-board-word` element. It reuses both nodes. */
+  private setCountAndWord(target: HTMLElement, { count, word }: CountAndWord): void {
+    let wordNode = target.lastElementChild as HTMLElement | null;
+    if (!wordNode?.classList.contains('of-board-word') || target.firstChild?.nodeType !== Node.TEXT_NODE) {
+      wordNode = this.createSpan('of-board-word');
+      target.replaceChildren(document.createTextNode(''), wordNode);
+    }
+    const countNode = target.firstChild!;
+    if (countNode.textContent !== count) countNode.textContent = count;
+    this.setText(wordNode, ` ${word}`);
   }
 
   private setText(node: HTMLElement, text: string): void {

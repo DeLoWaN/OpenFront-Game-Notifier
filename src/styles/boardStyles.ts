@@ -279,6 +279,12 @@ export function getBoardStyles(): string {
         --of-board-thumb-width: ${BOARD_SIZES.thumbWidthNarrowestPx}px;
       }
     }
+    /* A narrow card shows "54 / 60 · 90%" on its gauge. */
+    @container (width < ${BOARD_SIZES.playersWordHiddenBelowPx}px) {
+      .of-board-players .of-board-word {
+        display: none;
+      }
+    }
     .of-board-mods {
       display: flex;
       flex-wrap: wrap;

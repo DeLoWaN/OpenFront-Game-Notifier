@@ -91,6 +91,8 @@ export const BOARD_SIZES = {
   narrowCardBelowPx: 300,
   /** A card narrower than this gets the narrowest thumbnail. */
   narrowestCardBelowPx: 200,
+  /** A card narrower than this hides the word "players" on its gauge. */
+  playersWordHiddenBelowPx: 260,
   /** The height of the players gauge along the bottom of a card. */
   gaugeHeightPx: 18,
   /** The width of the "Join ›" slot at the right end of the gauge band. */

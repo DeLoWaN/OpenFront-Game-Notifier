@@ -747,6 +747,22 @@ describe('Lobby Board', () => {
       expect(cardIn('ffa', 0)?.textContent?.match(/10 \/ 40/g)).toHaveLength(1);
     });
 
+    it('puts the word "players" of the gauge in its own element, so a narrow card can hide it', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 54 }, { maxPlayers: 60 })] as any, NOW);
+
+      const players = cardIn('ffa', 0)!.querySelector('.of-board-players > span')!;
+      expect(players.firstChild?.nodeType).toBe(Node.TEXT_NODE);
+      expect(players.firstChild?.textContent).toBe('54 / 60');
+      const word = players.querySelector('.of-board-word')!;
+      expect(word.textContent).toBe(' players');
+      expect(players.lastElementChild).toBe(word);
+
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 55 }, { maxPlayers: 60 })] as any, NOW);
+      expect(players.querySelector('.of-board-word')).toBe(word);
+      expect(players.textContent).toBe('55 / 60 players');
+    });
+
     it('turns the gauge orange when the lobby is nearly full', () => {
       ui = new LobbyDiscoveryUI();
       ui.receiveLobbyUpdate(

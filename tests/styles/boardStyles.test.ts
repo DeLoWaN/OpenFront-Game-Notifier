@@ -260,6 +260,15 @@ describe('Lobby Board styles', () => {
     expect(zIndexOf('.of-board-join')).toBeLessThan(zIndexOf('.of-board-card::after'));
   });
 
+  it('hides the word "players" on the gauge of a card narrower than 260 px, so the text ends before the Join slot', () => {
+    expect(BOARD_SIZES.playersWordHiddenBelowPx).toBe(260);
+    const block = containerBlock(`(width < ${BOARD_SIZES.playersWordHiddenBelowPx}px)`);
+    expect(block).toMatch(/\.of-board-players \.of-board-word \{\s*display: none;/);
+    // A longer text is cut at the gauge end, under the Join slot never.
+    expect(ruleBody('.of-board-gauge')).toContain('right: var(--of-board-join-width);');
+    expect(ruleBody('.of-board-gauge')).toContain('overflow: hidden;');
+  });
+
   it('turns the Join label solid orange on a hovered match, and only a lighter grey on any other hovered card', () => {
     const matchHover = ruleBody('.of-board-card-match:hover .of-board-join');
     expect(matchHover).toContain(`background: ${BOARD_COLORS.live};`);

@@ -79,11 +79,17 @@ export function getBoardCountdownTarget(lobby: Lobby, queue: QueueSource, queueP
   return null;
 }
 
-/** "12 / 24 players", or "5 players" when the capacity is unknown. */
-export function getBoardPlayersText(players: number | null, capacity: number | null): string {
+/** A number and the word after it, kept apart so the card can hide the word. */
+export interface CountAndWord {
+  count: string;
+  word: string;
+}
+
+/** "12 / 24" and "players", or "5" and "players" when the capacity is unknown. */
+export function getBoardPlayersParts(players: number | null, capacity: number | null): CountAndWord {
   const count = players ?? 0;
-  if (capacity === null) return `${count} ${count === 1 ? 'player' : 'players'}`;
-  return `${count} / ${capacity} players`;
+  if (capacity === null) return { count: String(count), word: count === 1 ? 'player' : 'players' };
+  return { count: `${count} / ${capacity}`, word: 'players' };
 }
 
 export function buildBoardCardModel(

@@ -3,7 +3,7 @@ import {
   getBoardCountdownTarget,
   getBoardFormatText,
   getBoardModifiers,
-  getBoardPlayersText,
+  getBoardPlayersParts,
   toUnbreakableHyphens,
 } from '@/modules/lobby-discovery/LobbyBoardHelpers';
 import { LobbyDiscoveryFilters } from '@/modules/lobby-discovery/LobbyDiscoveryFilters';
@@ -204,18 +204,18 @@ describe('getBoardCountdownTarget', () => {
   });
 });
 
-describe('getBoardPlayersText', () => {
-  it('writes the players and the capacity', () => {
-    expect(getBoardPlayersText(12, 24)).toBe('12 / 24 players');
+describe('getBoardPlayersParts', () => {
+  it('splits the players and the capacity from the word "players"', () => {
+    expect(getBoardPlayersParts(12, 24)).toEqual({ count: '12 / 24', word: 'players' });
   });
 
-  it('writes a missing player count as zero', () => {
-    expect(getBoardPlayersText(null, 24)).toBe('0 / 24 players');
+  it('counts a missing player count as 0', () => {
+    expect(getBoardPlayersParts(null, 24)).toEqual({ count: '0 / 24', word: 'players' });
   });
 
-  it('writes the players alone when the capacity is unknown', () => {
-    expect(getBoardPlayersText(5, null)).toBe('5 players');
-    expect(getBoardPlayersText(1, null)).toBe('1 player');
+  it('gives the players alone when the capacity is unknown', () => {
+    expect(getBoardPlayersParts(5, null)).toEqual({ count: '5', word: 'players' });
+    expect(getBoardPlayersParts(1, null)).toEqual({ count: '1', word: 'player' });
   });
 });
 
