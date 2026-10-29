@@ -288,7 +288,7 @@ function getLobbyModeLabel(lobby: Lobby): string {
   return 'Team';
 }
 
-function formatStartingGold(value: number): string {
+export function formatStartingGold(value: number): string {
   if (value >= 1_000_000 && value % 1_000_000 === 0) {
     return `${value / 1_000_000}M`;
   }

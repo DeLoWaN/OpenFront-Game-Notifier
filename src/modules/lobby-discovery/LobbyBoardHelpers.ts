@@ -4,8 +4,18 @@
  */
 
 import type { Lobby } from '@/types/game';
-import type { QueueSource } from './LobbyDiscoveryTypes';
-import { getLobbyMapThumbnailUrl, getLobbyQueueSource, getMapDisplayName } from './LobbyDiscoveryHelpers';
+import type { DiscoveryCriteria, ModifierFilters, ModifierFilterState, QueueSource } from './LobbyDiscoveryTypes';
+import {
+  formatStartingGold,
+  getLobbyCapacity,
+  getLobbyGameMode,
+  getLobbyMapThumbnailUrl,
+  getLobbyModifierValue,
+  getLobbyQueueSource,
+  getLobbyTeamConfig,
+  getMapDisplayName,
+  getPlayersPerTeam,
+} from './LobbyDiscoveryHelpers';
 
 /** The board columns, left to right. */
 export const BOARD_QUEUES: ReadonlyArray<{ queue: QueueSource; label: string }> = [
@@ -97,4 +107,102 @@ export function formatLobbyCount(count: number): string {
 /** "1 match", "3 matches". */
 export function formatMatchCount(count: number): string {
   return `${count} ${count === 1 ? 'match' : 'matches'}`;
+}
+
+/**
+ * The team format in plain words: "Free for all · 55 players", "7 teams of 16",
+ * "Quads · 11 teams of 4", "Humans vs Nations · 105 humans". Named team
+ * formats resolve to their derived team count, as the matcher does.
+ */
+export function getBoardFormatText(lobby: Lobby): string {
+  const gameMode = getLobbyGameMode(lobby);
+  const capacity = getLobbyCapacity(lobby);
+
+  if (gameMode === 'FFA') {
+    return capacity !== null ? `Free for all · ${capacity} players` : 'Free for all';
+  }
+  if (gameMode !== 'Team') return 'Unsupported mode';
+
+  const teamConfig = getLobbyTeamConfig(lobby);
+  if (teamConfig === 'Humans Vs Nations') {
+    return capacity !== null ? `Humans vs Nations · ${capacity} humans` : 'Humans vs Nations';
+  }
+
+  const playersPerTeam = getPlayersPerTeam(teamConfig, capacity);
+  const isNamed = teamConfig === 'Duos' || teamConfig === 'Trios' || teamConfig === 'Quads';
+  let teamsText: string | null = null;
+  if (isNamed) {
+    teamsText =
+      playersPerTeam !== null && capacity !== null
+        ? `${Math.floor(capacity / playersPerTeam)} teams of ${playersPerTeam}`
+        : null;
+    return teamsText ? `${teamConfig} · ${teamsText}` : teamConfig;
+  }
+  if (typeof teamConfig === 'number') {
+    return playersPerTeam !== null ? `${teamConfig} teams of ${playersPerTeam}` : `${teamConfig} teams`;
+  }
+  return 'Teams';
+}
+
+/** How the filters treat a Modifier that a lobby has on. */
+export type BoardModifierState = 'neutral' | 'required' | 'blocked';
+
+export interface BoardModifier {
+  /** The full name, the same as the filter chip. */
+  name: string;
+  state: BoardModifierState;
+}
+
+// The boolean Modifiers, in the order of the filter chips.
+const BOOLEAN_MODIFIER_NAMES: ReadonlyArray<[keyof ModifierFilters, string]> = [
+  ['isCompact', 'Compact'],
+  ['isRandomSpawn', 'Random Spawn'],
+  ['isCrowded', 'Crowded'],
+  ['isHardNations', 'Hard Nations'],
+  ['isAlliancesDisabled', 'Alliances Off'],
+  ['isNukesDisabled', 'Nukes Off'],
+  ['isSAMsDisabled', 'SAMs Off'],
+  ['isPeaceTime', 'Peace Time'],
+  ['isWaterNukes', 'Water Nukes'],
+  ['isDoomsdayClock', 'Doomsday Clock'],
+  ['isTrusted', 'Trusted'],
+];
+
+function toBoardState(state: ModifierFilterState | undefined): BoardModifierState {
+  return state === 'required' || state === 'blocked' ? state : 'neutral';
+}
+
+/**
+ * Every Modifier that a lobby has on, by its full chip name, in the order of
+ * the filter chips. The state tells whether the filters of the lobby's game
+ * mode require or block it.
+ */
+export function getBoardModifiers(lobby: Lobby, criteria: DiscoveryCriteria[]): BoardModifier[] {
+  const gameMode = getLobbyGameMode(lobby);
+  const filters = criteria.find((criterion) => criterion.gameMode === gameMode && criterion.modifiers)?.modifiers;
+  const modifiers: BoardModifier[] = [];
+
+  for (const [key, name] of BOOLEAN_MODIFIER_NAMES) {
+    if (getLobbyModifierValue(lobby, key)) {
+      modifiers.push({ name, state: toBoardState(filters?.[key] as ModifierFilterState | undefined) });
+    }
+  }
+
+  const startingGold = getLobbyModifierValue(lobby, 'startingGold');
+  if (typeof startingGold === 'number') {
+    modifiers.push({
+      name: `Start Gold ${formatStartingGold(startingGold)}`,
+      state: toBoardState(filters?.startingGold?.[startingGold]),
+    });
+  }
+
+  const goldMultiplier = getLobbyModifierValue(lobby, 'goldMultiplier');
+  if (typeof goldMultiplier === 'number') {
+    modifiers.push({
+      name: `Gold ×${goldMultiplier}`,
+      state: toBoardState(filters?.goldMultiplier?.[goldMultiplier]),
+    });
+  }
+
+  return modifiers;
 }
