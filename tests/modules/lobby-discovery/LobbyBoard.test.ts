@@ -637,5 +637,57 @@ describe('Lobby Board', () => {
 
       expect(text(cardIn('ffa', 0), '.of-board-players')).toBe('30 / 40');
     });
+
+    it('updates a card in place: a new player count keeps the card, the image and the badge nodes', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 10 })] as any, NOW);
+      const before = cardIn('ffa', 0)!;
+      const img = before.querySelector('img');
+      const badge = before.querySelector('.of-board-badge');
+      const fill = before.querySelector('.of-board-fill') as HTMLElement;
+      expect(img).toBeTruthy();
+      expect(fill.style.width).toBe('25%');
+
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 30 })] as any, NOW);
+
+      const after = cardIn('ffa', 0)!;
+      expect(after).toBe(before);
+      expect(after.querySelector('img')).toBe(img);
+      expect(after.querySelector('.of-board-badge')).toBe(badge);
+      expect(after.querySelector('.of-board-fill')).toBe(fill);
+      expect(fill.style.width).toBe('75%');
+      expect(text(after, '.of-board-players')).toBe('30 / 40');
+    });
+
+    it('keeps the image node when the map stays the same and replaces it when the map changes', () => {
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', {}, { gameMap: 'Europe' })] as any, NOW);
+      const img = cardIn('ffa', 0)!.querySelector('img');
+      ui.receiveLobbyUpdate([ffa('ffa-0', { numClients: 9 }, { gameMap: 'Europe' })] as any, NOW);
+      expect(cardIn('ffa', 0)!.querySelector('img')).toBe(img);
+
+      ui.receiveLobbyUpdate([ffa('ffa-0', {}, { gameMap: 'Asia' })] as any, NOW);
+      expect(text(cardIn('ffa', 0), '.of-board-map')).toBe('Asia');
+      expect(cardIn('ffa', 0)!.querySelector('img')?.getAttribute('src')).toContain('asia');
+    });
+
+    it('updates the Modifier chips in place when a filter changes', () => {
+      store.set(STORAGE_KEYS.lobbyDiscoverySettings, {
+        criteria: [{ gameMode: 'FFA', teamCount: null, minPlayers: null, maxPlayers: null }],
+        discoveryEnabled: true,
+        soundEnabled: false,
+        isTeamTwoTimesMinEnabled: false,
+      });
+      ui = new LobbyDiscoveryUI();
+      ui.receiveLobbyUpdate([ffa('ffa-0', {}, { publicGameModifiers: { isCompact: true } })] as any, NOW);
+      const chip = cardIn('ffa', 0)!.querySelector('.of-board-mod');
+      expect(chip?.textContent).toBe('Compact');
+
+      (document.getElementById('modifier-isCompact') as HTMLButtonElement).click();
+
+      const after = cardIn('ffa', 0)!.querySelector('.of-board-mod');
+      expect(after?.classList.contains('of-board-mod-required')).toBe(true);
+      expect(after).toBe(chip);
+    });
   });
 });

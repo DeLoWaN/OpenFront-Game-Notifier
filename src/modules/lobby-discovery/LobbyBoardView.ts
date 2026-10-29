@@ -58,6 +58,19 @@ const BOARD_ID = 'of-lobby-board';
 const FLASH_DURATION_MS = 2_000;
 const GRID_CLASS_MARKER = 'sm:grid-cols-[2fr_1fr]';
 
+/** The nodes of a card that change with its model. They are built once and then updated in place. */
+interface CardParts {
+  thumb: HTMLElement;
+  badge: HTMLElement;
+  top: HTMLElement;
+  name: HTMLElement;
+  format: HTMLElement;
+  players: HTMLElement;
+  bar: HTMLElement;
+  fill: HTMLElement;
+  modifiers: HTMLElement;
+}
+
 interface SavedStyle {
   element: HTMLElement;
   property: string;
@@ -77,6 +90,7 @@ export class LobbyBoardView {
   private grid: HTMLDivElement | null = null;
   private rowCount = -1;
   private cards = new Map<string, HTMLButtonElement>();
+  private cardParts = new WeakMap<HTMLButtonElement, CardParts>();
   private signatures = new Map<string, string>();
   private flashTimers = new Map<string, ReturnType<typeof setTimeout>>();
 
@@ -365,11 +379,37 @@ export class LobbyBoardView {
     // Navigation happens only from this real click, never from a feed update or a timer.
     card.addEventListener('click', () => this.options.onJoin(gameID));
     card.addEventListener('pointerenter', () => this.options.onCardSeen(gameID));
+
+    const thumb = this.createSpan('of-board-thumb');
+    const badge = this.createSpan('of-board-badge');
+    const top = this.createSpan('of-board-top');
+    top.append(badge);
+    const name = this.createSpan('of-board-map');
+    const format = this.createSpan('of-board-format');
+    const playersRow = this.createSpan('of-board-playersrow');
+    const players = this.createSpan('of-board-players');
+    const bar = this.createSpan('of-board-bar');
+    const fill = document.createElement('i');
+    fill.className = 'of-board-fill';
+    bar.append(fill);
+    playersRow.append(players, bar);
+    const modifiers = this.createSpan('of-board-mods');
+    const body = this.createSpan('of-board-body');
+    body.append(name, format, playersRow, modifiers);
+    card.append(thumb, top, body);
+
+    this.cardParts.set(card, { thumb, badge, top, name, format, players, bar, fill, modifiers });
     this.cards.set(gameID, card);
     return card;
   }
 
-  /** Shows the "New" badge and the pulse of a card. Runs after updateCard, which rebuilds the card children. */
+  private createSpan(className: string): HTMLSpanElement {
+    const span = document.createElement('span');
+    span.className = className;
+    return span;
+  }
+
+  /** Shows the "New" badge and the pulse of a card. The badge is a child that updateCard never touches. */
   private applyAlertState(card: HTMLButtonElement, alert: CardAlertState | undefined): void {
     card.classList.toggle('of-board-card-pulse', alert?.isPulsing === true);
     const badge = Array.from(card.children).find((child) => child.classList.contains('of-board-new'));
@@ -384,85 +424,87 @@ export class LobbyBoardView {
     }
   }
 
+  /** Writes the model into the nodes of the card. A node whose value did not change is not touched. */
   private updateCard(card: HTMLButtonElement, model: BoardCardModel): void {
     const signature = JSON.stringify(model);
     if (this.signatures.get(model.gameID) === signature) return;
     this.signatures.set(model.gameID, signature);
 
-    const thumb = document.createElement('span');
-    thumb.className = 'of-board-thumb';
-    if (model.thumbnailUrl) {
-      const img = document.createElement('img');
-      img.src = model.thumbnailUrl;
-      img.alt = '';
-      img.loading = 'lazy';
-      thumb.append(img);
-    }
+    const parts = this.cardParts.get(card);
+    if (!parts) return;
 
-    const badge = document.createElement('span');
-    badge.className = 'of-board-badge';
+    this.updateThumbnail(parts.thumb, model.thumbnailUrl);
+
     if (model.badge.kind === 'countdown') {
       // The text is set by tickCountdowns, which knows the clock offset.
-      badge.dataset.countdownTo = String(model.badge.targetMs);
+      parts.badge.dataset.countdownTo = String(model.badge.targetMs);
     } else {
-      badge.textContent = model.badge.text;
+      delete parts.badge.dataset.countdownTo;
+      this.setText(parts.badge, model.badge.text);
     }
+    this.reconcileChildren(
+      parts.top,
+      1,
+      model.tags.map((tag) => ({ className: 'of-board-tag', text: tag }))
+    );
 
-    const name = document.createElement('span');
-    name.className = 'of-board-map';
-    name.textContent = model.mapName;
+    this.setText(parts.name, model.mapName);
+    this.setText(parts.format, model.formatText);
+    this.setText(
+      parts.players,
+      model.capacity === null ? String(model.players ?? '') : `${model.players ?? 0} / ${model.capacity}`
+    );
+    parts.bar.className = `of-board-bar${model.fillPercent >= 80 ? ' of-board-bar-hot' : ''}`;
+    parts.fill.style.width = `${model.fillPercent}%`;
 
-    const top = document.createElement('span');
-    top.className = 'of-board-top';
-    top.append(badge);
-    for (const tagText of model.tags) {
-      const tag = document.createElement('span');
-      tag.className = 'of-board-tag';
-      tag.textContent = tagText;
-      top.append(tag);
-    }
-
-    const format = document.createElement('span');
-    format.className = 'of-board-format';
-    format.textContent = model.formatText;
-
-    const modifiers = document.createElement('span');
-    modifiers.className = 'of-board-mods';
-    if (model.modifiers.length === 0) {
-      const none = document.createElement('span');
-      none.className = 'of-board-nomods';
-      none.textContent = 'No modifiers';
-      modifiers.append(none);
-    }
-    for (const modifier of model.modifiers) {
-      const chip = document.createElement('span');
-      chip.className = `of-board-mod${modifier.state === 'neutral' ? '' : ` of-board-mod-${modifier.state}`}`;
-      chip.textContent = modifier.name;
-      modifiers.append(chip);
-    }
-
-    const body = document.createElement('span');
-    body.className = 'of-board-body';
-    body.append(name, format, this.buildPlayers(model), modifiers);
+    this.reconcileChildren(
+      parts.modifiers,
+      0,
+      model.modifiers.length === 0
+        ? [{ className: 'of-board-nomods', text: 'No modifiers' }]
+        : model.modifiers.map((modifier) => ({
+            className: `of-board-mod${modifier.state === 'neutral' ? '' : ` of-board-mod-${modifier.state}`}`,
+            text: modifier.name,
+          }))
+    );
 
     card.setAttribute('aria-label', `Open ${model.mapName} in OpenFront's join modal`);
-    card.replaceChildren(thumb, top, body);
   }
 
-  private buildPlayers(model: BoardCardModel): HTMLElement {
-    const row = document.createElement('span');
-    row.className = 'of-board-playersrow';
-    const count = document.createElement('span');
-    count.className = 'of-board-players';
-    count.textContent =
-      model.capacity === null ? String(model.players ?? '') : `${model.players ?? 0} / ${model.capacity}`;
-    const bar = document.createElement('span');
-    bar.className = `of-board-bar${model.fillPercent >= 80 ? ' of-board-bar-hot' : ''}`;
-    const fill = document.createElement('i');
-    fill.className = 'of-board-fill';
-    fill.style.width = `${model.fillPercent}%`;
-    bar.append(fill);
-    row.append(count, bar);
-    return row;
+  /** Keeps the image node while its URL stays the same. A card without a thumbnail has no image. */
+  private updateThumbnail(thumb: HTMLElement, url: string | null): void {
+    const img = thumb.querySelector('img');
+    if (!url) {
+      img?.remove();
+      return;
+    }
+    if (img) {
+      if (img.getAttribute('src') !== url) img.src = url;
+      return;
+    }
+    const created = document.createElement('img');
+    created.src = url;
+    created.alt = '';
+    created.loading = 'lazy';
+    thumb.append(created);
+  }
+
+  /** Makes the children of `parent`, from index `from` on, match `wanted`. It reuses the nodes it has. */
+  private reconcileChildren(
+    parent: HTMLElement,
+    from: number,
+    wanted: Array<{ className: string; text: string }>
+  ): void {
+    const existing = Array.from(parent.children).slice(from) as HTMLElement[];
+    wanted.forEach(({ className, text }, index) => {
+      const node = existing[index] ?? parent.appendChild(this.createSpan(className));
+      if (node.className !== className) node.className = className;
+      this.setText(node, text);
+    });
+    for (const extra of existing.slice(wanted.length)) extra.remove();
+  }
+
+  private setText(node: HTMLElement, text: string): void {
+    if (node.textContent !== text) node.textContent = text;
   }
 }
